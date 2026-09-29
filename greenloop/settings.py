@@ -24,6 +24,10 @@ ALLOWED_HOSTS = [
     'muhammad-fayadh51-greenloop.pws.cs.ui.ac.id',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://muhammad-fayadh51-greenloop.pws.cs.ui.ac.id',
+]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
