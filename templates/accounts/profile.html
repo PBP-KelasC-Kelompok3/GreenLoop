@@ -1,13 +1,34 @@
 {% extends 'base.html' %}
 
+{% block title %}Profile | GreenLoop{% endblock title %}
+
 {% block content %}
-<h1>Profile</h1>
 
-<p>Username: {{ user.username }}</p>
-<p>Email: {{ user.email }}</p>
+<section class="profile-page">
+    <div class="profile-card">
 
-{% if user.userprofile %}
-    <p>Role: {{ user.userprofile.get_role_display }}</p>
-{% endif %}
+        <h1>Profile</h1>
+
+        <div class="profile-info">
+            <p>
+                <strong>Username</strong>
+                <span>{{ user.username }}</span>
+            </p>
+
+            <p>
+                <strong>Email</strong>
+                <span>{{ user.email }}</span>
+            </p>
+
+            {% if profile %}
+                <p>
+                    <strong>Role</strong>
+                    <span>{{ profile.get_role_display }}</span>
+                </p>
+            {% endif %}
+        </div>
+
+    </div>
+</section>
 
 {% endblock content %}

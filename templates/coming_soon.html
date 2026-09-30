@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ module_title }} | GreenLoop{% endblock title %}
+
+{% block content %}
+
+<section class="coming-soon">
+    <h1>{{ module_title }}</h1>
+
+    <p>
+        Fitur ini sedang dalam pengembangan.
+    </p>
+
+    <p>
+        Silakan kembali lagi nanti untuk menggunakan fitur {{ module_title }}.
+    </p>
+
+    <a href="{% url 'home' %}" class="btn btn-primary">
+        Kembali ke Beranda
+    </a>
+</section>
+
+{% endblock content %}

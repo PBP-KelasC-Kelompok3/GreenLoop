@@ -1,9 +1,98 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}GreenLoop | Ubah Limbah Jadi Bermakna{% endblock title %}
 
 {% block content %}
 
-<h1>Welcome to GreenLoop</h1>
+<!-- ================= HERO ================= -->
+<section class="hero">
+    <div class="hero-text">
+        <span class="badge">Sustainable Living Platform</span>
+        <h1>Ubah Limbah Organik Jadi Sabun yang Ramah Lingkungan</h1>
+        <p>
+            Setor limbah dapur organikmu, kami olah menjadi eco-enzyme dan produk
+            pembersih alami. Setiap langkah kecil menutup satu lingkaran.
+        </p>
 
-<p>Platform Sustainable Living untuk pengelolaan limbah organik dan eco-enzyme.</p>
+        <div class="hero-actions">
+            {% if user.is_authenticated %}
+                <a class="btn btn-light" href="{% url 'coming_soon' 'pickup' %}">Mulai Setor Limbah</a>
+            {% else %}
+                <a class="btn btn-light" href="{% url 'register' %}">Mulai Setor Limbah</a>
+            {% endif %}
+            <a class="btn btn-ghost" href="#impact">Lihat Dampak</a>
+        </div>
+    </div>
 
-{% endblock content %}exit()
+    <div class="hero-visual" aria-hidden="true">
+        <div class="hero-circle">
+            <img src="{% static 'img/Logo_Mark.png' %}" alt="">
+        </div>
+    </div>
+</section>
+
+<!-- ================= LIVE IMPACT =================
+     Data berasal dari context `impact` di greenloop/views.py (masih dummy). -->
+<section class="impact" id="impact" aria-labelledby="impact-title">
+    <header class="section-head">
+        <span class="badge badge-soft">Live Impact</span>
+        <h2 id="impact-title">Dampak nyata, diperbarui setiap penjemputan</h2>
+        <p>Kontribusi komunitas GreenLoop dalam mengurangi limbah dan emisi.</p>
+    </header>
+
+    <div class="impact-grid">
+        <article class="stat-card">
+            <p class="stat-label">Total limbah organik terkumpul</p>
+            <p class="stat-value">{{ impact.total_waste_kg }} <small>kg</small></p>
+        </article>
+
+        <article class="stat-card">
+            <p class="stat-label">Pengurangan emisi karbon</p>
+            <p class="stat-value">{{ impact.carbon_reduction_kg }} <small>kg CO&#8322;e</small></p>
+        </article>
+
+        <article class="chart-card">
+            <p class="stat-label">Limbah terkumpul per bulan</p>
+            <div class="bars" role="img" aria-label="Grafik batang limbah terkumpul per bulan">
+                {% for m in impact.monthly %}
+                    <div class="bar{% if forloop.last %} bar-active{% endif %}" style="--h:{{ m.percent }}%">
+                        <span>{{ m.label }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </article>
+    </div>
+</section>
+
+<!-- ================= CARA KERJA =================
+     Teks statis penjelasan alur. Tidak ada fungsi backend. -->
+<section class="impact" id="cara-kerja" aria-labelledby="cara-title">
+    <header class="section-head">
+        <span class="badge badge-soft">Cara Kerja</span>
+        <h2 id="cara-title">Tiga langkah menutup lingkaran</h2>
+    </header>
+
+    <div class="impact-grid">
+        <article class="chart-card">
+            <ol>
+                <li><strong>Kumpulkan</strong> limbah dapur organikmu di rumah.</li>
+                <li><strong>Jadwalkan penjemputan</strong> dan mitra GreenLoop akan mengambilnya.</li>
+                <li><strong>Olah dan manfaatkan</strong>: limbah diubah menjadi eco-enzyme dan produk pembersih alami.</li>
+            </ol>
+        </article>
+    </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+    <h2>Siap ikut menutup lingkaran?</h2>
+    <p>Bergabung dan mulai berkontribusi untuk lingkungan yang lebih hijau.</p>
+    {% if user.is_authenticated %}
+        <a class="btn btn-light" href="{% url 'profile' %}">Lihat Profil</a>
+    {% else %}
+        <a class="btn btn-light" href="{% url 'register' %}">Daftar Sekarang</a>
+    {% endif %}
+</section>
+
+{% endblock content %}

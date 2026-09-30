@@ -1,54 +1,256 @@
 {% load static %}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>GreenLoop</title>
+    <title>
+        {% block title %}GreenLoop{% endblock title %}
+    </title>
 
+    <link rel="icon" href="{% static 'img/Logo_Mark.png' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 
 <body>
 
-    <header>
-        <nav>
+<header class="site-header">
 
-            <a href="{% url 'home' %}">GreenLoop</a>
+    <nav class="navbar" aria-label="Navigasi utama">
 
-            <div>
-                <a href="{% url 'home' %}">Home</a>
+        <a class="brand" href="{% url 'home' %}">
+            <img
+                src="{% static 'img/Logo_Lockup.png' %}"
+                alt="GreenLoop"
+                height="36"
+            >
+        </a>
+
+        <input
+            type="checkbox"
+            id="nav-toggle"
+            class="nav-toggle"
+        >
+
+        <label
+            for="nav-toggle"
+            class="nav-burger"
+            aria-label="Buka menu"
+        >
+            <span></span>
+        </label>
+
+        <div class="nav-menu">
+
+            <ul class="nav-links">
+
+                <!-- Public navigation -->
+
+                <li>
+                    <a href="{% url 'home' %}">
+                        Beranda
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'home' %}#impact">
+                        Dampak
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'home' %}#cara-kerja">
+                        Cara Kerja
+                    </a>
+                </li>
+
 
                 {% if user.is_authenticated %}
 
-                    <a href="{% url 'profile' %}">Profile</a>
+                    {% if user.userprofile.role == 'consumer' %}
 
-                    <span>Hi, {{ user.username }}</span>
+                        <li>
+                            <a href="{% url 'coming_soon' 'katalog' %}">
+                                Katalog
+                            </a>
+                        </li>
 
-                    <a href="{% url 'logout' %}">Logout</a>
+                        <li>
+                            <a href="{% url 'coming_soon' 'rewards' %}">
+                                Rewards
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="{% url 'coming_soon' 'lacak-pesanan' %}">
+                                Lacak Pesanan
+                            </a>
+                        </li>
+
+                    {% elif user.userprofile.role == 'mitra' %}
+
+                        <li>
+                            <a href="{% url 'coming_soon' 'mitra-dashboard' %}">
+                                Dashboard Mitra
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="{% url 'coming_soon' 'pickup' %}">
+                                Pickup
+                            </a>
+                        </li>
+
+                    {% elif user.userprofile.role == 'courier' %}
+
+                        <li>
+                            <a href="{% url 'coming_soon' 'courier-dashboard' %}">
+                                Dashboard Courier
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="{% url 'coming_soon' 'routes' %}">
+                                Rute
+                            </a>
+                        </li>
+
+                    {% endif %}
 
                 {% else %}
 
-                    <a href="{% url 'login' %}">Login</a>
+                    <!-- Guest -->
 
-                    <a href="{% url 'register' %}">Register</a>
+                    <li>
+                        <a href="{% url 'coming_soon' 'katalog' %}">
+                            Katalog
+                        </a>
+                    </li>
 
                 {% endif %}
+
+            </ul>
+
+
+            <div class="nav-auth">
+
+                {% if user.is_authenticated %}
+
+                    <a href="{% url 'profile' %}">
+                        Profile
+                    </a>
+
+                    <span class="nav-user">
+                        Hi, {{ user.username }}
+                    </span>
+
+                    <a
+                        class="btn btn-outline"
+                        href="{% url 'logout' %}"
+                    >
+                        Logout
+                    </a>
+
+                {% else %}
+
+                    <a href="{% url 'login' %}">
+                        Masuk
+                    </a>
+
+                    <a
+                        class="btn btn-primary"
+                        href="{% url 'register' %}"
+                    >
+                        Daftar
+                    </a>
+
+                {% endif %}
+
             </div>
 
+        </div>
+
+    </nav>
+
+</header>
+
+
+<main>
+
+    {% block content %}
+    {% endblock content %}
+
+</main>
+
+
+<footer class="site-footer">
+
+    <div class="footer-inner">
+
+        <div class="footer-brand">
+
+            <img
+                src="{% static 'img/Logo_Mark.png' %}"
+                alt=""
+                height="40"
+            >
+
+            <p>
+                Platform Sustainable Living untuk pengelolaan
+                limbah organik dan eco-enzyme.
+            </p>
+
+        </div>
+
+
+        <nav
+            class="footer-nav"
+            aria-label="Navigasi footer"
+        >
+
+            <a href="{% url 'home' %}">
+                Beranda
+            </a>
+
+            <a href="{% url 'home' %}#impact">
+                Dampak
+            </a>
+
+            <a href="{% url 'home' %}#cara-kerja">
+                Cara Kerja
+            </a>
+
+            {% if user.is_authenticated %}
+
+                <a href="{% url 'profile' %}">
+                    Profile
+                </a>
+
+            {% else %}
+
+                <a href="{% url 'login' %}">
+                    Masuk
+                </a>
+
+                <a href="{% url 'register' %}">
+                    Daftar
+                </a>
+
+            {% endif %}
+
         </nav>
-    </header>
 
-    <main>
-        {% block content %}
-        {% endblock content %}
-    </main>
+    </div>
 
-    <footer>
-        <p>&copy; 2026 GreenLoop</p>
-    </footer>
+    <p class="footer-copy">
+        &copy; 2026 GreenLoop
+    </p>
+
+</footer>
+
 
 </body>
 </html>
