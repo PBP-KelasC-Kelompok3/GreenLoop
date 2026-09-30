@@ -1,6 +1,7 @@
-from django.shortcuts import render, redirect
+
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
 
 from .forms import RegisterForm
 
@@ -11,6 +12,10 @@ def register(request):
 
         if form.is_valid():
             user = form.save()
+
+            user.userprofile.role = form.cleaned_data['role']
+            user.userprofile.save()
+
             login(request, user)
             return redirect('home')
     else:
@@ -50,4 +55,12 @@ def logout_view(request):
 
 @login_required
 def profile(request):
-    return render(request, 'accounts/profile.html')
+    profile = getattr(request.user, 'userprofile', None)
+
+    return render(
+        request,
+        'accounts/profile.html',
+        {'profile': profile}
+    )
+
+
