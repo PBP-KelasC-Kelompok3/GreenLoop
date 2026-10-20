@@ -8,6 +8,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
     path('accounts/', include('accounts.urls')),
+    path('courier/', include('courier.urls')),
 
     # Placeholder sementara untuk modul teman.
     path(
