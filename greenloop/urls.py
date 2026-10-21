@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 
-from .views import home, coming_soon
+from .views import home, coming_soon, admin_dashboard
 
 
 urlpatterns = [
@@ -15,4 +15,5 @@ urlpatterns = [
         coming_soon,
         name='coming_soon'
     ),
+    path('admin-dashboard/', admin_dashboard, name='admin_dashboard'),
 ]

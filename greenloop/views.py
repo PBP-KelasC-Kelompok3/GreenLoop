@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from accounts.decorator import role_required
 
 
 def home(request):
@@ -56,3 +57,7 @@ def coming_soon(request, module):
         'coming_soon.html',
         {'module_title': title}
     )
+
+@role_required(['admin'])
+def admin_dashboard(request):
+    return render(request, 'admin/dashboard.html')
