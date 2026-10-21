@@ -38,6 +38,12 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
+
+            profile = getattr(user, 'userprofile', None)
+
+            if profile and profile.role == 'admin':
+                return redirect('admin_dashboard')
+
             return redirect('home')
 
         return render(
@@ -47,7 +53,6 @@ def login_view(request):
         )
 
     return render(request, 'accounts/login.html')
-
 
 def logout_view(request):
     logout(request)
