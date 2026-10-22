@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<!-- Load CSS Terpisah Khusus Mitra Dashboard -->
+<link rel="stylesheet" href="{% static 'css/mitra_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+  <!-- Header Dashboard Mitra -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold text-dark mb-1">Dashboard Mitra B2B</h3>
+      <p class="text-muted small mb-0">Pantau penjemputan, poin, dan dampak lingkungan usaha Anda secara real-time.</p>
+    </div>
+    <div>
+      <a href="{% url 'create_pickup' %}" class="btn btn-success rounded-3 fw-semibold px-3 shadow-sm">
+        <i class="bi bi-plus-lg me-1"></i> Ajukan Penjemputan
+      </a>
+    </div>
+  </div>
+
+  <!-- Messages / Alert Notification -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- 4 Kartu Ringkasan Statistik -->
+  <div class="row g-3 mb-4">
+    <!-- Total Limbah Disetor -->
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="p-2 bg-success-subtle rounded-3 text-success">
+            <i class="bi bi-recycle fs-5"></i>
+          </div>
+          <span class="badge bg-success-subtle text-success rounded-pill">+12%</span>
+        </div>
+        <small class="text-muted d-block fw-semibold">Total limbah disetor</small>
+        <h3 class="fw-bold text-dark mb-0 mt-1">{{ total_waste }} <span class="fs-6 fw-normal text-muted">kg</span></h3>
+      </div>
+    </div>
+
+    <!-- Saldo Waste Points -->
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm rounded-4 p-3 text-white h-100" style="background-color: #2D5A3D !important;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="p-2 bg-white bg-opacity-25 rounded-3 text-white">
+            <i class="bi bi-coin fs-5"></i>
+          </div>
+          <span class="badge bg-white text-dark rounded-pill fw-semibold">Silver</span>
+        </div>
+        <small class="text-white-50 d-block fw-semibold">Saldo Waste Points</small>
+        <!-- Variabel diganti ke {{ user_points }} -->
+        <h3 class="fw-bold text-white mb-0 mt-1">{{ user_points }} <span class="fs-6 fw-normal text-white-50">PTS</span></h3>
+      </div>
+    </div>
+
+    <!-- Penjemputan Bulan Ini -->
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="p-2 bg-light rounded-3 text-secondary">
+            <i class="bi bi-truck fs-5"></i>
+          </div>
+        </div>
+        <small class="text-muted d-block fw-semibold">Penjemputan bulan ini</small>
+        <h3 class="fw-bold text-dark mb-0 mt-1">{{ pickups_this_month }} <span class="fs-6 fw-normal text-muted">kali</span></h3>
+      </div>
+    </div>
+
+    <!-- CO2e Dicegah -->
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="p-2 bg-info-subtle rounded-3 text-info">
+            <i class="bi bi-tree fs-5"></i>
+          </div>
+          <span class="badge bg-info-subtle text-info rounded-pill">+9%</span>
+        </div>
+        <small class="text-muted d-block fw-semibold">CO2e dicegah</small>
+        <h3 class="fw-bold text-dark mb-0 mt-1">{{ co2_saved }} <span class="fs-6 fw-normal text-muted">kg</span></h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row Tengah: Penjemputan Berikutnya (Kiri) & Grafik (Kanan) -->
+  <div class="row g-4 mb-4">
+    <!-- Box Penjemputan Berikutnya -->
+    <div class="col-md-5">
+      <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+        <!-- Header Kartu -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0">Penjemputan Berikutnya</h5>
+          {% if next_pickup %}
+            {% if next_pickup.status == 'PENDING' %}
+              <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-1 rounded-pill">• Menunggu</span>
+            {% else %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">• Disetujui</span>
+            {% endif %}
+          {% endif %}
+        </div>
+
+        {% if next_pickup %}
+          <!-- Section Content: Box Tanggal Hijau Gelap & Detail Info -->
+          <div class="d-flex align-items-center gap-3 my-auto py-2">
+            <!-- Kotak Tanggal Hijau Gelap -->
+            <div class="rounded-4 text-center text-white d-flex flex-column justify-content-center flex-shrink-0 p-2" 
+                style="background-color: #1b4d2e !important; width: 90px; height: 95px;">
+              <span class="text-uppercase fw-semibold text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">{{ next_pickup.pickup_date|date:"D" }}</span>
+              <h2 class="fw-bold my-0 text-white" style="font-size: 1.8rem; line-height: 1.1;">{{ next_pickup.pickup_date|date:"d" }}</h2>
+              <span class="text-white-50" style="font-size: 0.75rem;">{{ next_pickup.pickup_date|date:"M Y" }}</span>
+            </div>
+
+            <!-- Detail Informasi -->
+            <div class="d-flex flex-column gap-2 text-dark">
+              <div class="d-flex align-items-center gap-2 small">
+                <i class="bi bi-clock-history text-success"></i>
+                <span>Slot {{ next_pickup.pickup_time_slot }}</span>
+              </div>
+              <div class="d-flex align-items-center gap-2 small">
+                <i class="bi bi-badge-ad text-success"></i>
+                <span>Estimasi {{ next_pickup.estimated_weight }} kg • {{ next_pickup.get_waste_type_display }}</span>
+              </div>
+              <div class="d-flex align-items-center gap-2 small">
+                <i class="bi bi-person text-success"></i>
+                <span>
+                  {% if next_pickup.courier_name %}
+                    {{ next_pickup.courier_name }}
+                  {% else %}
+                    <span class="text-muted fst-italic">Menunggu Penugasan Kurir</span>
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Stepper Progress -->
+          <div class="position-relative mt-auto pt-3">
+            <!-- Garis Dasar Stepper (Abu-abu) -->
+            <div class="position-absolute w-100 bg-secondary bg-opacity-25" style="top: 26px; left: 0; height: 3px; z-index: 0;"></div>
+            
+            <!-- Garis Isian Stepper (Hijau) -->
+            <div class="position-absolute bg-success" 
+                style="top: 26px; left: 0; height: 3px; z-index: 0; transition: width 0.3s ease;"
+                class="{% if next_pickup.status == 'PENDING' %}w-25{% elif next_pickup.status == 'IN_PROGRESS' %}w-75{% elif next_pickup.status == 'COMPLETED' %}w-100{% else %}w-0{% endif %}"></div>
+
+            <!-- Dots & Labels -->
+            <div class="d-flex justify-content-between align-items-center position-relative z-1">
+              <!-- Step 1: Diajukan -->
+              <div class="text-center">
+                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 bg-success text-white" 
+                    style="width: 24px; height: 24px; font-size: 14px;">
+                  <i class="bi bi-check"></i>
+                </div>
+                <span class="text-dark fw-medium" style="font-size: 0.75rem;">Diajukan</span>
+              </div>
+
+              <!-- Step 2: Foto OK -->
+              <div class="text-center">
+                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 {% if next_pickup.status != 'PENDING' %}bg-success text-white{% else %}bg-white border text-muted{% endif %}" 
+                    style="width: 24px; height: 24px; font-size: 14px;">
+                  <i class="bi bi-check"></i>
+                </div>
+                <span class="text-dark fw-medium" style="font-size: 0.75rem;">Foto OK</span>
+              </div>
+
+              <!-- Step 3: Kurir -->
+              <div class="text-center">
+                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 {% if next_pickup.status == 'IN_PROGRESS' or next_pickup.status == 'COMPLETED' %}bg-success text-white{% else %}bg-white border text-muted{% endif %}" 
+                    style="width: 24px; height: 24px; font-size: 14px;">
+                  <i class="bi bi-check"></i>
+                </div>
+                <span class="text-dark fw-medium" style="font-size: 0.75rem;">Kurir</span>
+              </div>
+
+              <!-- Step 4: Dijemput -->
+              <div class="text-center">
+                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 {% if next_pickup.status == 'COMPLETED' %}bg-success text-white{% else %}bg-white border text-muted{% endif %}" 
+                    style="width: 24px; height: 24px; font-size: 14px;">
+                  <i class="bi bi-check"></i>
+                </div>
+                <span class="text-muted" style="font-size: 0.75rem;">Dijemput</span>
+              </div>
+            </div>
+          </div>
+
+        {% else %}
+          <div class="text-center py-4 my-auto">
+            <div class="mb-3 text-muted"><i class="bi bi-calendar-x fs-1"></i></div>
+            <p class="text-muted small mb-3">Belum ada jadwal penjemputan berikutnya.</p>
+            <a href="{% url 'create_pickup' %}" class="btn btn-outline-success btn-sm rounded-pill px-3">
+              Ajukan Sekarang
+            </a>
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- Box Grafik 8 Minggu -->
+    <div class="col-md-7">
+      <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+        <h5 class="fw-bold text-dark mb-1">Setoran limbah 8 minggu terakhir</h5>
+        <small class="text-muted d-block mb-3">kilogram per minggu</small>
+        
+        <div class="chart-container" style="position: relative; height: 220px; width: 100%;">
+          <canvas id="wasteChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row Bawah: Status Penjemputan Aktif (Kiri) & Tukar Waste Points (Kanan) -->
+  <div class="row g-4">
+    <!-- Status Penjemputan Aktif (Dibatasi Maksimal 2 Item) -->
+    <div class="col-md-7">
+      <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0">Status Penjemputan Aktif</h5>
+          <a href="#" class="text-success text-decoration-none small fw-semibold">Lihat Semua Riwayat &rarr;</a>
+        </div>
+
+        {% for pickup in pickups %}
+          {% if pickup.status == 'PENDING' or pickup.status == 'IN_PROGRESS' %}
+            {% if forloop.counter <= 2 %}
+              <div class="p-3 border rounded-4 mb-3 bg-light-subtle">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="fw-bold text-dark">ID: PK-00{{ pickup.id }}</span>
+                  
+                  <div class="d-flex align-items-center gap-2">
+                    {% if pickup.status == 'PENDING' %}
+                      <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-1 rounded-pill">Menunggu Verifikasi Admin</span>
+                      <a href="{% url 'edit_pickup' pickup.id %}" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-0 fs-7" title="Ubah Jadwal">
+                        <i class="bi bi-pencil-square"></i> Edit
+                      </a>
+                    {% else %}
+                      <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1 rounded-pill">Kurir Dalam Perjalanan</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="row text-muted small g-2 mt-1">
+                  <div class="col-6"><i class="bi bi-calendar3 me-1"></i> {{ pickup.pickup_date|date:"d M Y" }} ({{ pickup.pickup_time_slot }})</div>
+                  <div class="col-6"><i class="bi bi-box-seam me-1"></i> {{ pickup.get_waste_type_display }} ({{ pickup.estimated_weight }} kg)</div>
+                </div>
+              </div>
+            {% endif %}
+          {% endif %}
+        {% empty %}
+          <div class="text-center py-4 my-auto text-muted">
+            <i class="bi bi-check2-circle fs-1 text-success d-block mb-2"></i>
+            <p class="small mb-0">Tidak ada penjemputan yang sedang berlangsung saat ini.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Widget Tukar Poin & Level Membership -->
+    <div class="col-md-5">
+      <div class="card border-0 shadow-sm rounded-4 p-4 text-white h-100" style="background-color: #1b4d2e !important;">
+        <span class="text-uppercase fw-bold text-success-subtle mb-3 d-block fs-7" style="letter-spacing: 1px;">Tukar Poin</span>
+        
+        <!-- Voucher Card Light Green -->
+        <div class="rounded-4 p-3 text-dark mb-4 d-flex align-items-center justify-content-between" style="background-color: #a3e635 !important;">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <i class="bi bi-ticket-perforated-fill fs-5 text-dark"></i>
+              <h6 class="fw-bold mb-0 text-dark">Diskon Rp 25.000</h6>
+            </div>
+            <small class="text-dark-50 d-block mb-2">Belanja sabun eco-enzyme</small>
+            <span class="fw-bold text-dark fs-6">450 poin</span>
+          </div>
+          
+          <button class="btn btn-dark text-white rounded-4 px-3 py-2 fw-semibold btn-sm shadow-sm">
+            Tukar
+          </button>
+        </div>
+
+        <!-- Info Level & Progress -->
+        <div class="mt-auto">
+          <div class="d-flex justify-content-between align-items-center small fw-semibold text-white mb-2">
+            <span>Level {{ current_tier }} {% if next_tier != 'Max Level' %}menuju {{ next_tier }}{% endif %}</span>
+            <span>{{ user_points }} / {{ target_points }}</span>
+          </div>
+
+          <!-- Custom Progress Bar Level -->
+          <div class="progress rounded-pill level-progress-track my-2">
+            <div class="progress-bar rounded-pill level-bar-fill" 
+                role="progressbar" 
+                style="--level-progress: {{ level_progress_pct }}%;"></div>
+          </div>
+
+          <small class="text-white-50 d-block" style="font-size: 0.75rem;">
+            {% if next_tier != 'Max Level' %}
+              Setor &plusmn;{{ kg_needed }} kg lagi untuk naik level.
+            {% else %}
+              Selamat! Kamu telah mencapai level tertinggi.
+            {% endif %}
+          </small>
+        </div>
+
+      </div>
+    </div>
+
+</div>
+
+<!-- Include Library Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Render Grafik Dinamis dari Django Backend -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById('wasteChart');
+    if (!ctx) return;
+
+    const chartLabels = JSON.parse('{{ weekly_labels|escapejs }}');
+    const chartData = JSON.parse('{{ weekly_data|escapejs }}');
+
+    new Chart(ctx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          label: 'Limbah (kg)',
+          data: chartData,
+          backgroundColor: '#2D5A3D',
+          borderRadius: 8,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 },
+            grid: { color: '#f0f0f0' }
+          },
+          x: {
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

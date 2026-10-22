@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+  <!-- Header Panel Admin -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold text-dark mb-1">Panel Admin / Petugas</h3>
+      <p class="text-muted small mb-0">Kelola, verifikasi foto limbah, dan pantau status penjemputan mitra B2B.</p>
+    </div>
+    <div>
+      <span class="badge bg-dark px-3 py-2 rounded-pill fs-6">
+        <i class="bi bi-shield-lock me-1"></i> Mode Admin / Petugas
+      </span>
+    </div>
+  </div>
+
+  <!-- Messages / Alert Notification -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Ringkasan Statistik Penjemputan -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+        <small class="text-muted d-block fw-semibold">Menunggu Konfirmasi</small>
+        <h3 class="fw-bold text-warning mb-0 mt-1">{{ pending_count }}</h3>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+        <small class="text-muted d-block fw-semibold">Dalam Proses / Penjemputan</small>
+        <h3 class="fw-bold text-info mb-0 mt-1">{{ in_progress_count }}</h3>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+        <small class="text-muted d-block fw-semibold">Selesai (Completed)</small>
+        <h3 class="fw-bold text-success mb-0 mt-1">{{ completed_count }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabel Utama Penjemputan -->
+  <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+    <h5 class="fw-bold text-dark mb-3">Daftar Semua Permintaan Penjemputan</h5>
+
+    <div class="table-responsive">
+      <table class="table align-middle table-hover mb-0">
+        <thead class="table-light">
+          <tr class="text-muted small">
+            <th>ID</th>
+            <th>MITRA / USER</th>
+            <th>FOTO BUKTI</th>
+            <th>TANGGAL & SLOT</th>
+            <th>JENIS LIMBAH</th>
+            <th>ESTIMASI</th>
+            <th>STATUS</th>
+            <th class="text-center">AKSI ADMIN</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pickup in all_pickups %}
+          <tr>
+            <td class="fw-bold">PK-00{{ pickup.id }}</td>
+            <td>
+              <div class="fw-semibold text-dark">{{ pickup.mitra.get_full_name|default:pickup.mitra.username }}</div>
+              <small class="text-muted">{{ pickup.mitra.email }}</small>
+            </td>
+            
+            <!-- Kolom Foto Bukti -->
+            <td>
+              {% if pickup.waste_photo %}
+                <button type="button" class="btn btn-sm btn-light border rounded-3 p-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#imageModal{{ pickup.id }}" title="Klik untuk memperbesar">
+                  <img src="{{ pickup.waste_photo.url }}" alt="Foto Limbah" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px;">
+                </button>
+              {% else %}
+                <span class="text-muted small fst-italic">Tanpa Foto</span>
+              {% endif %}
+            </td>
+
+            <td>
+              <div>{{ pickup.pickup_date|date:"d M Y" }}</div>
+              <small class="text-muted">Slot {{ pickup.pickup_time_slot }}</small>
+            </td>
+            <td>{{ pickup.get_waste_type_display }}</td>
+            <td><strong>{{ pickup.estimated_weight }}</strong> kg</td>
+            <td>
+              {% if pickup.status == 'COMPLETED' %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">Selesai</span>
+              {% elif pickup.status == 'PENDING' %}
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 rounded-pill">Menunggu</span>
+              {% elif pickup.status == 'IN_PROGRESS' or pickup.status == 'SCHEDULED' %}
+                <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 rounded-pill">Proses</span>
+              {% else %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill">{{ pickup.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <div class="btn-group btn-group-sm" role="group">
+                {% if pickup.status == 'PENDING' %}
+                  <a href="{% url 'update_pickup_status' pickup.id 'IN_PROGRESS' %}" class="btn btn-outline-primary btn-sm rounded-start">
+                    <i class="bi bi-play-fill me-1"></i>Proses
+                  </a>
+                  <a href="{% url 'update_pickup_status' pickup.id 'REJECTED' %}" class="btn btn-outline-danger btn-sm rounded-end">
+                    Tolak
+                  </a>
+                {% elif pickup.status == 'IN_PROGRESS' or pickup.status == 'SCHEDULED' %}
+                  <a href="{% url 'update_pickup_status' pickup.id 'COMPLETED' %}" class="btn btn-success btn-sm fw-semibold rounded">
+                    <i class="bi bi-check-circle me-1"></i>Selesaikan
+                  </a>
+                {% else %}
+                  <span class="text-muted small fst-italic">Tidak Ada Aksi</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+              Belum ada permintaan penjemputan dari mitra.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Tempatkan Modal Pop-Up di Luar Tabel -->
+{% for pickup in all_pickups %}
+  {% if pickup.waste_photo %}
+    <div class="modal fade" id="imageModal{{ pickup.id }}" tabindex="-1" aria-labelledby="imageModalLabel{{ pickup.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow p-3">
+          <div class="modal-header border-0 pb-2">
+            <h6 class="modal-title fw-bold" id="imageModalLabel{{ pickup.id }}">
+              Foto Bukti Limbah PK-00{{ pickup.id }} - {{ pickup.mitra.username }}
+            </h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center p-2">
+            <img src="{{ pickup.waste_photo.url }}" class="img-fluid rounded-3 shadow-sm border" alt="Foto Limbah Full" style="max-height: 70vh; width: auto; object-fit: contain;">
+            
+            {% if pickup.notes %}
+              <div class="p-3 bg-light rounded-3 mt-3 text-start small border">
+                <strong class="text-dark">Catatan Mitra:</strong>
+                <p class="mb-0 mt-1 text-secondary">{{ pickup.notes }}</p>
+              </div>
+            {% endif %}
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-secondary btn-sm rounded-3 px-3" data-bs-dismiss="modal">Tutup</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endfor %}
+
+{% endblock %}
