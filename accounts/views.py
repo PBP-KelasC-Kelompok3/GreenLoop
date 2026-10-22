@@ -1,9 +1,18 @@
-
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 
 from .forms import RegisterForm
+
+
+def redirect_after_login(user):
+    """Mengarahkan user ke halaman utama sesuai rolenya."""
+    profile = getattr(user, 'userprofile', None)
+
+    if profile is not None and profile.role == 'courier':
+        return redirect('courier:show_dashboard')
+
+    return redirect('home')
 
 
 def register(request):
@@ -17,7 +26,7 @@ def register(request):
             user.userprofile.save()
 
             login(request, user)
-            return redirect('home')
+            return redirect_after_login(user)
     else:
         form = RegisterForm()
 
@@ -37,7 +46,7 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
-            return redirect('home')
+            return redirect_after_login(user)
 
         return render(
             request,
@@ -62,5 +71,3 @@ def profile(request):
         'accounts/profile.html',
         {'profile': profile}
     )
-
-

@@ -1,9 +1,85 @@
 {% extends 'courier/base_courier.html' %}
+{% load static %}
 
 {% block title %}Riwayat Pikap{% endblock title %}
 
 {% block content %}
-<h1 class="page-title">Riwayat Pikap</h1>
-<p class="page-subtitle">Daftar penjemputan yang sudah selesai.</p>
+<div class="hist-head">
+    <div>
+        <h1 class="page-title">Riwayat Pikap</h1>
+        <p class="page-subtitle">Pantau jadwal, status, dan berat aktual setiap penjemputan yang Anda tangani.</p>
+    </div>
+    <button type="button" class="hist-download" id="hist-download">
+        <i data-lucide="download"></i><span>Unduh CSV</span>
+    </button>
+</div>
 
+{# ---- Filter status ---- #}
+<div class="hist-filters" id="hist-filters" role="tablist" aria-label="Filter status">
+    <button type="button" class="hist-chip is-active" data-filter="all" role="tab" aria-selected="true">
+        Semua <span class="hist-count">{{ total }}</span>
+    </button>
+    {% for key, label, count in filters %}
+    <button type="button" class="hist-chip" data-filter="{{ key }}" role="tab" aria-selected="false">
+        {{ label }} <span class="hist-count">{{ count }}</span>
+    </button>
+    {% endfor %}
+</div>
+
+{# ---- Tabel ---- #}
+<section class="hist-card">
+    <div class="hist-scroll">
+        <table class="hist-table" id="hist-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tanggal &amp; Slot</th>
+                    <th>Mitra</th>
+                    <th>Area</th>
+                    <th>Estimasi</th>
+                    <th>Berat Aktual</th>
+                    <th>Armada</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr data-status="{{ r.status }}">
+                    <td class="hist-id">{{ r.code }}</td>
+                    <td>{{ r.date_display }} · {{ r.slot }}</td>
+                    <td>{{ r.partner }}</td>
+                    <td>{{ r.area }}</td>
+                    <td>{{ r.est_kg }} kg</td>
+                    <td>{{ r.actual_display }}</td>
+                    <td>{{ r.vehicle }}</td>
+                    <td><span class="status status--{{ r.status }}">{{ r.status_label }}</span></td>
+                </tr>
+                {% endfor %}
+                <tr class="hist-empty" id="hist-empty" hidden>
+                    <td colspan="8">Belum ada penjemputan pada status ini.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="hist-foot">
+        <p id="hist-info">Menampilkan 0 dari {{ total }} penjemputan</p>
+        <nav class="hist-pager" id="hist-pager" aria-label="Halaman"></nav>
+    </div>
+</section>
+
+{# ---- Catatan penjemputan dibatalkan ---- #}
+{% if last_cancelled %}
+<section class="hist-note">
+    <i data-lucide="octagon-alert"></i>
+    <div>
+        <h2>{{ last_cancelled.code }} dibatalkan · {{ last_cancelled.date_display }}</h2>
+        <p>Mitra: {{ last_cancelled.partner }}. {{ last_cancelled.note }}</p>
+    </div>
+</section>
+{% endif %}
 {% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'courier/js/history.js' %}"></script>
+{% endblock extra_js %}

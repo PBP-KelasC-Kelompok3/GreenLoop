@@ -45,3 +45,39 @@ def get_courier_stats(user):
     setelah model Pickup disepakati dengan modul mitra.
     """
     return {"pickups_done": 0, "total_kg": 0, "points": 0}
+
+
+PICKUP_STATUS = {
+    "scheduled": "Dijadwalkan",
+    "ongoing": "Dalam Perjalanan",
+    "done": "Selesai",
+    "cancelled": "Dibatalkan",
+}
+
+
+def get_pickup_history(user):
+    rows = [
+        ("PK-0941", "2026-10-06", "08.00–10.00", "Kafe Senja Margonda", "Beji", 30, None, "Pickup Bak", "scheduled", ""),
+        ("PK-0940", "2026-10-03", "08.00–10.00", "Resto Sari Rasa", "Pancoran Mas", 35, None, "Pickup Bak", "ongoing", ""),
+        ("PK-0938", "2026-09-29", "13.00–15.00", "Warung Bu Tini", "Cimanggis", 20, None, "Motor Box", "ongoing", ""),
+        ("PK-0931", "2026-09-26", "08.00–10.00", "Kafe Senja Margonda", "Beji", 35, 35.2, "Pickup Bak", "done", ""),
+        ("PK-0924", "2026-09-19", "08.00–10.00", "Katering Nusantara", "Sukmajaya", 40, 41.0, "Pickup Bak", "done", ""),
+        ("PK-0917", "2026-09-12", "13.00–15.00", "Resto Sari Rasa", "Pancoran Mas", 30, None, "Pickup Bak", "cancelled",
+         "Foto limbah tercampur plastik dan styrofoam, penjemputan dibatalkan oleh admin."),
+        ("PK-0910", "2026-09-05", "08.00–10.00", "Warung Bu Tini", "Cimanggis", 25, 22.8, "Motor Box", "done", ""),
+        ("PK-0903", "2026-08-29", "08.00–10.00", "Katering Nusantara", "Sukmajaya", 30, 31.4, "Pickup Bak", "done", ""),
+        ("PK-0897", "2026-08-22", "13.00–15.00", "Kafe Senja Margonda", "Beji", 28, 27.5, "Pickup Bak", "done", ""),
+        ("PK-0889", "2026-08-15", "08.00–10.00", "Resto Sari Rasa", "Pancoran Mas", 32, 33.1, "Pickup Bak", "done", ""),
+    ]
+    keys = ("code", "date", "slot", "partner", "area", "est_kg", "actual_kg",
+            "vehicle", "status", "note")
+    result = []
+    for row in rows:
+        item = dict(zip(keys, row))
+        y, m, d = (int(x) for x in item["date"].split("-"))
+        item["date_display"] = f"{d:02d} {MONTHS_ID[m - 1]}"
+        item["status_label"] = PICKUP_STATUS[item["status"]]
+        actual = item["actual_kg"]
+        item["actual_display"] = f"{actual:.1f}".replace(".", ",") + " kg" if actual else "–"
+        result.append(item)
+    return result

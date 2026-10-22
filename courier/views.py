@@ -8,9 +8,12 @@ from accounts.decorator import role_required
 from .forms import CourierPasswordForm, CourierProfileForm, errors_to_dict
 from .models import CourierProfile
 from .utils import (
+    PICKUP_STATUS,
     format_date_id,
     get_courier_stats,
     get_display_name,
+    get_initials,
+    get_pickup_history,
     profile_payload,
 )
 
@@ -27,7 +30,18 @@ def show_route_today(request):
 
 @role_required(['courier'])
 def show_history(request):
-    return render(request, "courier/pickup_history.html")
+    rows = get_pickup_history(request.user)
+    counts = {key: 0 for key in PICKUP_STATUS}
+    for row in rows:
+        counts[row["status"]] += 1
+
+    context = {
+        "rows": rows,
+        "filters": [(key, label, counts[key]) for key, label in PICKUP_STATUS.items()],
+        "total": len(rows),
+        "last_cancelled": next((r for r in rows if r["status"] == "cancelled"), None),
+    }
+    return render(request, "courier/pickup_history.html", context)
 
 
 @role_required(['courier'])
@@ -42,6 +56,7 @@ def show_profile(request):
     context = {
         "profile": profile,
         "display_name": get_display_name(request.user),
+        "initials": get_initials(request.user),
         "joined_display": format_date_id(request.user.date_joined),
         "stats": get_courier_stats(request.user),
         "vehicle_choices": CourierProfile.VehicleType.choices,
