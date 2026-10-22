@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts.apps.AccountsConfig',
+    'waste_reward.apps.WasteRewardConfig',
 ]
 
 MIDDLEWARE = [
