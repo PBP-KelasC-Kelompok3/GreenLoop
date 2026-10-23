@@ -1,52 +1,109 @@
-{% extends 'base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenLoop - Ajukan Penjemputan</title>
+  
+  <!-- CDN Bootstrap 5 & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  
+  <!-- CSS Khusus Mitra Dashboard -->
+  <link rel="stylesheet" href="{% static 'css/mitra_dashboard.css' %}">
+</head>
+<body class="bg-light">
 
-{% block content %}
-<div class="container-fluid p-4">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="card border-0 shadow-sm create-pickup-card p-4">
-        <h4 class="fw-bold mb-3 text-dark-green">Ajukan Penjemputan Sampah Organik</h4>
-        <form method="POST" enctype="multipart/form-data">
+<div class="d-flex min-vh-100">
+  <!-- Sidebar Kiri Mitra -->
+  <aside class="sidebar p-3 d-flex flex-column justify-content-between bg-white border-end" style="width: 260px; min-height: 100vh;">
+    <div>
+      <div class="d-flex align-items-center mb-3 px-2">
+        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop Logo" class="img-fluid" style="max-height: 40px; width: auto;">
+      </div>
+      
+      <div class="mb-4 px-2">
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill small">
+          <i class="bi bi-building me-1"></i> Mitra B2B
+        </span>
+      </div>
+
+      <small class="text-uppercase text-muted fw-bold px-2 mb-2 d-block" style="font-size: 10px;">MENU</small>
+      <nav class="nav flex-column gap-1">
+        <a href="{% url 'mitra_dashboard' %}" class="nav-link-custom d-flex align-items-center justify-content-between px-3 py-2 rounded-3 text-secondary">
+          <div><i class="bi bi-grid-fill me-2"></i> Dashboard</div>
+        </a>
+        <a href="{% url 'create_pickup' %}" class="nav-link-custom active d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
+          <div><i class="bi bi-calendar-plus me-2"></i> Ajukan Penjemputan</div>
+        </a>
+        <a href="#" class="nav-link-custom d-flex align-items-center justify-content-between px-3 py-2 rounded-3 text-secondary">
+          <div><i class="bi bi-list-task me-2"></i> Riwayat Penjemputan</div>
+        </a>
+        <a href="#" class="nav-link-custom d-flex align-items-center justify-content-between px-3 py-2 rounded-3 text-secondary">
+          <div><i class="bi bi-gift me-2"></i> Waste & Reward</div>
+        </a>
+        <a href="#" class="nav-link-custom d-flex align-items-center justify-content-between px-3 py-2 rounded-3 text-secondary">
+          <div><i class="bi bi-person me-2"></i> Profil Mitra</div>
+        </a>
+      </nav>
+    </div>
+
+    <div>
+      <div class="p-3 bg-light rounded-3 mb-3 border">
+        <div class="fw-bold text-dark mb-1 small"><i class="bi bi-geo-alt-fill text-success me-1"></i> Area Pilot: Kota Depok</div>
+        <div class="text-muted" style="font-size: 11px;">Layanan penjemputan khusus wilayah Kota Depok.</div>
+      </div>
+      
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Jenis Limbah</label>
-            {{ form.waste_type }}
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Estimasi Berat (Kg)</label>
-            {{ form.estimated_weight }}
-          </div>
-
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-semibold">Tanggal Penjemputan</label>
-              {{ form.pickup_date }}
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-semibold">Slot Waktu</label>
-              {{ form.pickup_time_slot }}
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Foto Kondisi Sampah</label>
-            {{ form.waste_photo }}
-          </div>
-
-          <div class="mb-4">
-            <label class="form-label fw-semibold">Catatan Tambahan</label>
-            {{ form.notes }}
-          </div>
-
-          <div class="d-flex justify-content-end gap-2">
-            <a href="{% url 'mitra_dashboard' %}" class="btn btn-light px-4">Batal</a>
-            <button type="submit" class="btn btn-submit-pickup px-4">Kirim Pengajuan</button>
-          </div>
+          <button type="submit" class="btn btn-link text-danger text-decoration-none fw-semibold small p-0 px-2 border-0 bg-transparent">
+            <i class="bi bi-box-arrow-right me-2"></i>Keluar
+          </button>
         </form>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- Content Area Utama Form -->
+  <main class="flex-grow-1 p-4 overflow-auto">
+    <!-- Header Topbar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom bg-white p-3 rounded-4 shadow-sm">
+      <div>
+        <h4 class="fw-bold text-dark mb-0">Ajukan Penjemputan Sampah</h4>
+        <small class="text-muted">Isi form di bawah ini untuk menjadwalkan penjemputan limbah usaha Anda.</small>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px;">
+          {{ request.user.username|slice:":2"|upper|default:"FZ" }}
+        </div>
+        <div>
+          <div class="fw-bold small mb-0">{{ request.user.get_full_name|default:request.user.username }}</div>
+          <div class="text-muted" style="font-size: 11px;">Mitra B2B</div>
+        </div>
       </div>
     </div>
-  </div>
+
+    <!-- Card Form Input -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white max-w-lg mx-auto" style="max-width: 800px;">
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Render form Django secara rapi pakai Bootstrap -->
+        <div class="mb-3">
+          {{ form.as_p }}
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+          <a href="{% url 'mitra_dashboard' %}" class="btn btn-light px-4 rounded-3 fw-semibold">Batal</a>
+          <button type="submit" class="btn btn-success px-4 rounded-3 fw-semibold shadow-sm">Kirim Pengajuan</button>
+        </div>
+      </form>
+    </div>
+  </main>
 </div>
-{% endblock %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
