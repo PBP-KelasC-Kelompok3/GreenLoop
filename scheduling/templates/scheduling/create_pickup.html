@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid p-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card border-0 shadow-sm create-pickup-card p-4">
+        <h4 class="fw-bold mb-3 text-dark-green">Ajukan Penjemputan Sampah Organik</h4>
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Jenis Limbah</label>
+            {{ form.waste_type }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Estimasi Berat (Kg)</label>
+            {{ form.estimated_weight }}
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Tanggal Penjemputan</label>
+              {{ form.pickup_date }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold">Slot Waktu</label>
+              {{ form.pickup_time_slot }}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Foto Kondisi Sampah</label>
+            {{ form.waste_photo }}
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Catatan Tambahan</label>
+            {{ form.notes }}
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'mitra_dashboard' %}" class="btn btn-light px-4">Batal</a>
+            <button type="submit" class="btn btn-submit-pickup px-4">Kirim Pengajuan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

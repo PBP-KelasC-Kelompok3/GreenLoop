@@ -1,0 +1,324 @@
+/* Custom CSS - GreenLoop Mitra Dashboard */
+:root {
+  /* Color Palette */
+  --primary-green: #008a5f;    /* Hijau Utama / Aksens / Button Primary */
+  --dark-green: #506649;       /* Hijau Tua / Card Poin / Header */
+  --dark-green-hover: #3e5038; /* Hijau Tua Hover */
+  --secondary-green: #789c6d;  /* Hijau Sedang / Hover & Secondary Badge */
+  --light-green: #c0ccbb;      /* Hijau Muda / Border, Background Card, Neutral */
+  --bg-main: #f4f6f3;          /* Background Utama Halaman */
+  
+  /* Accent & Neutral Colors */
+  --bg-pill: #d1fae5;
+  --bg-card-light: #eaf3ee;
+  --text-muted: #4b5563;
+  --text-dark: #1f2937;
+  --border-light: #e5e7eb;
+}
+
+/* Global Reset & Base Layout */
+body {
+  background-color: var(--bg-main);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-dark);
+}
+
+/* ==========================================
+   Sidebar Styling & Navigation
+   ========================================== */
+.sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background-color: #ffffff;
+  border-right: 1px solid var(--border-light);
+}
+
+.nav-link-custom,
+.sidebar-nav-item {
+  color: var(--text-muted);
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  margin-bottom: 4px;
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-link-custom:hover,
+.sidebar-nav-item:hover {
+  background-color: #f0fdf4;
+  color: var(--dark-green);
+}
+
+.nav-link-custom.active,
+.sidebar-nav-item.active {
+  background-color: var(--dark-green) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.nav-link-custom.active i,
+.sidebar-nav-item.active i {
+  color: #86efac !important; /* Warna hijau muda aksen ikon */
+}
+
+.active-indicator {
+  width: 4px;
+  height: 18px;
+  background-color: #86efac;
+  border-radius: 4px;
+}
+
+.pill-mitra {
+  background-color: var(--bg-pill);
+  color: var(--primary-green);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+.card-pilot {
+  background-color: var(--bg-card-light);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 12px;
+}
+
+/* ==========================================
+   Buttons & Cards
+   ========================================== */
+.btn-ajukan {
+  background-color: var(--dark-green);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  padding: 8px 16px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.btn-ajukan:hover {
+  background-color: var(--dark-green-hover);
+  color: #ffffff;
+}
+
+.card-stat {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-poin-green,
+.widget-tukar-poin {
+  background-color: var(--dark-green);
+  color: #ffffff;
+  border-radius: 12px;
+}
+
+/* ==========================================
+   Status Badges
+   ========================================== */
+.badge-status-selesai {
+  background-color: var(--bg-card-light);
+  color: var(--primary-green);
+  font-weight: 600;
+}
+
+.badge-status-disetujui {
+  background-color: #e0f2fe;
+  color: #0284c7;
+  font-weight: 600;
+}
+
+.badge-status-ditolak {
+  background-color: #ffe4e6;
+  color: #e11d48;
+  font-weight: 600;
+}
+
+/* ==========================================
+   Stepper Component
+   ========================================== */
+.step-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.step-done {
+  background-color: var(--dark-green);
+  color: #ffffff;
+}
+
+.step-pending {
+  background-color: var(--border-light);
+  color: #9ca3af;
+}
+
+/* ==========================================
+   GLOBAL & UTILITIES
+   ========================================== */
+.text-dark-green {
+  color: var(--dark-green, #1b4d3e) !important;
+}
+
+.bg-dark-green {
+  background-color: var(--dark-green, #1b4d3e) !important;
+}
+
+/* ==========================================
+   CREATE PICKUP PAGE
+   ========================================== */
+.create-pickup-card {
+  border-radius: 1rem;
+}
+
+.btn-submit-pickup {
+  background-color: var(--dark-green, #1b4d3e);
+  color: #ffffff;
+}
+
+.btn-submit-pickup:hover {
+  background-color: #143b2f;
+  color: #ffffff;
+}
+
+/* ==========================================
+   ADMIN DASHBOARD PAGE
+   ========================================== */
+.pickup-thumb-btn {
+  padding: 0.25rem;
+}
+
+.pickup-thumb-img {
+  width: 45px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 0.375rem;
+}
+
+.modal-pickup-preview {
+  max-height: 380px;
+  object-fit: contain;
+}
+
+/* ==========================================
+   DASHBOAR GRAPH
+   ========================================== */
+/* Card Saldo Waste Points */
+.card-waste-points {
+  background-color: #2D5A3D;
+}
+
+/* Container Grafik */
+.chart-container {
+  position: relative;
+  height: 220px;
+  width: 100%;
+}
+
+/* ==========================================
+   PENJEMPUTAN BERIKUTNYA
+   ========================================== */
+/* Styling Kotak Tanggal */
+.date-card-box {
+  background-color: #1b4d2e !important;
+  width: 90px;
+  height: 95px;
+  padding: 10px;
+}
+
+.date-card-day {
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+}
+
+.date-card-num {
+  font-size: 1.8rem;
+  line-height: 1.1;
+}
+
+.date-card-month {
+  font-size: 0.75rem;
+}
+
+/* Custom Stepper Container */
+.stepper-wrapper {
+  padding-top: 15px;
+}
+
+/* Garis Dasar Stepper (Abu-abu) */
+.stepper-line-bg {
+  position: absolute;
+  top: 26px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #e9ecef;
+  z-index: 0;
+}
+
+/* Garis Isian Stepper (Hijau) */
+.stepper-line-fill {
+  position: absolute;
+  top: 26px;
+  left: 0;
+  height: 3px;
+  background-color: #198754;
+  z-index: 0;
+  transition: width 0.3s ease;
+}
+
+/* Bulatan Step */
+.step-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 6px auto;
+  font-size: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.step-active {
+  background-color: #198754;
+  color: #ffffff;
+}
+
+.step-inactive {
+  background-color: #ffffff;
+  border: 2px solid #dee2e6;
+  color: #adb5bd;
+}
+
+.step-label {
+  font-size: 0.75rem;
+  display: block;
+}
+
+/* Track/Jalur Dasar Progress Bar (Hijau Tua Transparan) */
+.level-progress-track {
+  height: 8px !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  overflow: hidden;
+}
+
+/* Isian Progress Bar Hijau Muda Cerah (100% Bebas Linter Error) */
+.level-bar-fill {
+  background-color: #a3e635 !important;
+  width: var(--level-progress, 0%);
+  height: 100% !important;
+  transition: width 0.8s ease;
+}
