@@ -109,28 +109,36 @@ def mitra_dashboard(request):
     return render(request, 'scheduling/mitra_dashboard.html', context)
 
 
-@login_required
 def create_pickup(request):
-    """
-    View untuk Mitra B2B mengajukan penjemputan limbah baru.
-    """
     if request.method == 'POST':
         form = PickupScheduleForm(request.POST, request.FILES)
         if form.is_valid():
-            pickup = form.save(commit=False)
-            pickup.mitra = request.user
-            pickup.status = 'PENDING'
-            pickup.save()
-            messages.success(request, "Permintaan penjemputan limbah berhasil diajukan!")
-            return redirect('mitra_dashboard')  # Diubah dari 'dashboard' ke 'mitra_dashboard'
-        else:
-            messages.error(request, "Gagal mengajukan penjemputan. Silakan periksa kembali data pada form.")
+            # Ambil tanggal dan slot waktu yang dipilih user
+            pickup_date = form.cleaned_data.get('pickup_date')
+            time_slot = form.cleaned_data.get('pickup_time_slot')
+            
+            # Batas kuota per slot (misalnya maksimal 3 mitra)
+            MAX_QUOTA = 3
+            existing_count = PickupSchedule.objects.filter(
+                pickup_date=pickup_date, 
+                pickup_time_slot=time_slot
+            ).exclude(status='REJECTED').count()
+            
+            if existing_count >= MAX_QUOTA:
+                messages.error(request, f"Maaf, slot waktu {time_slot} pada tanggal tersebut sudah penuh (maksimal {MAX_QUOTA} mitra). Silakan pilih slot lain.")
+            else:
+                # Simpan data jika kuota masih tersedia
+                pickup = form.save(commit=False)
+                pickup.mitra = request.user
+                pickup.status = 'PENDING' # Status awal
+                pickup.save()
+                messages.success(request, "Pengajuan penjemputan berhasil dikirim!")
+                return redirect('mitra_dashboard')
     else:
         form = PickupScheduleForm()
-
+        
     context = {
         'form': form,
-        'title': 'Buat Penjemputan Limbah Baru'
     }
     return render(request, 'scheduling/create_pickup.html', context)
 

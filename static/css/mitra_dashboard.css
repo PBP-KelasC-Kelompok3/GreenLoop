@@ -322,3 +322,68 @@ body {
   height: 100% !important;
   transition: width 0.8s ease;
 }
+
+/* ==========================================
+   BUAT PENJEMPUTAN
+   ========================================== */
+
+/* Styling Khusus Form Ajukan Penjemputan */
+
+.pickup-card {
+  border: none;
+  border-radius: 16px;
+  background-color: #ffffff;
+}
+
+.pickup-form-label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.pickup-form-control, 
+.pickup-form-select {
+  border-radius: 10px;
+  border: 1px solid #dee2e6;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.pickup-form-control:focus, 
+.pickup-form-select:focus {
+  border-color: #198754;
+  box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
+}
+
+.helper-text {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+/* Card Rekomendasi Armada */
+.fleet-card {
+  border: 1.5px solid #e9ecef;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.fleet-card.active {
+  border-color: #198754;
+  background-color: #f0fdf4;
+  box-shadow: 0 0 0 1px #198754;
+}
+
+/* Preview Box Foto */
+.photo-preview-box {
+  border: 2px dashed #b1d8b7;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  background-color: #fafdfa;
+}
