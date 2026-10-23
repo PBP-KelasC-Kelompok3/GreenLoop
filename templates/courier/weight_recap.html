@@ -1,9 +1,116 @@
 {% extends 'courier/base_courier.html' %}
+{% load static courier_extras %}
 
 {% block title %}Rekap Timbangan{% endblock title %}
 
 {% block content %}
-<h1 class="page-title">Rekap Timbangan</h1>
-<p class="page-subtitle">Total berat sampah dan Waste Points yang Anda kumpulkan.</p>
+
+<!-- Judul halaman dan tombol tambah -->
+<div class="page-head">
+    <div>
+        <h1 class="page-title">Rekap Timbangan</h1>
+        <p class="page-subtitle">Total berat sampah dan Waste Points yang Anda kumpulkan.</p>
+    </div>
+
+    <button type="button" class="btn-submit" data-action="add">
+        <i data-lucide="plus"></i>
+        Tambah Timbangan
+    </button>
+</div>
+
+<!-- Filter periode, rentang tanggal, dan pencarian -->
+<form id="recap-filter" class="filter-bar" method="get" action="{% url 'courier:show_recap' %}">
+    <!-- Menyimpan periode yang sedang dipilih -->
+    <input type="hidden" name="period" value="{{ filters.period }}">
+
+    <!-- Tombol pilihan periode -->
+    <div class="chips" role="group" aria-label="Periode">
+        {% for value, label in periods %}
+            <button type="button" class="chip {% if filters.period == value %}is-active{% endif %}" data-period="{{ value }}">{{ label }}</button>
+        {% endfor %}
+    </div>
+
+    <!-- Rentang tanggal kustom -->
+    <div class="date-range">
+        <label class="date-field">
+            <span>Dari</span>
+            <input type="date" name="start" value="{{ filters.start_value }}" max="{{ today_iso }}" class="field-input">
+        </label>
+        <label class="date-field">
+            <span>Sampai</span>
+            <input type="date" name="end" value="{{ filters.end_value }}" max="{{ today_iso }}" class="field-input">
+        </label>
+    </div>
+
+    <!-- Pencarian nama mitra -->
+    <label class="filter-search">
+        <i data-lucide="search"></i>
+        <input type="search" name="q" value="{{ filters.q }}" placeholder="Cari mitra...">
+    </label>
+</form>
+
+<!-- Hasil: ringkasan dan tabel (diganti lewat AJAX oleh recap.js) -->
+<div id="recap-results" data-list-url="{% url 'courier:recap_list' %}">
+    {% include 'courier/components/recap_results.html' %}
+</div>
+
+<!-- Dialog tambah / ubah timbangan (satu form dipakai untuk keduanya) -->
+<dialog id="weight-dialog" class="dialog" aria-labelledby="weight-dialog-title">
+    <div class="dialog-head">
+        <h2 id="weight-dialog-title" class="dialog-title">Tambah Timbangan</h2>
+        <button type="button" class="icon-btn" data-dialog-close aria-label="Tutup">
+            <i data-lucide="x"></i>
+        </button>
+    </div>
+
+    <!-- Form tambah/ubah: alamat tujuan (action) diatur oleh recap.js sesuai mode -->
+    <form id="weight-form" method="post" class="dialog-body profile-form" novalidate
+          data-create-url="{% url 'courier:create_weight_log' %}" data-today="{{ today_iso }}">
+        {% csrf_token %}
+
+        <p class="form-message" data-form-message role="status" hidden></p>
+
+        {% include 'courier/components/form_field.html' with label="Mitra / lokasi" name="partner_name" %}
+
+        <div class="form-grid">
+            {% include 'courier/components/form_field.html' with label="Tanggal" name="collected_at" type="date" attrs=date_attrs %}
+            {% include 'courier/components/form_field.html' with label="Berat bersih (kg)" name="weight_kg" type="text" attrs='inputmode="decimal" placeholder="35,2"' %}
+        </div>
+
+        {% include 'courier/components/form_field.html' with label="Catatan" name="notes" optional=True %}
+
+        <div class="dialog-actions">
+            <button type="button" class="btn-secondary" data-dialog-close>Batal</button>
+            <button type="submit" class="btn-submit">
+                <i data-lucide="check"></i>
+                Simpan
+            </button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Dialog konfirmasi hapus -->
+<dialog id="delete-dialog" class="dialog dialog--small" aria-labelledby="delete-dialog-title">
+    <form id="delete-form" method="post" class="dialog-body">
+        {% csrf_token %}
+
+        <h2 id="delete-dialog-title" class="dialog-title">Hapus data timbangan?</h2>
+        <p class="dialog-text" id="delete-summary"></p>
+
+        <p class="form-message is-error" data-form-message role="alert" hidden></p>
+
+        <div class="dialog-actions">
+            <button type="button" class="btn-secondary" data-dialog-close>Batal</button>
+            <button type="submit" class="btn-danger">Hapus</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Notifikasi singkat (diisi oleh recap.js) -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 {% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'courier/js/recap.js' %}"></script>
+{% endblock extra_js %}

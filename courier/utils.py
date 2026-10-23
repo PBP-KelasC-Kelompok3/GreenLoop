@@ -28,7 +28,7 @@ def build_topbar_sub(profile):
 
 
 def profile_payload(user, profile):
-    """Data yang dikirim ke browser setelah profil diubah."""
+    """Data yang dikirim ke browser setelah profil diubah (dipakai AJAX)."""
     return {
         "display_name": get_display_name(user),
         "initials": get_initials(user),
@@ -40,12 +40,21 @@ def profile_payload(user, profile):
 
 
 def get_courier_stats(user):
-    """
-    TODO: ganti dengan query ke model Pickup (status 'done', kurir = user)
-    setelah model Pickup disepakati dengan modul mitra.
-    """
-    return {"pickups_done": 0, "total_kg": 0, "points": 0}
+    from decimal import Decimal
 
+    from .models import WeightLog, points_for
+
+    weights = list(
+        WeightLog.objects.filter(courier=user).values_list("weight_kg", flat=True)
+    )
+    return {
+        "pickups_done": len(weights),
+        "total_kg": sum(weights, Decimal("0")),
+        "points": sum(points_for(w) for w in weights),
+    }
+
+
+# ===================== Riwayat pikap =====================
 
 PICKUP_STATUS = {
     "scheduled": "Dijadwalkan",

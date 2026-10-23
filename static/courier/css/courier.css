@@ -985,6 +985,514 @@ button {
     font-size: 13px;
 }
 
+/* ===== Halaman Rekap Timbangan ===== */
+/* Menyembunyikan teks dari tampilan tetapi tetap terbaca oleh pembaca layar */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);                   /* Menyembunyikan secara visual */
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Mengatur tulisan '(opsional)' di samping label */
+.field-optional {
+    font-weight: 400;
+    color: var(--dark-green);
+}
+
+/* Menempatkan judul halaman di kiri dan tombol aksi di kanan */
+.page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+/* Mencegah tombol aksi mengecil saat judul panjang */
+.page-head .btn-submit {
+    flex: none;
+}
+
+/* ----- Filter ----- */
+/* Menyusun filter periode, rentang tanggal, dan pencarian dalam satu baris */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 20px;
+    margin-bottom: 20px;
+}
+
+/* Menyusun tombol pilihan periode berdampingan */
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Membuat tombol pilihan periode berbentuk kapsul */
+.chip {
+    padding: 8px 16px;
+    border: 1px solid var(--light-green);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--forest);
+    font-size: 13px;
+    font-weight: 600;
+    transition: background .15s, color .15s;
+}
+
+/* Memberi latar mint saat pilihan didekati kursor */
+.chip:hover {
+    background: var(--mint);
+}
+
+/* Menandai periode yang sedang dipilih dengan hijau tua */
+.chip.is-active {
+    border-color: var(--forest);
+    background: var(--forest);
+    color: var(--white);
+}
+
+/* Menyusun kolom 'Dari' dan 'Sampai' berdampingan */
+.date-range {
+    display: flex;
+    gap: 8px;
+}
+
+/* Menyusun label kecil di atas kolom tanggal */
+.date-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--dark-green);
+}
+
+/* Memperkecil kolom tanggal agar sejajar dengan filter lain */
+.date-field .field-input {
+    padding: 7px 12px;
+    font-size: 13px;
+}
+
+/* Membuat kolom cari mitra dengan ikon kaca pembesar */
+.filter-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 200px;
+    max-width: 280px;
+    padding: 8px 14px;
+    border: 1px solid var(--light-green);
+    border-radius: 12px;
+    background: var(--white);
+    color: var(--dark-green);
+}
+
+/* Mewarnai tepi kolom cari hijau saat sedang diketik */
+.filter-search:focus-within {
+    border-color: var(--primary);
+}
+
+/* Mengatur ukuran ikon kaca pembesar */
+.filter-search svg {
+    width: 16px;
+    height: 16px;
+    flex: none;
+}
+
+/* Menghilangkan bingkai bawaan input agar menyatu dengan kolom cari */
+.filter-search input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    color: var(--forest);
+}
+
+/* ----- Hasil ----- */
+/* Memberi animasi redup saat data dimuat */
+#recap-results {
+    transition: opacity .15s;
+}
+
+/* Meredupkan hasil dan mencegah klik saat data sedang dimuat */
+#recap-results.is-loading {
+    opacity: .5;
+    pointer-events: none;                     /* Mencegah klik ganda saat data dimuat */
+}
+
+/* Menyusun empat kartu ringkasan dalam satu baris */
+.recap-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* Membuat satu kartu ringkasan berbingkai */
+.summary-card {
+    padding: 16px 20px;
+    border: 1px solid var(--light-green);
+    border-radius: 14px;
+    background: var(--white);
+}
+
+/* Mengatur nama ringkasan (Total berat, Waste Points, dst.) */
+.summary-card span {
+    display: block;
+    font-size: 12px;
+    color: var(--dark-green);
+}
+
+/* Mengatur angka besar pada kartu ringkasan */
+.summary-card strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--forest);
+}
+
+/* Membuat kartu putih berbingkai yang membungkus tabel */
+.table-card {
+    border: 1px solid var(--light-green);
+    border-radius: 16px;
+    background: var(--white);
+    overflow: hidden;                         /* Sudut tabel ikut membulat */
+}
+
+/* Menempatkan judul tabel di kiri dan keterangan periode di kanan */
+.table-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 24px;
+}
+
+/* Mengatur judul tabel */
+.table-card-head h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--forest);
+}
+
+/* Mengatur teks keterangan periode */
+.table-card-head p {
+    font-size: 13px;
+    color: var(--dark-green);
+}
+
+/* Membuat tabel selebar kartu tanpa jarak antar sel */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Mengatur baris judul kolom: huruf kapital kecil dengan latar mint */
+.data-table th {
+    padding: 10px 24px;
+    background: var(--mint);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-align: left;
+    text-transform: uppercase;
+    color: var(--dark-green);
+}
+
+/* Mengatur isi sel dengan garis tipis pemisah antar baris */
+.data-table td {
+    padding: 14px 24px;
+    border-top: 1px solid var(--mint);
+    font-size: 14px;
+    color: var(--forest);
+}
+
+/* Memberi warna tipis pada baris yang didekati kursor */
+.data-table tbody tr:hover {
+    background: rgba(234, 245, 236, .5);
+}
+
+/* Meratakan angka ke kanan dan mencegahnya terpotong */
+.data-table .num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Menebalkan nama mitra */
+.cell-strong {
+    font-weight: 600;
+}
+
+/* Mewarnai angka poin dengan hijau */
+.cell-points {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Mewarnai catatan dengan hijau gelap */
+.cell-notes {
+    color: var(--dark-green);
+}
+
+/* Mempersempit kolom aksi dan meratakannya ke kanan */
+.col-actions {
+    width: 1%;                                /* Lebar menyesuaikan isi */
+    white-space: nowrap;
+    text-align: right;
+}
+
+/* Membuat tombol ikon kecil untuk ubah dan hapus */
+.icon-action {
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--dark-green);
+}
+
+/* Memberi latar mint saat tombol ikon didekati kursor */
+.icon-action:hover {
+    background: var(--mint);
+    color: var(--forest);
+}
+
+/* Memberi latar merah muda pada tombol hapus saat didekati kursor */
+.icon-action--danger:hover {
+    background: #fdecea;
+    color: var(--danger);
+}
+
+/* Mengatur ukuran ikon pensil dan tempat sampah */
+.icon-action svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Menempatkan keterangan jumlah data di kiri dan nomor halaman di kanan */
+.table-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--mint);
+    font-size: 13px;
+    color: var(--dark-green);
+}
+
+/* Menyusun tombol nomor halaman berdampingan */
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Membuat tombol nomor halaman berbentuk kotak membulat */
+.page-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--light-green);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--forest);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Memberi latar mint pada tombol halaman yang aktif diklik */
+.page-btn:hover:not(:disabled) {
+    background: var(--mint);
+}
+
+/* Menandai halaman yang sedang dibuka dengan hijau tua */
+.page-btn.is-active {
+    border-color: var(--forest);
+    background: var(--forest);
+    color: var(--white);
+}
+
+/* Meredupkan tombol 'sebelumnya/berikutnya' yang tidak bisa dipakai */
+.page-btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+/* Mengatur tanda titik-titik di antara nomor halaman */
+.page-gap {
+    padding: 0 4px;
+    color: var(--dark-green);
+}
+
+/* Menyembunyikan tulisan 'Halaman X dari Y' di layar besar (hanya dipakai di HP) */
+.page-info {
+    display: none;
+    font-size: 13px;
+    color: var(--dark-green);
+}
+
+/* Memusatkan pesan saat tidak ada data pada periode yang dipilih */
+.empty-state {
+    padding: 40px 24px 48px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--dark-green);
+}
+
+/* Mengatur judul tebal pada pesan data kosong */
+.empty-title {
+    margin-bottom: 4px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--forest);
+}
+
+/* ----- Tombol tambahan ----- */
+/* Membuat tombol sekunder (Batal) berlatar putih dan berbingkai */
+.btn-secondary {
+    padding: 10px 20px;
+    border: 1px solid var(--light-green);
+    border-radius: 12px;
+    background: var(--white);
+    color: var(--forest);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Memberi latar mint saat tombol sekunder didekati kursor */
+.btn-secondary:hover {
+    background: var(--mint);
+}
+
+/* Membuat tombol bahaya (Hapus) berwarna merah */
+.btn-danger {
+    padding: 10px 20px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--danger);
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* Menggelapkan merah saat tombol hapus didekati kursor */
+.btn-danger:hover {
+    background: #b92d26;
+}
+
+/* Meredupkan tombol hapus saat sedang diproses */
+.btn-danger:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* ----- Dialog ----- */
+/* Membuat kotak dialog putih di tengah layar */
+.dialog {
+    width: min(520px, calc(100vw - 32px));
+    margin: auto;                             /* Memusatkan dialog (reset margin di atas menghilangkan pemusatan bawaan) */
+    padding: 0;
+    border: 0;
+    border-radius: 16px;
+    background: var(--white);
+    color: var(--forest);
+    box-shadow: 0 20px 60px rgba(15, 61, 42, .3);
+}
+
+/* Memperkecil lebar dialog konfirmasi hapus */
+.dialog--small {
+    width: min(420px, calc(100vw - 32px));
+}
+
+/* Menggelapkan latar belakang halaman saat dialog terbuka */
+.dialog::backdrop {
+    background: rgba(15, 61, 42, .45);
+}
+
+/* Menempatkan judul dialog di kiri dan tombol tutup di kanan */
+.dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 16px 0 24px;
+}
+
+/* Mengatur ukuran judul dialog */
+.dialog-title {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* Mengatur jarak isi dialog */
+.dialog-body {
+    padding: 16px 24px 24px;
+}
+
+/* Menambah jarak atas isi dialog konfirmasi karena tidak punya header */
+.dialog--small .dialog-body {
+    padding-top: 24px;
+}
+
+/* Mengatur teks keterangan di dialog konfirmasi */
+.dialog-text {
+    margin: 8px 0 16px;
+    font-size: 14px;
+    color: var(--dark-green);
+}
+
+/* Menempatkan tombol Batal dan Simpan di sisi kanan dialog */
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+/* ----- Notifikasi ----- */
+/* Membuat notifikasi singkat di pojok kanan bawah yang awalnya tersembunyi */
+.toast {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 50;
+    max-width: calc(100vw - 48px);
+    padding: 12px 18px;
+    border-radius: 12px;
+    background: var(--forest);
+    color: var(--white);
+    font-size: 14px;
+    box-shadow: 0 8px 24px rgba(15, 61, 42, .3);
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;                     /* Notifikasi tidak menghalangi klik */
+    transition: opacity .2s, transform .2s;
+}
+
+/* Memunculkan notifikasi dengan animasi naik */
+.toast.is-visible {
+    opacity: 1;
+    transform: none;
+}
+
+/* Mewarnai notifikasi gagal dengan merah */
+.toast.is-error {
+    background: var(--danger);
+}
+
 /* ===== Laptop (<= 1285px) ===== */
 @media (max-width: 1285px) {
     /* Sidebar dirapatkan */
@@ -1080,7 +1588,34 @@ button {
     }
 }
 
-/* ===== Mobile / tablet (<= 895px) ===== */
+/* ===== Tablet landscape (<= 1199px) ===== */
+@media (max-width: 1199px) {
+    /* Mengubah menjadi dua kolom: identitas dan data diri */
+    .profile-header {
+        grid-template-columns: 160px 1fr;
+    }
+
+    /* Memindahkan statistik ke baris baru selebar kartu */
+    .profile-stats {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ===== Laptop kecil (<= 1285px) ===== */
+@media (max-width: 1285px) and (max-height: 640px) {
+    /* Merapatkan lagi tulisan 'MENU' */
+    .menu-label {
+        margin-top: 10px;
+    }
+
+    /* Memperkecil lagi menu dan tombol Keluar */
+    .menu-item,
+    .logout {
+        padding: 6px 12px;
+    }
+}
+
+/* ===== Mobile / tablet potrait (<= 895px) ===== */
 @media (max-width: 895px) {
     /* Jadi satu kolom */
     .layout {
@@ -1197,6 +1732,176 @@ button {
 
     .hist-chip {
         padding: 6px 12px;
+    }
+
+    /* ----- Rekap Timbangan di HP / tablet ----- */
+    /* Menyusun judul dan tombol aksi secara vertikal, dengan jarak ke filter di bawahnya */
+    .page-head {
+        flex-direction: column;
+        gap: 0;
+        margin-bottom: 16px;
+    }
+
+    /* Memperkecil jarak bawah keterangan agar tombol tidak terlalu jauh dari judul */
+    .page-head .page-subtitle {
+        margin-bottom: 14px;
+    }
+
+    /* Membuat tombol tambah selebar layar */
+    .page-head .btn-submit {
+        width: 100%;
+    }
+
+    /* Menyusun filter secara vertikal dengan jarak antar bagian */
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    /* Menyusun tombol periode menjadi dua kolom agar tidak dempet */
+    .chips {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    /* Memperbesar area tekan tombol periode */
+    .chip {
+        padding: 10px 12px;
+        text-align: center;
+    }
+
+    /* Membagi lebar kolom tanggal sama rata */
+    .date-range .date-field {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Membuat kolom cari selebar layar; flex: none mencegah tingginya ikut membesar (flex-basis berlaku ke tinggi pada susunan vertikal) */
+    .filter-search {
+        flex: none;
+        max-width: none;
+    }
+
+    /* Menyusun kartu ringkasan menjadi dua kolom */
+    .recap-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Memperkecil jarak dalam kartu ringkasan */
+    .summary-card {
+        padding: 14px 16px;
+    }
+
+    /* Memperkecil angka ringkasan */
+    .summary-card strong {
+        font-size: 18px;
+    }
+
+    /* Menyusun judul dan periode secara vertikal */
+    .table-card-head {
+        flex-direction: column;
+        gap: 2px;
+        padding: 16px;
+    }
+
+    /* Menyembunyikan baris judul kolom karena tiap baris berubah menjadi kartu */
+    .data-table thead {
+        display: none;
+    }
+
+    /* Membuat tiap baris data menjadi satu blok kartu */
+    .data-table tr {
+        display: block;
+        padding: 12px 16px;
+        border-top: 1px solid var(--mint);
+    }
+
+    /* Menempatkan nama kolom di kiri dan isinya di kanan */
+    .data-table td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 4px 0;
+        border: 0;
+        text-align: right;
+    }
+
+    /* Menampilkan nama kolom dari atribut data-label, dengan huruf biasa (tidak mewarisi huruf tebal dari sel) */
+    .data-table td::before {
+        content: attr(data-label);
+        flex: none;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--dark-green);
+        text-align: left;
+    }
+
+    /* Menempatkan tombol ubah dan hapus di sisi kanan bawah kartu dengan jarak antar tombol */
+    .data-table .col-actions {
+        width: auto;
+        justify-content: flex-end;
+        gap: 8px;
+        padding-top: 10px;
+    }
+
+    /* Memperbesar tombol ubah dan hapus agar mudah ditekan jari */
+    .icon-action {
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--light-green);
+    }
+
+    /* Menyusun keterangan jumlah data dan nomor halaman secara vertikal */
+    .table-foot {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 14px 16px;
+    }
+
+    /* Menyebar tombol sebelumnya, info halaman, dan berikutnya selebar kartu */
+    .pagination {
+        justify-content: space-between;
+    }
+
+    /* Memperbesar tombol halaman (dan tanda panahnya) agar mudah ditekan */
+    .page-btn {
+        min-width: 40px;
+        height: 40px;
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    /* Menyembunyikan deretan nomor halaman dan menggantinya dengan tulisan 'Halaman X dari Y' */
+    .page-num,
+    .page-gap {
+        display: none;
+    }
+
+    .page-info {
+        display: inline;
+    }
+
+    /* Membuat tombol Batal dan Simpan/Hapus sama lebar */
+    .dialog-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Mengisi penuh kolom tombol dialog */
+    .dialog-actions .btn-secondary,
+    .dialog-actions .btn-submit,
+    .dialog-actions .btn-danger {
+        width: 100%;
+    }
+
+    /* Mendekatkan notifikasi ke tepi layar */
+    .toast {
+        right: 16px;
+        bottom: 16px;
     }
 }
 
