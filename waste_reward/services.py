@@ -1,5 +1,6 @@
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation, ROUND_DOWN
+import re
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -14,6 +15,10 @@ POINTS_PER_KILOGRAM = 5
 
 class InsufficientPoints(Exception):
     """Raised when a member does not have enough points for a voucher."""
+
+
+class VoucherUnavailable(Exception):
+    """Raised when a member voucher is missing, expired, or already used."""
 
 
 def get_balance(user):
@@ -90,3 +95,94 @@ def redeem_voucher(user, voucher_id):
         description=f'Tukar voucher {voucher.value_label}',
     )
     return user_voucher
+
+
+def _checkout_amount(value, field_name):
+    try:
+        amount = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ValueError(f'{field_name} harus berupa angka yang valid.') from exc
+
+    if not amount.is_finite() or amount < 0:
+        raise ValueError(f'{field_name} tidak boleh negatif.')
+    return amount
+
+
+def _label_amount(value_label):
+    digits = ''.join(re.findall(r'\d', value_label))
+    if not digits:
+        raise ValueError('Nilai voucher tidak dapat dibaca.')
+    return Decimal(digits)
+
+
+@transaction.atomic
+def apply_voucher_at_checkout(
+    user,
+    voucher_code,
+    order_reference,
+    subtotal,
+    shipping_cost=0,
+    wholesale_order=False,
+):
+    """Validate and consume a member voucher while calculating checkout totals.
+
+    Call this inside the checkout's outer transaction together with order creation,
+    so an invalid voucher rolls back the order as well.
+    """
+    order_reference = str(order_reference or '').strip()
+    if not order_reference:
+        raise ValueError('Referensi pesanan wajib diisi.')
+    if len(order_reference) > 80:
+        raise ValueError('Referensi pesanan maksimal 80 karakter.')
+
+    subtotal = _checkout_amount(subtotal, 'Subtotal')
+    shipping_cost = _checkout_amount(shipping_cost, 'Ongkos kirim')
+
+    try:
+        user_voucher = UserVoucher.objects.select_for_update().select_related(
+            'voucher'
+        ).get(user=user, code=voucher_code)
+    except UserVoucher.DoesNotExist as exc:
+        raise VoucherUnavailable('Voucher tidak ditemukan untuk akun ini.') from exc
+
+    current_time = timezone.now()
+    if user_voucher.used_at is not None:
+        raise VoucherUnavailable('Voucher ini sudah pernah digunakan.')
+    if user_voucher.expires_at <= current_time:
+        raise VoucherUnavailable('Masa berlaku voucher sudah habis.')
+
+    voucher = user_voucher.voucher
+    goods_discount = Decimal('0')
+    shipping_discount = Decimal('0')
+
+    if voucher.kind == RewardVoucher.Kind.DISCOUNT:
+        goods_discount = min(subtotal, _label_amount(voucher.value_label))
+    elif voucher.kind == RewardVoucher.Kind.SHIPPING:
+        shipping_discount = min(shipping_cost, _label_amount(voucher.value_label))
+    elif voucher.kind == RewardVoucher.Kind.WHOLESALE:
+        if not wholesale_order:
+            raise VoucherUnavailable('Voucher ini hanya berlaku untuk pesanan grosir B2B.')
+        match = re.search(r'\d+(?:[,.]\d+)?', voucher.value_label)
+        if not match:
+            raise ValueError('Persentase voucher tidak dapat dibaca.')
+        percentage = Decimal(match.group().replace(',', '.'))
+        goods_discount = (subtotal * percentage / Decimal('100')).quantize(
+            Decimal('1'),
+            rounding=ROUND_DOWN,
+        )
+    else:
+        raise VoucherUnavailable('Jenis voucher ini belum dapat digunakan saat checkout.')
+
+    total_due = subtotal - goods_discount + shipping_cost - shipping_discount
+    user_voucher.used_at = current_time
+    user_voucher.used_order_reference = order_reference
+    user_voucher.save(update_fields=('used_at', 'used_order_reference'))
+
+    return {
+        'user_voucher': user_voucher,
+        'goods_discount': goods_discount,
+        'shipping_discount': shipping_discount,
+        'subtotal': subtotal,
+        'shipping_cost': shipping_cost,
+        'total_due': total_due,
+    }

@@ -43,6 +43,12 @@ class UserVoucher(models.Model):
     acquired_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
+    used_order_reference = models.CharField(
+        max_length=80,
+        unique=True,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ('-acquired_at',)
