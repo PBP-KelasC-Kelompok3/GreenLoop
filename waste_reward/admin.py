@@ -19,5 +19,11 @@ class RewardTransactionAdmin(admin.ModelAdmin):
 
 @admin.register(UserVoucher)
 class UserVoucherAdmin(admin.ModelAdmin):
-    list_display = ('user', 'voucher', 'code', 'points_spent', 'expires_at', 'used_at')
-    search_fields = ('user__username', 'code', 'voucher__title')
+    list_display = (
+        'user', 'voucher', 'code', 'points_spent', 'expires_at',
+        'used_at', 'used_order_reference',
+    )
+    list_filter = ('used_at', 'expires_at')
+    search_fields = (
+        'user__username', 'code', 'voucher__title', 'used_order_reference',
+    )

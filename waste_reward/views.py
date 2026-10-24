@@ -7,7 +7,12 @@ from django.views.decorators.http import require_POST
 from accounts.decorator import role_required
 
 from .models import RewardTransaction, RewardVoucher, UserVoucher
-from .services import InsufficientPoints, get_balance, redeem_voucher
+from .services import (
+    InsufficientPoints,
+    VoucherUnavailable,
+    get_balance,
+    redeem_voucher,
+)
 
 
 def _format_points(value):
@@ -93,6 +98,8 @@ def redeem(request, voucher_id):
         redeem_voucher(request.user, voucher.pk)
     except InsufficientPoints:
         messages.error(request, 'Poin kamu belum cukup untuk menukar voucher ini.')
+    except VoucherUnavailable as exc:
+        messages.error(request, str(exc))
     else:
         messages.success(request, f'Voucher {voucher.value_label} berhasil ditambahkan.')
     return redirect('waste_reward:dashboard')

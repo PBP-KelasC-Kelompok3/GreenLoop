@@ -55,7 +55,11 @@ class UserVoucher(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.code:
-            self.code = f'GLV-{secrets.token_hex(3).upper()}'
+            while True:
+                candidate = f'GLV-{secrets.token_hex(6).upper()}'
+                if not type(self).objects.filter(code=candidate).exists():
+                    self.code = candidate
+                    break
         super().save(*args, **kwargs)
 
     @property

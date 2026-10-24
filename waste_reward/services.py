@@ -3,7 +3,8 @@ from decimal import Decimal, InvalidOperation, ROUND_DOWN
 import re
 
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.utils import timezone
 
@@ -21,6 +22,16 @@ class VoucherUnavailable(Exception):
     """Raised when a member voucher is missing, expired, or already used."""
 
 
+def _require_mitra(user):
+    profile = getattr(user, 'userprofile', None)
+    if (
+        not getattr(user, 'is_authenticated', False)
+        or not profile
+        or profile.role != 'mitra'
+    ):
+        raise PermissionDenied('Fitur Waste & Reward hanya tersedia untuk mitra B2B.')
+
+
 def get_balance(user):
     return user.reward_transactions.aggregate(total=Sum('points_delta'))['total'] or 0
 
@@ -28,6 +39,7 @@ def get_balance(user):
 @transaction.atomic
 def award_verified_pickup(user, kilograms, pickup_reference):
     """Award points for a verified pickup; a stable reference makes retries safe."""
+    _require_mitra(user)
     try:
         weight = Decimal(str(kilograms)).quantize(
             Decimal('0.1'),
@@ -69,13 +81,17 @@ def award_verified_pickup(user, kilograms, pickup_reference):
 @transaction.atomic
 def redeem_voucher(user, voucher_id):
     """Spend a member's points and issue a time-limited voucher atomically."""
+    _require_mitra(user)
     User = get_user_model()
     User.objects.select_for_update().get(pk=user.pk)
 
-    voucher = RewardVoucher.objects.select_for_update().get(
-        pk=voucher_id,
-        is_active=True,
-    )
+    try:
+        voucher = RewardVoucher.objects.select_for_update().get(
+            pk=voucher_id,
+            is_active=True,
+        )
+    except RewardVoucher.DoesNotExist as exc:
+        raise VoucherUnavailable('Voucher tidak tersedia.') from exc
     balance = get_balance(user)
     if balance < voucher.points_cost:
         raise InsufficientPoints
@@ -129,6 +145,7 @@ def apply_voucher_at_checkout(
     Call this inside the checkout's outer transaction together with order creation,
     so an invalid voucher rolls back the order as well.
     """
+    _require_mitra(user)
     order_reference = str(order_reference or '').strip()
     if not order_reference:
         raise ValueError('Referensi pesanan wajib diisi.')
@@ -150,6 +167,8 @@ def apply_voucher_at_checkout(
         raise VoucherUnavailable('Voucher ini sudah pernah digunakan.')
     if user_voucher.expires_at <= current_time:
         raise VoucherUnavailable('Masa berlaku voucher sudah habis.')
+    if UserVoucher.objects.filter(used_order_reference=order_reference).exists():
+        raise VoucherUnavailable('Pesanan ini sudah menggunakan voucher.')
 
     voucher = user_voucher.voucher
     goods_discount = Decimal('0')
@@ -176,7 +195,11 @@ def apply_voucher_at_checkout(
     total_due = subtotal - goods_discount + shipping_cost - shipping_discount
     user_voucher.used_at = current_time
     user_voucher.used_order_reference = order_reference
-    user_voucher.save(update_fields=('used_at', 'used_order_reference'))
+    try:
+        with transaction.atomic():
+            user_voucher.save(update_fields=('used_at', 'used_order_reference'))
+    except IntegrityError as exc:
+        raise VoucherUnavailable('Pesanan ini sudah menggunakan voucher.') from exc
 
     return {
         'user_voucher': user_voucher,
