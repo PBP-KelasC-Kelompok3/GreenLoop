@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 
 
-
 class PickupSchedule(models.Model):
 
     STATUS_CHOICES = [
@@ -21,6 +20,12 @@ class PickupSchedule(models.Model):
         ('COFFEE_GROUNDS', 'Ampas Kopi'),
         ('FRUIT_VEG', 'Sisa Buah & Sayur'),
         ('MIXED_ORGANIC', 'Organik Campuran'),
+    ]
+
+    ARMADA_CHOICES = [
+        ('Motor Box', 'Motor Box'),
+        ('Pickup Bak', 'Pickup Bak'),
+        ('Truk Kecil', 'Truk Kecil'),
     ]
 
     mitra = models.ForeignKey(
@@ -44,6 +49,14 @@ class PickupSchedule(models.Model):
 
     pickup_time_slot = models.CharField(max_length=50)
 
+    # Pilihan Armada Pengangkut
+    armada = models.CharField(
+        max_length=50, 
+        choices=ARMADA_CHOICES, 
+        default='Pickup Bak',
+        verbose_name="Jenis Armada"
+    )
+
     waste_photo = models.ImageField(
         upload_to='pickup_photos/',
         blank=True,
@@ -60,12 +73,28 @@ class PickupSchedule(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
-    actual_weight = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, verbose_name="Berat Aktual (kg)")
+    
+    # Berat Aktual dari kurir (cukup ditulis sekali saja dengan max_length & max_digits yang benar)
+    actual_weight = models.DecimalField(
+        max_digits=6, 
+        decimal_places=2, 
+        null=True, 
+        blank=True, 
+        verbose_name="Berat Aktual (kg)"
+    )
+
+    points = models.IntegerField(default=0, verbose_name="Poin Diperoleh")
+
+    # Kolom untuk file sertifikat milestone
+    certificate = models.FileField(
+        upload_to='certificates/',
+        blank=True,
+        null=True,
+        verbose_name="Sertifikat Kontribusi"
+    )
 
     class Meta:
         ordering = ['-pickup_date', '-created_at']
 
     def __str__(self):
         return f"{self.mitra.username} - {self.pickup_date} ({self.get_status_display()})"
-
-    actual_weight = models.DecimalField(max_length=6, decimal_places=2, max_digits=6, null=True, blank=True, verbose_name="Berat Aktual (kg)")

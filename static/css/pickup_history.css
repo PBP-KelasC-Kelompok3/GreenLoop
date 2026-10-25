@@ -1,0 +1,66 @@
+/* ==========================================
+   RIWAYAT PENJEMPUTAN
+   ========================================== */
+
+/* Styling Khusus Halaman Riwayat Penjemputan */
+
+.history-card {
+  border: none;
+  border-radius: 16px;
+  background-color: #ffffff;
+}
+
+/* Filter Status Pills */
+.filter-pill {
+  border-radius: 50rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  color: #6c757d;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.filter-pill:hover {
+  background-color: #e9ecef;
+  color: #212529;
+}
+
+.filter-pill.active {
+  background-color: #198754;
+  color: #ffffff;
+  border-color: #198754;
+  box-shadow: 0 4px 6px rgba(25, 135, 84, 0.15);
+}
+
+/* Tabel Riwayat */
+.table-history th {
+  font-weight: 600;
+  color: #6c757d;
+  background-color: #f8f9fa !important;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table-history td {
+  vertical-align: middle;
+  color: #2c3e50;
+}
+
+/* Card Notifikasi Penolakan */
+.rejection-alert-card {
+  border: none;
+  border-left: 4px solid #dc3545;
+  background-color: rgba(220, 53, 69, 0.05);
+  border-radius: 16px;
+}
+
+/* Style Khusus Tombol Unduh Sertifikat */
+.btn-certificate {
+  font-size: 11px;
+  border-radius: 50rem;
+  padding: 2px 10px;
+  transition: all 0.2s ease-in-out;
+}

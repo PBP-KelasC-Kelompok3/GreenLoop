@@ -4,7 +4,7 @@ from .models import PickupSchedule
 class PickupScheduleForm(forms.ModelForm):
     class Meta:
         model = PickupSchedule
-        fields = ['waste_type', 'estimated_weight', 'pickup_date', 'pickup_time_slot', 'waste_photo', 'notes']
+        fields = ['waste_type', 'estimated_weight', 'pickup_date', 'pickup_time_slot', 'armada' , 'waste_photo', 'notes']
         widgets = {
             'waste_type': forms.Select(attrs={'class': 'form-select'}),
             'estimated_weight': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Masukkan berat dalam kg (contoh: 15.5)', 'step': '0.1'}),

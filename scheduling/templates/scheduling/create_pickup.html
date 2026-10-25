@@ -10,7 +10,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   
-  <!-- CSS Khusus -->
+  <!-- CSS Khusus Terpisah -->
   <link rel="stylesheet" href="{% static 'css/mitra_dashboard.css' %}">
   <link rel="stylesheet" href="{% static 'css/create_pickup.css' %}">
 </head>
@@ -18,10 +18,10 @@
 
 <div class="d-flex min-vh-100">
   <!-- Sidebar Kiri Mitra -->
-  <aside class="sidebar p-3 d-flex flex-column justify-content-between bg-white border-end" style="width: 260px; min-height: 100vh;">
+  <aside class="sidebar p-3 d-flex flex-column justify-content-between bg-white border-end">
     <div>
       <div class="d-flex align-items-center mb-3 px-2">
-        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop Logo" class="img-fluid" style="max-height: 40px; width: auto;">
+        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop Logo" class="img-fluid sidebar-logo">
       </div>
       
       <div class="mb-4 px-2">
@@ -30,7 +30,7 @@
         </span>
       </div>
 
-      <small class="text-uppercase text-muted fw-bold px-2 mb-2 d-block" style="font-size: 10px;">MENU</small>
+      <small class="text-uppercase text-muted fw-bold px-2 mb-2 d-block sidebar-menu-title">MENU</small>
       <nav class="nav flex-column gap-1">
         <a href="{% url 'mitra_dashboard' %}" class="nav-link-custom d-flex align-items-center justify-content-between px-3 py-2 rounded-3 text-secondary">
           <div><i class="bi bi-grid-fill me-2"></i> Dashboard</div>
@@ -38,7 +38,7 @@
         <a href="{% url 'create_pickup' %}" class="nav-link-custom active d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
           <div><i class="bi bi-calendar-plus me-2"></i> Ajukan Penjemputan</div>
         </a>
-        <a href="#" class="nav-link-custom d-flex align-items-center justify-content-between px-3 py-2 rounded-3 text-secondary">
+        <a href="{% url 'pickup_history' %}" class="nav-link-custom d-flex align-items-center justify-content-between px-3 py-2 rounded-3 text-secondary">
           <div><i class="bi bi-list-task me-2"></i> Riwayat Penjemputan</div>
         </a>
         <a href="#" class="nav-link-custom d-flex align-items-center justify-content-between px-3 py-2 rounded-3 text-secondary">
@@ -53,7 +53,7 @@
     <div>
       <div class="p-3 bg-light rounded-3 mb-3 border">
         <div class="fw-bold text-dark mb-1 small"><i class="bi bi-geo-alt-fill text-success me-1"></i> Area Pilot: Kota Depok</div>
-        <div class="text-muted" style="font-size: 11px;">Layanan penjemputan khusus wilayah Kota Depok.</div>
+        <div class="text-muted pilot-area-text">Layanan penjemputan khusus wilayah Kota Depok.</div>
       </div>
       
       {% if user.is_authenticated %}
@@ -76,17 +76,17 @@
         <small class="text-muted">Smart Pick-Up Scheduler · isi jadwal, estimasi volume, dan unggah foto limbah.</small>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px;">
+        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold user-avatar-initials">
           {{ request.user.username|slice:":2"|upper|default:"FZ" }}
         </div>
         <div>
           <div class="fw-bold small mb-0">{{ request.user.get_full_name|default:request.user.username }}</div>
-          <div class="text-muted" style="font-size: 11px;">Mitra B2B</div>
+          <div class="text-muted user-role-subtitle">Mitra B2B</div>
         </div>
       </div>
     </div>
 
-    <!-- Alert Messages (jika ada pesan error kuota/sukses dari views) -->
+    <!-- Alert Messages -->
     {% if messages %}
       {% for message in messages %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
@@ -97,7 +97,7 @@
     {% endif %}
 
     <!-- Card Form Utama -->
-    <div class="card pickup-card shadow-sm p-4 bg-white mx-auto" style="max-width: 850px;">
+    <div class="card pickup-card shadow-sm p-4 bg-white mx-auto pickup-card-container">
       <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
@@ -139,6 +139,23 @@
             {{ form.pickup_time_slot }}
             {% if form.pickup_time_slot.errors %}
               <div class="text-danger small mt-1">{{ form.pickup_time_slot.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Jenis Armada Pengangkut -->
+          <div class="col-12">
+            <label for="{{ form.armada.id_for_label }}" class="pickup-form-label">Jenis Armada Pengangkut</label>
+            {% if form.armada %}
+              {{ form.armada }}
+            {% else %}
+              <select name="armada" class="form-select pickup-form-control" required>
+                <option value="Motor Box">Motor Box (Kapasitas s/d 50 kg)</option>
+                <option value="Pickup Bak" selected>Pickup Bak (Kapasitas s/d 500 kg)</option>
+                <option value="Truk Kecil">Truk Kecil (Kapasitas > 500 kg)</option>
+              </select>
+            {% endif %}
+            {% if form.armada.errors %}
+              <div class="text-danger small mt-1">{{ form.armada.errors.0 }}</div>
             {% endif %}
           </div>
 
@@ -184,10 +201,10 @@
 <script>
   // Otomatis memberikan class Bootstrap pada elemen form Django
   document.querySelectorAll('input, select, textarea').forEach(el => {
-    if (el.type !== 'file' && el.type !== 'submit' && el.type !== 'hidden') {
+    if (el.tagName === 'SELECT') {
+      el.classList.add('form-select', 'pickup-form-control');
+    } else if (el.type !== 'file' && el.type !== 'submit' && el.type !== 'hidden') {
       el.classList.add('form-control', 'pickup-form-control');
-    } else if (el.tagName === 'SELECT') {
-      el.classList.add('form-select', 'pickup-form-select');
     } else if (el.type === 'file') {
       el.classList.add('form-control');
     }

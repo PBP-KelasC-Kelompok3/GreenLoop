@@ -387,3 +387,63 @@ body {
   text-align: center;
   background-color: #fafdfa;
 }
+
+/* ==========================================
+   ADMIN
+   ========================================== */
+/* Layout & Sidebar B2B */
+body {
+  background-color: #f8f9fa;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.sidebar-b2b {
+  width: 260px;
+  min-height: 100vh;
+  background-color: #ffffff;
+  border-right: 1px solid #e9ecef;
+}
+
+.nav-link-custom {
+  color: #6c757d;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-link-custom:hover {
+  background-color: #f8f9fa;
+  color: #198754;
+}
+
+.nav-link-custom.active {
+  background-color: #e8f5e9;
+  color: #198754;
+  font-weight: 600;
+}
+
+/* Modal & Table Styling */
+.table-admin th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  background-color: #f8f9fa !important;
+}
+
+.img-preview-thumb {
+  width: 45px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.img-preview-full {
+  max-height: 70vh;
+  width: auto;
+  object-fit: contain;
+}
+
+.form-text-subtle {
+  font-size: 11px;
+}
