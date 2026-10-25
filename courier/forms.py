@@ -86,10 +86,10 @@ class CourierPasswordForm(PasswordChangeForm):
     """Form Ganti Kata Sandi bawaan Django dengan pesan berbahasa Indonesia."""
 
     error_messages = {
-        "password_mismatch": "Kata sandi baru dan konfirmasinya tidak sama.",
+        "password_mismatch": "Kata sandi baru dan konfirmasi tidak sama.",
         "password_incorrect": "Kata sandi saat ini salah.",
     }
-
+ 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():

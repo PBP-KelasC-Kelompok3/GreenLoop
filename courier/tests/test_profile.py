@@ -155,7 +155,7 @@ class CourierProfileFormTests(TestCase):
 
     def test_email_used_by_other_user_is_rejected(self):
         make_user("lain")
-        form = self.form(email="LAIN@greenloop.id")   # beda huruf besar pun ditolak
+        form = self.form(email="LAIN@greenloop.id")   
         self.assertFalse(form.is_valid())
         self.assertEqual(form.errors["email"], ["Email sudah dipakai akun lain."])
 

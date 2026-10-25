@@ -1,3 +1,4 @@
+# Nama bulan singkat bahasa Indonesia (tidak bergantung pada pengaturan bahasa Django)
 MONTHS_ID = [
     "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
     "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
@@ -5,6 +6,7 @@ MONTHS_ID = [
 
 
 def get_display_name(user):
+    # Memakai nama lengkap; kalau kosong, pakai username
     return (user.get_full_name() or user.username).strip()
 
 
@@ -22,6 +24,7 @@ def format_date_id(value):
 
 
 def build_topbar_sub(profile):
+    # Teks kecil di bawah nama pada topbar, contoh: "Kurir · B 1234 KZT"
     if profile.plate_number:
         return f"Kurir · {profile.plate_number}"
     return "Kurir"
@@ -40,6 +43,7 @@ def profile_payload(user, profile):
 
 
 def get_courier_stats(user):
+    # Diimpor di sini (bukan di atas file) untuk menghindari impor melingkar
     from decimal import Decimal
 
     from .models import WeightLog, points_for
@@ -65,18 +69,13 @@ PICKUP_STATUS = {
 
 
 def get_pickup_history(user):
+    """Riwayat pikap milik kurir, diambil dari tabel PickupRecord (terbaru paling atas)."""
+    from .models import PickupRecord
+
     rows = [
-        ("PK-0941", "2026-10-06", "08.00–10.00", "Kafe Senja Margonda", "Beji", 30, None, "Pickup Bak", "scheduled", ""),
-        ("PK-0940", "2026-10-03", "08.00–10.00", "Resto Sari Rasa", "Pancoran Mas", 35, None, "Pickup Bak", "ongoing", ""),
-        ("PK-0938", "2026-09-29", "13.00–15.00", "Warung Bu Tini", "Cimanggis", 20, None, "Motor Box", "ongoing", ""),
-        ("PK-0931", "2026-09-26", "08.00–10.00", "Kafe Senja Margonda", "Beji", 35, 35.2, "Pickup Bak", "done", ""),
-        ("PK-0924", "2026-09-19", "08.00–10.00", "Katering Nusantara", "Sukmajaya", 40, 41.0, "Pickup Bak", "done", ""),
-        ("PK-0917", "2026-09-12", "13.00–15.00", "Resto Sari Rasa", "Pancoran Mas", 30, None, "Pickup Bak", "cancelled",
-         "Foto limbah tercampur plastik dan styrofoam, penjemputan dibatalkan oleh admin."),
-        ("PK-0910", "2026-09-05", "08.00–10.00", "Warung Bu Tini", "Cimanggis", 25, 22.8, "Motor Box", "done", ""),
-        ("PK-0903", "2026-08-29", "08.00–10.00", "Katering Nusantara", "Sukmajaya", 30, 31.4, "Pickup Bak", "done", ""),
-        ("PK-0897", "2026-08-22", "13.00–15.00", "Kafe Senja Margonda", "Beji", 28, 27.5, "Pickup Bak", "done", ""),
-        ("PK-0889", "2026-08-15", "08.00–10.00", "Resto Sari Rasa", "Pancoran Mas", 32, 33.1, "Pickup Bak", "done", ""),
+        (r.code, r.date.isoformat(), r.slot, r.partner_name, r.area, r.est_kg,
+         r.actual_kg, r.vehicle, r.status, r.note)
+        for r in PickupRecord.objects.filter(courier=user)
     ]
     keys = ("code", "date", "slot", "partner", "area", "est_kg", "actual_kg",
             "vehicle", "status", "note")

@@ -1493,6 +1493,695 @@ button {
     background: var(--danger);
 }
 
+/* ===== Halaman Rute Hari Ini ===== */
+ 
+/* Judul halaman di kiri, saklar Sedang Bertugas di kanan */
+.route-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+ 
+/* Saklar status bertugas */
+.duty-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border: 1px solid var(--light-green);
+    border-radius: 999px;
+    background: var(--white);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--forest);
+    cursor: pointer;
+    white-space: nowrap;
+}
+ 
+/* Checkbox asli disembunyikan tapi tetap bisa difokuskan dengan keyboard */
+.duty-switch input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    cursor: pointer;
+}
+ 
+/* Jalur saklar */
+.duty-track {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    border-radius: 999px;
+    background: var(--light-green);
+    transition: background .2s;
+}
+ 
+/* Bulatan geser di dalam jalur */
+.duty-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--white);
+    transition: transform .2s;
+}
+ 
+.duty-switch input:checked ~ .duty-track {
+    background: var(--accent);
+}
+ 
+.duty-switch input:checked ~ .duty-track::after {
+    transform: translateX(16px);
+}
+ 
+.duty-switch input:focus-visible ~ .duty-track {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+ 
+/* Dua kolom: peta lebar di kiri, daftar dan detail di kanan */
+.route-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 20px;
+    align-items: start;
+}
+ 
+/* Kartu peta; kartu-kartu kecil di atasnya diposisikan absolut */
+.route-map-card {
+    position: relative;
+    min-height: 560px;
+    border: 1px solid var(--light-green);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--mint);
+}
+ 
+.route-map {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+ 
+/* Ringkasan rute dan pesan ditumpuk di kiri atas peta supaya tidak saling menutupi */
+.route-top {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: calc(100% - 28px);
+    pointer-events: none;           /* area kosong di sekitar kartu tetap bisa menggeser peta */
+}
+ 
+.route-top > * {
+    pointer-events: auto;
+}
+ 
+/* Kartu ringkasan rute (kiri atas peta) */
+.route-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--white);
+    box-shadow: 0 4px 16px rgba(15, 61, 42, .15);
+}
+ 
+.route-summary[hidden],
+.route-turn[hidden],
+.route-map-msg[hidden],
+.route-toast[hidden] {
+    display: none;
+}
+ 
+.route-summary-label {
+    font-size: 12px;
+    color: var(--dark-green);
+}
+ 
+.route-summary strong {
+    font-size: 16px;
+}
+ 
+/* Deretan chip kecil (OSRM, hemat jarak, cuaca) */
+.route-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+ 
+.route-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--mint);
+    color: var(--forest);
+}
+ 
+.route-chip i,
+.route-chip svg {
+    width: 12px;
+    height: 12px;
+}
+ 
+.route-chip--blue  { background: #DCE8FF; color: #1d4ed8; }
+.route-chip--green { background: #D8F1E2; color: var(--primary); }
+.route-chip--amber { background: #FFF1D6; color: #8A5A00; }
+.route-chip--gray  { background: #EEF0EE; color: var(--dark-green); }
+ 
+/* Petunjuk belok (kiri bawah peta) */
+.route-turn {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 22px;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--forest);
+    color: var(--white);
+    box-shadow: 0 4px 16px rgba(15, 61, 42, .25);
+}
+ 
+.route-turn strong,
+.route-turn small {
+    display: block;
+}
+ 
+.route-turn small {
+    font-size: 12px;
+    opacity: .85;
+}
+ 
+.route-turn-text {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 8px;
+}
+
+/* Baris 1: jarak + nomor langkah; baris 2: nama jalan (maks. 2 baris) agar tinggi kartu tetap */
+.route-turn-text strong {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.route-turn-text small:not(.route-turn-count) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+ 
+.route-turn-text .route-turn-count {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 0;
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: .65;
+}
+
+/* Tombol zoom dinaikkan agar tidak tertutup kartu hijau; tulisan OpenStreetMap tetap di bawah kartu */
+.route-map .leaflet-bottom .leaflet-control-zoom {
+    margin-bottom: 70px;
+}
+ 
+/* Tombol panah untuk pindah antar belokan */
+.route-turn-nav {
+    display: flex;
+    gap: 6px;
+    margin-left: 4px;
+}
+ 
+.route-turn-btn {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .15);
+    color: var(--white);
+    cursor: pointer;
+}
+ 
+.route-turn-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, .28);
+}
+ 
+.route-turn-btn:disabled {
+    opacity: .35;
+    cursor: default;
+}
+ 
+.route-turn-btn i,
+.route-turn-btn svg {
+    width: 16px;
+    height: 16px;
+}
+ 
+.route-turn-icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .15);
+}
+ 
+/* Pesan bila peta atau layanan rute bermasalah */
+.route-map-msg {
+    max-width: 320px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: #FFF1D6;
+    color: #6B4600;
+    font-size: 12px;
+}
+ 
+/* Penanda bernomor di peta */
+.route-pin-wrap {
+    background: none;
+    border: 0;
+}
+ 
+.route-pin {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--white);
+    border-radius: 50%;
+    background: var(--dark-green);
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+}
+ 
+.route-pin.is-done     { background: var(--accent); }
+.route-pin.is-active   { background: #2563eb; }
+.route-pin.is-selected { transform: scale(1.2); }
+ 
+/* Titik biru posisi kurir */
+.route-me {
+    display: block;
+    width: 22px;
+    height: 22px;
+    border: 3px solid var(--white);
+    border-radius: 50%;
+    background: #2563eb;
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, .25), 0 2px 8px rgba(0, 0, 0, .3);
+}
+ 
+/* Kolom kanan */
+.route-side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+ 
+.route-card {
+    padding: 18px;
+    border: 1px solid var(--light-green);
+    border-radius: var(--radius);
+    background: var(--white);
+}
+ 
+.route-card-title {
+    margin-bottom: 12px;
+    font-size: 16px;
+}
+ 
+.route-empty {
+    font-size: 13px;
+    color: var(--dark-green);
+}
+ 
+/* Daftar urutan penjemputan */
+.route-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    list-style: none;
+}
+ 
+.route-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--light-green);
+    border-radius: 12px;
+    background: var(--white);
+    color: var(--forest);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+ 
+.route-item:hover {
+    background: var(--mint);
+}
+ 
+.route-item.is-selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 138, 95, .12);
+}
+ 
+.route-item-text {
+    flex: 1;
+    min-width: 0;
+}
+ 
+.route-item-text strong,
+.route-item-text small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+ 
+.route-item-text small {
+    font-size: 12px;
+    color: var(--dark-green);
+}
+ 
+/* Lingkaran nomor urut */
+.route-badge {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--mint);
+    font-size: 13px;
+    font-weight: 700;
+}
+ 
+.route-badge i,
+.route-badge svg {
+    width: 14px;
+    height: 14px;
+}
+ 
+.route-item.is-done .route-badge   { background: var(--accent); color: var(--white); }
+.route-item.is-active .route-badge { background: #2563eb; color: var(--white); }
+ 
+/* Label status di kanan setiap titik */
+.route-pill {
+    flex: none;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #EEF0EE;
+    color: var(--dark-green);
+}
+ 
+.route-pill--done   { background: #D8F1E2; color: var(--primary); }
+.route-pill--active { background: #DCE8FF; color: #1d4ed8; }
+ 
+/* Kolom kiri: peta, lalu daftar petunjuk arah di bawahnya */
+.route-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+ 
+/* Daftar petunjuk arah di bawah peta */
+.route-steps {
+    display: flex;
+    flex-direction: column;
+    max-height: 320px;
+    overflow-y: auto;
+    list-style: none;
+}
+ 
+.route-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 8px;
+    border: 0;
+    border-bottom: 1px solid var(--mint);
+    border-radius: 10px;
+    background: none;
+    color: var(--forest);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+ 
+.route-step:hover {
+    background: var(--mint);
+}
+ 
+/* Belokan yang sedang tampil di kartu hijau pada peta */
+.route-step.is-current {
+    background: var(--mint);
+    box-shadow: inset 3px 0 0 var(--accent);
+}
+ 
+.route-step-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--mint);
+    color: var(--forest);
+}
+ 
+.route-step.is-current .route-step-icon {
+    background: var(--forest);
+    color: var(--white);
+}
+ 
+.route-step-icon i,
+.route-step-icon svg {
+    width: 16px;
+    height: 16px;
+}
+ 
+.route-step-text strong,
+.route-step-text small {
+    display: block;
+}
+ 
+.route-step-text strong {
+    font-size: 13px;
+}
+ 
+.route-step-text small {
+    font-size: 12px;
+    color: var(--dark-green);
+}
+ 
+.route-steps-empty {
+    font-size: 13px;
+    color: var(--dark-green);
+}
+ 
+/* Kartu detail titik */
+.route-step-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--mint);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+}
+ 
+.route-detail-name {
+    margin-top: 8px;
+    font-size: 18px;
+}
+ 
+.route-detail-address {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--dark-green);
+}
+ 
+.route-facts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 14px 0;
+}
+ 
+.route-fact {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--mint);
+}
+ 
+.route-fact span,
+.route-fact strong {
+    display: block;
+}
+ 
+.route-fact span {
+    font-size: 11px;
+    color: var(--dark-green);
+}
+ 
+.route-fact strong {
+    font-size: 13px;
+}
+ 
+/* Catatan foto terverifikasi admin */
+.route-photo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 10px;
+    border: 1px dashed var(--light-green);
+    border-radius: 10px;
+    font-size: 13px;
+}
+ 
+.route-photo small {
+    display: block;
+    font-size: 12px;
+    color: var(--dark-green);
+}
+ 
+.route-photo-thumb {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--light-green), var(--green));
+}
+ 
+/* Input berat dengan satuan kg di dalamnya */
+.route-weight {
+    position: relative;
+}
+ 
+.route-weight .field-input {
+    padding-right: 44px;
+}
+ 
+.route-unit {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: var(--dark-green);
+}
+ 
+.route-points {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+}
+ 
+/* Dua tombol aksi berdampingan */
+.route-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+}
+ 
+.route-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+ 
+.route-btn-outline {
+    border: 1px solid var(--forest);
+    background: var(--white);
+    color: var(--forest);
+}
+ 
+.route-btn-outline:hover:not(:disabled) {
+    background: var(--mint);
+}
+ 
+.route-btn-outline:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+ 
+.route-actions .btn-submit:disabled {
+    opacity: .55;
+    cursor: wait;
+}
+ 
+.route-done-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary);
+}
+ 
+/* Pemberitahuan singkat di bawah layar */
+.route-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 2000;
+    transform: translateX(-50%);
+    max-width: calc(100% - 32px);
+    padding: 10px 18px;
+    border-radius: 12px;
+    background: var(--forest);
+    color: var(--white);
+    font-size: 14px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
+}
+ 
+.route-toast.is-error {
+    background: var(--danger);
+}
+
 /* ===== Laptop (<= 1285px) ===== */
 @media (max-width: 1285px) {
     /* Sidebar dirapatkan */
@@ -1599,6 +2288,24 @@ button {
     .profile-stats {
         grid-column: 1 / -1;
     }
+
+    /* ----- Rute Hari ini ----- */
+    .route-layout {
+        grid-template-columns: 1fr;
+    }
+ 
+    .route-map-card {
+        min-height: 420px;
+    }
+ 
+    /* Petunjuk arah dipindah ke paling bawah agar form berat tidak terdorong jauh */
+    .route-main {
+        display: contents;
+    }
+ 
+    .route-map-card { order: 1; }
+    .route-side { order: 2; }
+    .route-directions { order: 3; }
 }
 
 /* ===== Laptop kecil (<= 1285px) ===== */
@@ -1734,7 +2441,7 @@ button {
         padding: 6px 12px;
     }
 
-    /* ----- Rekap Timbangan di HP / tablet ----- */
+    /* ----- Rekap Timbangan ----- */
     /* Menyusun judul dan tombol aksi secara vertikal, dengan jarak ke filter di bawahnya */
     .page-head {
         flex-direction: column;
@@ -1902,6 +2609,111 @@ button {
     .toast {
         right: 16px;
         bottom: 16px;
+    }
+
+    /* ----- Rute Hari Ini ----- */
+    .route-head {
+        flex-direction: column;
+    }
+ 
+    .route-map-card {
+        min-height: max(440px, 72vh);
+    }
+
+    /* Kartu di atas peta diringkas supaya petanya tetap kelihatan */
+    .route-top {
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        max-width: none;
+        gap: 6px;
+    }
+
+    .route-summary {
+        position: relative;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 2px 8px;
+        padding: 8px 32px 8px 12px;
+        cursor: pointer;
+    }
+
+    .route-summary-label {
+        display: none;
+    }
+
+    .route-summary strong {
+        font-size: 14px;
+    }
+
+    /* Chip disembunyikan dulu; ketuk kartu untuk membukanya */
+    .route-summary .route-chips {
+        display: none;
+        flex-basis: 100%;
+        margin-top: 4px;
+    }
+
+    .route-summary.is-open .route-chips {
+        display: flex;
+    }
+
+    .route-summary::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: 13px;
+        width: 7px;
+        height: 7px;
+        border-right: 2px solid var(--dark-green);
+        border-bottom: 2px solid var(--dark-green);
+        transform: translateY(-70%) rotate(45deg);
+    }
+
+    .route-summary.is-open::after {
+        transform: translateY(-30%) rotate(-135deg);
+    }
+
+    /* Pesan posisi: satu baris, ketuk untuk membaca selengkapnya */
+    .route-map-msg {
+        max-width: 100%;
+        padding: 6px 10px;
+        font-size: 11px;
+        line-height: 1.35;
+        cursor: pointer;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+
+    .route-map-msg.is-open {
+        white-space: normal;
+    }
+
+    /* Petunjuk belok: kartu hijau lebih tipis dan selebar peta */
+    .route-turn {
+        left: 8px;
+        right: 8px;
+        padding: 8px 10px;
+        gap: 10px;
+    }
+
+    .route-turn-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .route-turn-text strong {
+        font-size: 15px;
+    }
+
+    .route-turn-btn {
+        width: 30px;
+        height: 30px;
+    }
+ 
+    .route-fact strong {
+        font-size: 12px;
     }
 }
 

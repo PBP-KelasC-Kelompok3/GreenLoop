@@ -39,11 +39,6 @@ def show_dashboard(request):
 
 
 @role_required(['courier'])
-def show_route_today(request):
-    return render(request, "courier/route_today.html")
-
-
-@role_required(['courier'])
 def show_history(request):
     rows = get_pickup_history(request.user)
     counts = {key: 0 for key in PICKUP_STATUS}
