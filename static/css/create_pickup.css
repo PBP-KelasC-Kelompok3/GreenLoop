@@ -1,51 +1,23 @@
-/* Custom Styles for Create Pickup Page */
-
-/* Layout & Sidebar Rules */
-.sidebar {
-  width: 260px;
-  min-height: 100vh;
-}
-
-.sidebar-menu-title {
-  font-size: 10px;
-}
-
-.sidebar-logo {
-  max-height: 40px;
-  width: auto;
-}
-
-.pilot-area-text {
-  font-size: 11px;
-}
-
-.user-avatar-initials {
-  width: 38px;
-  height: 38px;
-}
-
-.user-role-subtitle {
-  font-size: 11px;
-}
-
-/* Card & Form Container */
+/* Container Form Penjemputan */
 .pickup-card-container {
-  max-width: 850px;
+  max-width: 800px;
+  border-radius: 16px;
+  border: none;
 }
 
-/* Form Custom Control Styling */
+/* Label & Input Form */
 .pickup-form-label {
   font-weight: 600;
   font-size: 0.875rem;
-  color: #333333;
-  margin-bottom: 0.375rem;
+  margin-bottom: 6px;
+  color: #2b2b2b;
 }
 
 .pickup-form-control {
-  border-radius: 0.5rem;
+  border-radius: 10px;
+  padding: 10px 14px;
   border: 1px solid #dee2e6;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
 }
 
 .pickup-form-control:focus {
@@ -53,16 +25,22 @@
   box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
 }
 
-/* Photo Upload Preview Box */
+/* Box Area Unggah Foto */
 .photo-preview-box {
   border: 2px dashed #198754;
   background-color: #f8f9fa;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
+  border-radius: 12px;
+  padding: 24px;
   text-align: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.photo-preview-box:hover {
+  background-color: #f1f8f4;
+  border-color: #146c43;
 }
 
 .photo-preview-box .helper-text {
-  font-size: 11px;
+  font-size: 0.75rem;
   color: #6c757d;
 }

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import PickupSchedule
+from .models import PickupSchedule, MitraProfile
 from .forms import PickupScheduleForm
 from django.db.models import Sum
 from django.utils import timezone
@@ -295,3 +295,44 @@ def courier_dashboard(request):
         'pickups': active_pickups,
     }
     return render(request, 'scheduling/courier_dashboard.html', context)
+
+@login_required
+def mitra_profile(request):
+    profile, created = MitraProfile.objects.get_or_create(user=request.user)
+
+    # Statistik kalkulasi dinamis berdasarkan riwayat transaksi aktual mitra ini
+    completed_pickups = PickupSchedule.objects.filter(mitra=request.user, status='COMPLETED')
+    
+    total_limbah = completed_pickups.aggregate(Sum('actual_weight'))['actual_weight__sum'] or 0
+    total_penjemputan = completed_pickups.count()
+    total_poin = completed_pickups.aggregate(Sum('points'))['points__sum'] or 0
+    co2e_dicegah = round(float(total_limbah) * 0.75, 1)
+
+    if request.method == 'POST':
+        profile.business_name = request.POST.get('business_name')
+        profile.business_type = request.POST.get('business_type')
+        profile.pic_name = request.POST.get('pic_name')
+        profile.phone_number = request.POST.get('phone_number')
+        profile.operational_hours = request.POST.get('operational_hours')
+        profile.provinsi = request.POST.get('provinsi')
+        profile.kota = request.POST.get('kota')
+        profile.kecamatan = request.POST.get('kecamatan')
+        profile.kelurahan = request.POST.get('kelurahan')
+        profile.address_detail = request.POST.get('address_detail')
+        
+        # Simpan koordinat dari API Google Maps jika ada inputan dari JavaScript
+        if request.POST.get('latitude') and request.POST.get('longitude'):
+            profile.latitude = float(request.POST.get('latitude'))
+            profile.longitude = float(request.POST.get('longitude'))
+            
+        profile.save()
+        return redirect('mitra_profile')
+
+    context = {
+        'profile': profile,
+        'total_limbah': total_limbah,
+        'total_penjemputan': total_penjemputan,
+        'total_poin': total_poin,
+        'co2e_dicegah': co2e_dicegah,
+    }
+    return render(request, 'scheduling/mitra_profile.html', context)

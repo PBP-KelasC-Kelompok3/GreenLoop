@@ -1,0 +1,33 @@
+/* Sidebar Layout & Dimensions Sempurna */
+aside.sidebar {
+  width: 260px !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  flex-shrink: 0;
+  font-size: 0.85rem !important;
+}
+
+.sidebar-logo {
+  max-height: 40px;
+  width: auto;
+}
+
+.sidebar-menu-title {
+  font-size: 10px;
+}
+
+.pilot-area-subtext {
+  font-size: 11px;
+}
+
+/* User Avatar & Topbar */
+.user-avatar-circle {
+  width: 38px;
+  height: 38px;
+}
+
+.user-role-text {
+  font-size: 11px;
+}

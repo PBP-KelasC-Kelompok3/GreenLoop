@@ -98,3 +98,35 @@ class PickupSchedule(models.Model):
 
     def __str__(self):
         return f"{self.mitra.username} - {self.pickup_date} ({self.get_status_display()})"
+
+class MitraProfile(models.Model):
+    JENIS_USAHA_CHOICES = [
+        ('Kafe', 'Kafe'),
+        ('Restoran', 'Restoran'),
+        ('Hotel', 'Hotel'),
+        ('Katering', 'Katering'),
+        ('Lainnya', 'Lainnya'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    business_name = models.CharField(max_length=150, verbose_name="Nama Usaha", blank=True, null=True)
+    business_type = models.CharField(max_length=50, choices=JENIS_USAHA_CHOICES, blank=True, null=True)
+    pic_name = models.CharField(max_length=100, verbose_name="Nama Penanggung Jawab", blank=True, null=True)
+    phone_number = models.CharField(max_length=20, verbose_name="No. WhatsApp", blank=True, null=True)
+    operational_hours = models.CharField(max_length=50, verbose_name="Jam Operasional", blank=True, null=True)
+    
+    # Wilayah Penjemputan (Dapat diisi dari Form atau Autocomplete API)
+    provinsi = models.CharField(max_length=100, blank=True, null=True)
+    kota = models.CharField(max_length=100, blank=True, null=True)
+    kecamatan = models.CharField(max_length=100, blank=True, null=True)
+    kelurahan = models.CharField(max_length=100, blank=True, null=True)
+    address_detail = models.TextField(verbose_name="Alamat Detail", blank=True, null=True)
+    
+    # Titik Koordinat dari Google Maps API (Places Autocomplete / Pin Drag)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Profil {self.business_name or self.user.username}"

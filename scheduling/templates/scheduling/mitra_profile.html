@@ -1,0 +1,252 @@
+{% extends 'scheduling/mitra_base.html' %}
+{% load static %}
+
+{% block title %}GreenLoop - Profil Mitra{% endblock %}
+
+{% block header_title %}Profil Mitra{% endblock %}
+{% block header_subtitle %}Kelola informasi usaha, alamat penjemputan, dan keamanan akun.{% endblock %}
+
+{% block extra_css %}
+<!-- CSS Khusus Terpisah untuk Profil Mitra -->
+<link rel="stylesheet" href="{% static 'css/mitra_profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Header Banner Profil Mitra -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+  <div class="profile-banner text-white p-4 d-flex align-items-center justify-content-between position-relative">
+    <div class="d-flex align-items-center gap-3">
+      <div class="profile-avatar rounded-circle bg-white text-success fw-bold d-flex align-items-center justify-content-center shadow-sm">
+        {{ profile.business_name|default:request.user.username|slice:":2"|upper }}
+      </div>
+      <div>
+        <h4 class="fw-bold mb-1">{{ profile.business_name|default:request.user.username }}</h4>
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+          <span class="badge bg-light text-success fw-semibold">Terverifikasi</span>
+          <span class="badge bg-warning text-dark fw-semibold">Level Silver</span>
+          <small class="opacity-75">Mitra sejak {{ request.user.date_joined|date:"M Y" }}</small>
+          {% if profile.kota %}<small class="opacity-75">&bull; {{ profile.kecamatan }}, {{ profile.kota }}</small>{% endif %}
+        </div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-sm btn-light text-success rounded-pill fw-semibold px-3 shadow-sm">
+      <i class="bi bi-camera me-1"></i> Edit Foto
+    </button>
+  </div>
+
+  <!-- Navigasi Tab -->
+  <div class="bg-white px-4 pt-2 border-bottom">
+    <ul class="nav border-0 gap-3">
+      <li class="nav-item">
+        <a class="profile-tab-link active" href="#">Informasi Usaha</a>
+      </li>
+      <li class="nav-item">
+        <a class="profile-tab-link" href="#">Alamat Penjemputan</a>
+      </li>
+      <li class="nav-item">
+        <a class="profile-tab-link" href="#">Keamanan Akun</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Kolom Kiri: Form Input Usaha & Wilayah -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+      <form method="POST" action="">
+        {% csrf_token %}
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Nama Usaha</label>
+            <input type="text" name="business_name" value="{{ profile.business_name|default:'' }}" class="form-control rounded-3" placeholder="Nama usaha/toko">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Jenis Usaha</label>
+            <select name="business_type" class="form-select rounded-3">
+              <option value="">-- Pilih Jenis Usaha --</option>
+              <option value="Kafe / Coffee Shop" {% if profile.business_type == 'Kafe / Coffee Shop' %}selected{% endif %}>Kafe / Coffee Shop</option>
+              <option value="Restoran" {% if profile.business_type == 'Restoran' %}selected{% endif %}>Restoran</option>
+              <option value="Hotel" {% if profile.business_type == 'Hotel' %}selected{% endif %}>Hotel</option>
+              <option value="Katering" {% if profile.business_type == 'Katering' %}selected{% endif %}>Katering</option>
+              <option value="Lainnya" {% if profile.business_type == 'Lainnya' %}selected{% endif %}>Lainnya</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Nama Penanggung Jawab</label>
+            <input type="text" name="pic_name" value="{{ profile.pic_name|default:'' }}" class="form-control rounded-3" placeholder="Nama PIC">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">No. WhatsApp</label>
+            <input type="text" name="phone_number" value="{{ profile.phone_number|default:'' }}" class="form-control rounded-3" placeholder="08xxxxxxxxxx">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Email</label>
+            <input type="email" value="{{ request.user.email }}" class="form-control rounded-3 bg-light" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Jam Operasional</label>
+            <input type="text" name="operational_hours" value="{{ profile.operational_hours|default:'' }}" class="form-control rounded-3" placeholder="contoh: 07.00–22.00 WIB">
+          </div>
+        </div>
+
+        <hr class="my-4 text-muted opacity-25">
+        <h6 class="fw-bold mb-3">Wilayah Penjemputan</h6>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Provinsi</label>
+            <input type="text" name="provinsi" value="{{ profile.provinsi|default:'' }}" class="form-control rounded-3" placeholder="Provinsi">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Kota / Kabupaten</label>
+            <input type="text" name="kota" value="{{ profile.kota|default:'' }}" class="form-control rounded-3" placeholder="Kota/Kabupaten">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Kecamatan</label>
+            <input type="text" name="kecamatan" value="{{ profile.kecamatan|default:'' }}" class="form-control rounded-3" placeholder="Kecamatan">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">Kelurahan</label>
+            <input type="text" name="kelurahan" value="{{ profile.kelurahan|default:'' }}" class="form-control rounded-3" placeholder="Kelurahan">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold small">Cari Alamat Detail (Google Maps API)</label>
+          <input type="text" id="address-input" name="address_detail" value="{{ profile.address_detail|default:'' }}" class="form-control rounded-3" placeholder="Ketik alamat atau titik lokasi...">
+        </div>
+
+        <!-- Hidden Input Koordinat Google Maps -->
+        <input type="hidden" id="lat-input" name="latitude" value="{{ profile.latitude|default:'' }}">
+        <input type="hidden" id="lng-input" name="longitude" value="{{ profile.longitude|default:'' }}">
+
+        <div class="d-flex justify-content-end gap-2">
+          <button type="reset" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">Batal</button>
+          <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Kolom Kanan: Statistik Kontribusi & Peta Google Maps Asli -->
+  <div class="col-lg-4">
+    <!-- Kartu Kontribusi Anda -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+      <h6 class="fw-bold text-dark mb-3">Kontribusi Anda</h6>
+      
+      <div class="d-flex align-items-center justify-content-between py-2 stat-item">
+        <div class="d-flex align-items-center gap-2 text-muted small">
+          <i class="bi bi-recycle text-success"></i> Total limbah disetor
+        </div>
+        <span class="fw-bold">{{ total_limbah }} kg</span>
+      </div>
+
+      <div class="d-flex align-items-center justify-content-between py-2 stat-item">
+        <div class="d-flex align-items-center gap-2 text-muted small">
+          <i class="bi bi-truck text-success"></i> Penjemputan selesai
+        </div>
+        <span class="fw-bold">{{ total_penjemputan }} kali</span>
+      </div>
+
+      <div class="d-flex align-items-center justify-content-between py-2 stat-item">
+        <div class="d-flex align-items-center gap-2 text-muted small">
+          <i class="bi bi-gift text-success"></i> Poin terkumpul
+        </div>
+        <span class="fw-bold">{{ total_poin }}</span>
+      </div>
+
+      <div class="d-flex align-items-center justify-content-between py-2 stat-item">
+        <div class="d-flex align-items-center gap-2 text-muted small">
+          <i class="bi bi-cloud-minus text-success"></i> CO2e dicegah
+        </div>
+        <span class="fw-bold">{{ co2e_dicegah }} kg</span>
+      </div>
+    </div>
+
+    <!-- Widget Google Maps Asli -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div id="map" class="map-container"></div>
+      <div class="p-3 bg-white">
+        <div class="fw-bold small text-dark">Titik Penjemputan</div>
+        <div class="text-muted small mb-1" id="selected-address-text">
+          {{ profile.address_detail|default:"Belum ada titik alamat yang dipilih" }}
+        </div>
+        <small class="text-success fw-semibold">
+          Geser pin pada peta untuk menyesuaikan titik lokasi &rsaquo;
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Google Maps JavaScript API & Places Autocomplete -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap"></script>
+
+<script>
+  let map, marker, autocomplete;
+
+  function initMap() {
+    const defaultLat = parseFloat("{{ profile.latitude|default:'-6.3627' }}");
+    const defaultLng = parseFloat("{{ profile.longitude|default:'106.82715' }}");
+    const initialPos = { lat: defaultLat, lng: defaultLng };
+
+    map = new google.maps.Map(document.getElementById("map"), {
+      zoom: 15,
+      center: initialPos,
+      mapTypeControl: false,
+      streetViewControl: false,
+    });
+
+    marker = new google.maps.Marker({
+      position: initialPos,
+      map: map,
+      draggable: true,
+      title: "Titik Penjemputan Mitra"
+    });
+
+    marker.addListener("dragend", function(event) {
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+      document.getElementById("lat-input").value = lat;
+      document.getElementById("lng-input").value = lng;
+    });
+
+    const addressInput = document.getElementById("address-input");
+    autocomplete = new google.maps.places.Autocomplete(addressInput);
+    autocomplete.bindTo("bounds", map);
+
+    autocomplete.addListener("place_changed", function() {
+      const place = autocomplete.getPlace();
+      if (!place.geometry || !place.geometry.location) {
+        return;
+      }
+
+      if (place.geometry.viewport) {
+        map.fitBounds(place.geometry.viewport);
+      } else {
+        map.setCenter(place.geometry.location);
+        map.setZoom(17);
+      }
+
+      marker.setPosition(place.geometry.location);
+
+      document.getElementById("lat-input").value = place.geometry.location.lat();
+      document.getElementById("lng-input").value = place.geometry.location.lng();
+      document.getElementById("selected-address-text").innerText = place.formatted_address || addressInput.value;
+    });
+  }
+</script>
+{% endblock %}

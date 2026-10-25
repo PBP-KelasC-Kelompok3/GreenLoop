@@ -18,4 +18,6 @@ urlpatterns = [
     path('admin-panel/update-status/<int:pickup_id>/', views.update_pickup_status, name='update_pickup_status_form'),
 
     path('courier/dashboard/', views.courier_dashboard, name='courier_dashboard'),
+
+    path('profile/', views.mitra_profile, name='mitra_profile'),
 ]

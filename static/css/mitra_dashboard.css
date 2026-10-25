@@ -1,449 +1,199 @@
-/* Custom CSS - GreenLoop Mitra Dashboard */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* ===== Palette GreenLoop ===== */
 :root {
-  /* Color Palette */
-  --primary-green: #008a5f;    /* Hijau Utama / Aksens / Button Primary */
-  --dark-green: #506649;       /* Hijau Tua / Card Poin / Header */
-  --dark-green-hover: #3e5038; /* Hijau Tua Hover */
-  --secondary-green: #789c6d;  /* Hijau Sedang / Hover & Secondary Badge */
-  --light-green: #c0ccbb;      /* Hijau Muda / Border, Background Card, Neutral */
-  --bg-main: #f4f6f3;          /* Background Utama Halaman */
-  
-  /* Accent & Neutral Colors */
-  --bg-pill: #d1fae5;
-  --bg-card-light: #eaf3ee;
-  --text-muted: #4b5563;
-  --text-dark: #1f2937;
-  --border-light: #e5e7eb;
+  --gl-primary: #1b4d2e;
+  --gl-olive:   #506649;
+  --gl-mid:     #789c6d;
+  --gl-sage:    #8bbd3b;
+  --gl-dark:    #1b4d2e;
+  --gl-bg:      #d8f1cf;
+  --gl-text:    #1f2a1c;
 }
 
-/* Global Reset & Base Layout */
 body {
-  background-color: var(--bg-main);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: var(--text-dark);
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--gl-bg);
+  color: var(--gl-text);
 }
 
-/* ==========================================
-   Sidebar Styling & Navigation
-   ========================================== */
-.sidebar {
-  width: 260px;
-  min-height: 100vh;
+/* ===== Sidebar Layout & Dimensions ===== */
+aside.sidebar {
+  width: 260px !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  flex-shrink: 0;
   background-color: #ffffff;
-  border-right: 1px solid var(--border-light);
 }
 
-.nav-link-custom,
-.sidebar-nav-item {
-  color: var(--text-muted);
-  font-weight: 500;
-  border-radius: 8px;
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  margin-bottom: 4px;
-  transition: all 0.2s ease-in-out;
+.sidebar-logo {
+  max-height: 40px;
+  width: auto;
 }
 
-.nav-link-custom:hover,
-.sidebar-nav-item:hover {
-  background-color: #f0fdf4;
-  color: var(--dark-green);
+.sidebar-menu-title {
+  font-size: 10px;
 }
 
-.nav-link-custom.active,
-.sidebar-nav-item.active {
-  background-color: var(--dark-green) !important;
-  color: #ffffff !important;
-  font-weight: 600;
-}
-
-.nav-link-custom.active i,
-.sidebar-nav-item.active i {
-  color: #86efac !important; /* Warna hijau muda aksen ikon */
-}
-
-.active-indicator {
-  width: 4px;
-  height: 18px;
-  background-color: #86efac;
-  border-radius: 4px;
-}
-
-.pill-mitra {
-  background-color: var(--bg-pill);
-  color: var(--primary-green);
+.pilot-area-subtext {
   font-size: 11px;
-  font-weight: 700;
-  padding: 2px 10px;
-  border-radius: 12px;
 }
 
-.card-pilot {
-  background-color: var(--bg-card-light);
-  border-radius: 12px;
-  padding: 14px;
-  font-size: 12px;
-}
-
-/* ==========================================
-   Buttons & Cards
-   ========================================== */
-.btn-ajukan {
-  background-color: var(--dark-green);
-  color: #ffffff;
-  font-weight: 600;
-  border-radius: 8px;
-  border: none;
-  padding: 8px 16px;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.btn-ajukan:hover {
-  background-color: var(--dark-green-hover);
-  color: #ffffff;
-}
-
-.card-stat {
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.card-poin-green,
-.widget-tukar-poin {
-  background-color: var(--dark-green);
-  color: #ffffff;
-  border-radius: 12px;
-}
-
-/* ==========================================
-   Status Badges
-   ========================================== */
-.badge-status-selesai {
-  background-color: var(--bg-card-light);
-  color: var(--primary-green);
-  font-weight: 600;
-}
-
-.badge-status-disetujui {
-  background-color: #e0f2fe;
-  color: #0284c7;
-  font-weight: 600;
-}
-
-.badge-status-ditolak {
-  background-color: #ffe4e6;
-  color: #e11d48;
-  font-weight: 600;
-}
-
-/* ==========================================
-   Stepper Component
-   ========================================== */
-.step-dot {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.step-done {
-  background-color: var(--dark-green);
-  color: #ffffff;
-}
-
-.step-pending {
-  background-color: var(--border-light);
-  color: #9ca3af;
-}
-
-/* ==========================================
-   GLOBAL & UTILITIES
-   ========================================== */
-.text-dark-green {
-  color: var(--dark-green, #1b4d3e) !important;
-}
-
-.bg-dark-green {
-  background-color: var(--dark-green, #1b4d3e) !important;
-}
-
-/* ==========================================
-   CREATE PICKUP PAGE
-   ========================================== */
-.create-pickup-card {
-  border-radius: 1rem;
-}
-
-.btn-submit-pickup {
-  background-color: var(--dark-green, #1b4d3e);
-  color: #ffffff;
-}
-
-.btn-submit-pickup:hover {
-  background-color: #143b2f;
-  color: #ffffff;
-}
-
-/* ==========================================
-   ADMIN DASHBOARD PAGE
-   ========================================== */
-.pickup-thumb-btn {
-  padding: 0.25rem;
-}
-
-.pickup-thumb-img {
-  width: 45px;
-  height: 45px;
-  object-fit: cover;
-  border-radius: 0.375rem;
-}
-
-.modal-pickup-preview {
-  max-height: 380px;
-  object-fit: contain;
-}
-
-/* ==========================================
-   DASHBOAR GRAPH
-   ========================================== */
-/* Card Saldo Waste Points */
-.card-waste-points {
-  background-color: #2D5A3D;
-}
-
-/* Container Grafik */
-.chart-container {
-  position: relative;
-  height: 220px;
-  width: 100%;
-}
-
-/* ==========================================
-   PENJEMPUTAN BERIKUTNYA
-   ========================================== */
-/* Styling Kotak Tanggal */
-.date-card-box {
-  background-color: #1b4d2e !important;
-  width: 90px;
-  height: 95px;
-  padding: 10px;
-}
-
-.date-card-day {
-  font-size: 0.7rem;
-  letter-spacing: 0.5px;
-}
-
-.date-card-num {
-  font-size: 1.8rem;
-  line-height: 1.1;
-}
-
-.date-card-month {
-  font-size: 0.75rem;
-}
-
-/* Custom Stepper Container */
-.stepper-wrapper {
-  padding-top: 15px;
-}
-
-/* Garis Dasar Stepper (Abu-abu) */
-.stepper-line-bg {
-  position: absolute;
-  top: 26px;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background-color: #e9ecef;
-  z-index: 0;
-}
-
-/* Garis Isian Stepper (Hijau) */
-.stepper-line-fill {
-  position: absolute;
-  top: 26px;
-  left: 0;
-  height: 3px;
-  background-color: #198754;
-  z-index: 0;
-  transition: width 0.3s ease;
-}
-
-/* Bulatan Step */
-.step-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 6px auto;
-  font-size: 14px;
-  position: relative;
-  z-index: 1;
-}
-
-.step-active {
-  background-color: #198754;
-  color: #ffffff;
-}
-
-.step-inactive {
-  background-color: #ffffff;
-  border: 2px solid #dee2e6;
-  color: #adb5bd;
-}
-
-.step-label {
-  font-size: 0.75rem;
-  display: block;
-}
-
-/* Track/Jalur Dasar Progress Bar (Hijau Tua Transparan) */
-.level-progress-track {
-  height: 8px !important;
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  overflow: hidden;
-}
-
-/* Isian Progress Bar Hijau Muda Cerah (100% Bebas Linter Error) */
-.level-bar-fill {
-  background-color: #a3e635 !important;
-  width: var(--level-progress, 0%);
-  height: 100% !important;
-  transition: width 0.8s ease;
-}
-
-/* ==========================================
-   BUAT PENJEMPUTAN
-   ========================================== */
-
-/* Styling Khusus Form Ajukan Penjemputan */
-
-.pickup-card {
-  border: none;
-  border-radius: 16px;
-  background-color: #ffffff;
-}
-
-.pickup-form-label {
-  font-weight: 600;
-  color: #2c3e50;
-  font-size: 0.9rem;
-  margin-bottom: 6px;
-}
-
-.pickup-form-control, 
-.pickup-form-select {
-  border-radius: 10px;
-  border: 1px solid #dee2e6;
-  padding: 10px 14px;
-  font-size: 0.95rem;
-  transition: all 0.2s ease-in-out;
-}
-
-.pickup-form-control:focus, 
-.pickup-form-select:focus {
-  border-color: #198754;
-  box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
-}
-
-.helper-text {
-  font-size: 0.8rem;
-  color: #6c757d;
-  margin-top: 4px;
-}
-
-/* Card Rekomendasi Armada */
-.fleet-card {
-  border: 1.5px solid #e9ecef;
-  border-radius: 12px;
-  padding: 12px;
-  text-align: center;
-  background-color: #f8f9fa;
-  transition: all 0.2s ease;
-}
-
-.fleet-card.active {
-  border-color: #198754;
-  background-color: #f0fdf4;
-  box-shadow: 0 0 0 1px #198754;
-}
-
-/* Preview Box Foto */
-.photo-preview-box {
-  border: 2px dashed #b1d8b7;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  background-color: #fafdfa;
-}
-
-/* ==========================================
-   ADMIN
-   ========================================== */
-/* Layout & Sidebar B2B */
-body {
-  background-color: #f8f9fa;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
-
-.sidebar-b2b {
-  width: 260px;
-  min-height: 100vh;
-  background-color: #ffffff;
-  border-right: 1px solid #e9ecef;
-}
-
+/* Nav Link Custom */
 .nav-link-custom {
   color: #6c757d;
-  text-decoration: none;
   font-weight: 500;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease;
+  text-decoration: none;
 }
 
 .nav-link-custom:hover {
   background-color: #f8f9fa;
-  color: #198754;
+  color: var(--gl-primary);
 }
 
 .nav-link-custom.active {
-  background-color: #e8f5e9;
-  color: #198754;
-  font-weight: 600;
+  background-color: var(--gl-primary) !important;
+  color: #ffffff !important;
 }
 
-/* Modal & Table Styling */
-.table-admin th {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #6c757d;
-  background-color: #f8f9fa !important;
+/* ===== Kartu Umum ===== */
+.card {
+  box-shadow: 0 2px 10px rgba(52, 69, 47, .06) !important;
+  border: none;
 }
 
-.img-preview-thumb {
-  width: 45px;
-  height: 45px;
-  object-fit: cover;
-  border-radius: 8px;
+/* ===== Override Warna Bootstrap ===== */
+.btn-success {
+  --bs-btn-bg: var(--gl-primary);
+  --bs-btn-border-color: var(--gl-primary);
+  --bs-btn-hover-bg: var(--gl-olive);
+  --bs-btn-hover-border-color: var(--gl-olive);
+  --bs-btn-active-bg: var(--gl-olive);
+  --bs-btn-active-border-color: var(--gl-olive);
 }
 
-.img-preview-full {
-  max-height: 70vh;
-  width: auto;
-  object-fit: contain;
+.btn-outline-success {
+  --bs-btn-color: var(--gl-primary);
+  --bs-btn-border-color: var(--gl-primary);
+  --bs-btn-hover-bg: var(--gl-primary);
+  --bs-btn-hover-border-color: var(--gl-primary);
+  --bs-btn-active-bg: var(--gl-primary);
 }
 
-.form-text-subtle {
-  font-size: 11px;
+.text-success         { color: var(--gl-primary) !important; }
+.bg-success           { background-color: var(--gl-primary) !important; }
+.bg-success-subtle    { background-color: rgba(192, 204, 187, .45) !important; }
+.border-success-subtle { border-color: var(--gl-sage) !important; }
+
+/* ===== PERBAIKAN MUTLAK KARTU SALDO WASTE POINTS (Kiri Atas) ===== */
+div.card.bg-waste-points,
+.bg-waste-points {
+  background: #1b4d2e !important; 
+  color: #ffffff !important;
 }
+
+div.card.bg-waste-points h3,
+div.card.bg-waste-points .fw-bold,
+div.card.bg-waste-points i {
+  color: #ffffff !important;
+}
+
+div.card.bg-waste-points small,
+div.card.bg-waste-points .text-white-50 {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* ===== PERBAIKAN MUTLAK WIDGET TUKAR POIN (Kanan Bawah) ===== */
+div.card.bg-pickup-dark,
+.bg-pickup-dark {
+  background: #1b4d2e !important; 
+  color: #ffffff !important;
+}
+
+div.card.bg-pickup-dark h5,
+div.card.bg-pickup-dark h6,
+div.card.bg-pickup-dark span,
+div.card.bg-pickup-dark small,
+div.card.bg-pickup-dark .text-white,
+div.card.bg-pickup-dark .text-white-50 {
+  color: #ffffff !important;
+}
+
+/* Kotak Diskon/Voucher Hijau Sage di Dalam Widget */
+.bg-accent-lime { 
+  background-color: #8bbd3b !important; 
+  color: #1f2a1c !important;
+}
+
+.bg-accent-lime h6,
+.bg-accent-lime div,
+.bg-accent-lime span,
+.bg-accent-lime small,
+.bg-accent-lime i {
+  color: #1f2a1c !important;
+}
+
+.bg-accent-lime .btn-dark {
+  background-color: #1b4d2e !important;
+  border-color: #1b4d2e !important;
+  color: #ffffff !important;
+}
+
+/* ===== Kotak Tanggal Penjemputan Berikutnya ===== */
+.next-pickup-date-box {
+  width: 78px;
+  min-height: 88px;
+  background: linear-gradient(160deg, var(--gl-olive), var(--gl-dark)) !important;
+}
+.next-pickup-day      { font-size: .65rem; letter-spacing: 1px; color: rgba(255, 255, 255, 0.8) !important; }
+.next-pickup-date-num { font-size: 1.9rem; line-height: 1.1; color: #ffffff !important; }
+.next-pickup-month    { font-size: .65rem; color: rgba(255, 255, 255, 0.8) !important; }
+
+/* ===== Stepper ===== */
+.stepper-line-bg,
+.stepper-line-fill {
+  top: 19px;
+  left: 4%;
+  height: 3px;
+  border-radius: 2px;
+}
+.stepper-line-bg {
+  width: 92% !important;
+  background-color: var(--gl-sage) !important;
+  opacity: 1 !important;
+}
+.stepper-line-fill { background-color: var(--gl-primary) !important; }
+.w-0 { width: 0 !important; }
+
+.stepper-circle {
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+}
+.stepper-circle.border { border-color: var(--gl-sage) !important; }
+.stepper-label { font-size: .7rem; }
+
+/* ===== Grafik ===== */
+.chart-container-box {
+  position: relative;
+  height: 230px;
+  width: 100%;
+}
+
+/* ===== Progress Level ===== */
+.level-progress-track {
+  height: 8px;
+  background-color: rgba(255, 255, 255, .25) !important;
+}
+.level-bar-fill {
+  width: var(--level-progress, 0%);
+  background-color: var(--gl-sage) !important;
+}
+
+/* ===== Utility ===== */
+.fs-7 { font-size: .8rem !important; }
+.letter-spacing-1 { letter-spacing: 1px; }
+.text-dark-50 { color: rgba(0, 0, 0, .6) !important; }
