@@ -99,6 +99,7 @@ img { max-width: 100%; }
 }
 .nav-links a:hover,
 .nav-auth a:not(.btn):hover { color: var(--primary); }
+.nav-links a.nav-current { color: var(--primary); font-weight: 700; }
 
 .nav-auth { display: flex; align-items: center; gap: 16px; }
 .nav-user { font-size: 14px; color: var(--green); }

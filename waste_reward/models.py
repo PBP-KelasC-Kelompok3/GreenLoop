@@ -43,13 +43,23 @@ class UserVoucher(models.Model):
     acquired_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
+    used_order_reference = models.CharField(
+        max_length=80,
+        unique=True,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ('-acquired_at',)
 
     def save(self, *args, **kwargs):
         if not self.code:
-            self.code = f'GLV-{secrets.token_hex(3).upper()}'
+            while True:
+                candidate = f'GLV-{secrets.token_hex(6).upper()}'
+                if not type(self).objects.filter(code=candidate).exists():
+                    self.code = candidate
+                    break
         super().save(*args, **kwargs)
 
     @property

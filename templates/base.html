@@ -13,6 +13,7 @@
 
     <link rel="icon" href="{% static 'img/Logo_Mark.png' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_head %}{% endblock extra_head %}
 </head>
 
 <body>
@@ -101,6 +102,12 @@
                         <li>
                             <a href="{% url 'coming_soon' 'pickup' %}">
                                 Pickup
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="{% url 'waste_reward:dashboard' %}"{% if request.resolver_match.app_name == 'waste_reward' %} class="nav-current" aria-current="page"{% endif %}>
+                                Waste &amp; Reward
                             </a>
                         </li>
 
