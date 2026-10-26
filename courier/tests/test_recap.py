@@ -236,7 +236,7 @@ class RecapPageTests(RecapTestBase):
         self.assertEqual(summary["count"], 2)
         self.assertEqual(summary["total"], Decimal("15.5"))
         self.assertEqual(summary["points"], points_for(Decimal("10.0")) + points_for(Decimal("5.5")))   # 50 + 28 (27,5 dibulatkan ke atas)
-        self.assertEqual(summary["average"], Decimal("7.8"))     # 15,5 / 2 = 7,75 -> 7,8
+        self.assertEqual(summary["average"], Decimal("7.75"))
 
     def test_points_round_half_up_in_page(self):
         make_log(self.user, "A", "0.5")      # 2,5 poin -> 3

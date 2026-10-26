@@ -1713,6 +1713,7 @@ button {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
 }
  
@@ -2126,10 +2127,11 @@ button {
     justify-content: center;
     gap: 6px;
     width: 100%;
-    padding: 11px 12px;
+    padding: 11px 8px;
     border-radius: 12px;
     font: inherit;
     font-weight: 600;
+    white-space: nowrap;
     cursor: pointer;
 }
  
@@ -2714,6 +2716,777 @@ button {
  
     .route-fact strong {
         font-size: 12px;
+    }
+}
+
+/* ===== Dashboard Kurir ===== */
+/* Kepala halaman: judul di kiri, pilihan periode di kanan, lencana di baris sendiri selebar penuh */
+.dash-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    column-gap: 16px;
+    margin-bottom: 20px;
+}
+
+/* Pembungkus judul dilepas supaya tulisan kecil, judul, dan lencana bisa ditata satu per satu */
+.dash-head > div {
+    display: contents;
+}
+
+/* Tulisan kecil huruf kapital di atas judul */
+.dash-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--primary);
+}
+
+/* Judul besar dashboard */
+.dash-heading {
+    margin-top: 6px;
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 700;
+    color: var(--forest);
+}
+
+/* Deretan lencana kecil (live, status tugas, armada, cuaca) */
+.dash-badges {
+    display: flex;
+    flex-wrap: wrap;
+    grid-column: 1 / -1;   /* memanjang ke kedua kolom, di bawah judul */
+    gap: 6px;
+    margin-top: 14px;
+}
+
+/* Satu lencana berbentuk kapsul */
+.dash-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #D8F1E2;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--forest);
+    white-space: nowrap;
+}
+
+/* Lencana live memakai warna teks gelap */
+.dash-badge.is-live { color: var(--forest); }
+/* Status Sedang Bertugas: hijau penuh */
+.dash-badge.is-on   { background: var(--primary); color: var(--white); }
+/* Peringatan (misalnya sedang hujan): kuning */
+.dash-badge.is-warn { background: #FFF1D6; color: #8A5A00; }
+
+/* Titik kecil di depan teks lencana */
+.dash-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--forest);
+}
+
+/* Titik berwarna putih pada lencana hijau */
+.dash-badge.is-on .dash-dot { background: var(--white); }
+
+/* Pilihan periode */
+.dash-tabs {
+    display: inline-flex;
+    grid-column: 2;        /* kolom kanan, sejajar dengan tulisan kecil + judul */
+    grid-row: 1 / span 2;
+    flex-shrink: 0;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 12px;
+    background: #DDEBDD;
+}
+
+/* Satu tombol periode */
+.dash-tabs a {
+    padding: 8px 18px;
+    border-radius: 9px;
+    font-size: 13px;
+    color: var(--dark-green);
+}
+
+/* Periode yang sedang dipilih: putih dan tebal */
+.dash-tabs a.is-active {
+    background: var(--white);
+    font-weight: 600;
+    color: var(--forest);
+    box-shadow: 0 1px 3px rgba(15, 61, 42, .12);
+}
+
+/* Empat angka utama */
+.dash-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+/* Satu kartu angka */
+.dash-kpi {
+    padding: 20px;
+    border: 1px solid var(--light-green);
+    border-radius: 18px;
+    background: var(--white);
+}
+
+/* Kartu pertama berwarna hijau tua */
+.dash-kpi.is-dark {
+    border-color: var(--forest);
+    background: var(--forest);
+    color: var(--white);
+}
+
+/* Baris atas kartu: ikon di kiri, persentase di kanan */
+.dash-kpi-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+/* Kotak ikon di kartu */
+.dash-kpi-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #DDF0DF;
+    color: var(--forest);
+    flex-shrink: 0;
+}
+
+/* Kotak ikon semi transparan di atas latar hijau tua (kartu pertama dan banner) */
+.dash-kpi.is-dark .dash-kpi-icon,
+.dash-banner .dash-kpi-icon {
+    background: rgba(255, 255, 255, .14);
+    color: #C8F0D2;
+}
+
+/* Ukuran ikon garis */
+.dash-svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Lencana persentase naik atau turun */
+.dash-delta {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #DDF0DF;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--forest);
+}
+
+/* Persentase turun: merah */
+.dash-delta--down {
+    background: #FDE8E8;
+    color: var(--danger);
+}
+
+/* Keterangan di atas angka */
+.dash-kpi-label {
+    font-size: 13px;
+    color: var(--dark-green);
+}
+
+/* Keterangan putih pada kartu hijau tua */
+.dash-kpi.is-dark .dash-kpi-label {
+    color: rgba(255, 255, 255, .8);
+}
+
+/* Angka besar pada kartu */
+.dash-kpi-value {
+    margin-top: 4px;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+/* Grafik + kolom kanan */
+.dash-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+}
+
+/* Kartu putih umum */
+.dash-card {
+    padding: 24px 28px;
+    border: 1px solid var(--light-green);
+    border-radius: 18px;
+    background: var(--white);
+}
+
+/* Kepala kartu: judul di kiri, lencana di kanan */
+.dash-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* Judul kartu */
+.dash-card-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Keterangan kecil di bawah judul kartu */
+.dash-card-sub {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--dark-green);
+}
+
+/* Kapsul hijau muda berisi nama armada */
+.dash-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #D8F1E2;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Grafik batang */
+.dash-chart {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Area grafik: sumbu Y di kiri, batang di kanan, sumbu X di bawah */
+.dash-plot {
+    position: relative;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-rows: minmax(260px, 1fr) auto;
+    margin-top: 18px;
+}
+
+/* Sumbu Y dan area batang memakai posisi relatif agar isinya bisa diposisikan */
+.dash-yaxis,
+.dash-area {
+    position: relative;
+}
+
+/* Angka pada sumbu Y */
+.dash-yaxis span {
+    position: absolute;
+    left: 0;
+    transform: translateY(50%);
+    font-size: 11px;
+    color: #8A9A86;
+}
+
+/* Garis bantu mendatar */
+.dash-grid-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #E8EEE6;
+}
+
+/* Deretan batang */
+.dash-bars {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 6px;
+    padding: 0 6px;
+}
+
+/* Satu kolom batang (batang + tooltip) */
+.dash-bar-col {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    justify-content: center;
+    max-width: 38px;
+    height: 100%;
+}
+
+/* Batang grafik */
+.dash-bar-fill {
+    position: relative;
+    display: block;
+    width: 100%;
+    border-radius: 6px 6px 0 0;
+    background: #B5E07B;
+}
+
+/* Sumbu Y dan Garis Bantu Grafik */
+.dash-yaxis span,
+.dash-grid-line {
+    bottom: var(--bottom-pos);
+}
+
+/* Tinggi Batang Grafik */
+.dash-bar-fill {
+    height: var(--bar-height);
+}
+
+/* Lebar Batang Sumber Limbah */
+.dash-comp-fill {
+    width: var(--comp-width);
+}
+
+/* Posisi Pin pada Peta Skema */
+.dash-pin {
+    left: var(--pin-left);
+    top: var(--pin-top);
+}
+
+/* Batang terakhir (hari atau bulan ini) berwarna hijau tua */
+.dash-bar-col.is-last .dash-bar-fill {
+    background: #1F5E32;
+}
+
+/* Batang sedikit lebih gelap saat disorot */
+.dash-bar-col:hover .dash-bar-fill {
+    filter: brightness(.94);
+}
+
+/* Label sumbu X */
+.dash-xaxis {
+    grid-column: 2;
+    display: flex;
+    justify-content: space-around;
+    gap: 6px;
+    padding: 10px 6px 0;
+}
+
+/* Satu label sumbu X */
+.dash-xaxis span {
+    flex: 1;
+    max-width: 38px;
+    font-size: 11px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: visible;
+    color: #8A9A86;
+}
+
+/* Tooltip: batang terakhir selalu tampil, batang lain muncul saat disorot */
+.dash-tip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    display: none;
+    min-width: 138px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--forest);
+    color: var(--white);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+/* Baris tanggal atau bulan pada tooltip */
+.dash-tip small {
+    display: block;
+    font-size: 11px;
+    opacity: .8;
+}
+
+/* Angka kg pada tooltip */
+.dash-tip strong {
+    font-size: 16px;
+    color: #B5E07B;
+}
+
+/* Tooltip batang terakhir selalu tampil */
+.dash-bar-col.is-last .dash-tip {
+    display: block;
+    left: auto;
+    right: -6px;
+    transform: none;
+}
+
+/* Saat batang lain disorot, tooltip batang terakhir disembunyikan */
+.dash-bars:hover .dash-bar-col.is-last:not(:hover) .dash-tip {
+    display: none;
+}
+
+/* Tooltip muncul pada batang yang disorot */
+.dash-bar-col:hover .dash-tip {
+    display: block;
+}
+
+/* Kolom kanan */
+.dash-side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Daftar sumber limbah */
+.dash-comp ul {
+    margin-top: 14px;
+    list-style: none;
+}
+
+/* Satu baris: nama, batang persentase, angka persen */
+.dash-comp li {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr) 40px;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    font-size: 13px;
+}
+
+/* Angka persen rata kanan */
+.dash-comp li strong {
+    text-align: right;
+    font-weight: 600;
+}
+
+/* Alur batang persentase */
+.dash-comp-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: #EAEFE8;
+    overflow: hidden;
+}
+
+/* Isi batang persentase (hijau tua) */
+.dash-comp-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: #1F5E32;
+}
+
+/* Batang kedua: hijau sedang */
+.dash-comp-fill--2 { background: #3F9A58; }
+/* Batang ketiga: hijau muda */
+.dash-comp-fill--3 { background: #78B84B; }
+/* Batang keempat: hijau paling muda */
+.dash-comp-fill--4 { background: #B5E07B; }
+
+/* Pesan bila belum ada data */
+.dash-empty {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--dark-green);
+}
+
+/* Peta skema rute hari ini */
+.dash-route {
+    flex: 1;
+    min-height: 250px;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Latar peta skema */
+.dash-route-map {
+    position: relative;
+    height: 100%;
+    min-height: 250px;
+    background: #F1F3EA;
+    overflow: hidden;
+}
+
+/* Jalan (garis putih) pada peta skema */
+.dash-road { position: absolute; background: var(--white); }
+/* Jalan mendatar atas */
+.dash-road--h1 { left: 0; right: 0; top: 36%; height: 7px; }
+/* Jalan mendatar bawah */
+.dash-road--h2 { left: 0; right: 0; top: 66%; height: 7px; }
+/* Jalan tegak kiri (kuning) */
+.dash-road--v1 { top: 0; bottom: 0; left: 30%; width: 7px; background: #F6E7A8; }
+/* Jalan tegak kanan */
+.dash-road--v2 { top: 0; bottom: 0; left: 72%; width: 7px; }
+/* Taman (blok hijau muda) */
+.dash-park { position: absolute; border-radius: 16px; background: #DCEBCB; }
+/* Taman kiri bawah */
+.dash-park--a { left: 6%; bottom: 8%; width: 24%; height: 22%; }
+/* Taman kanan atas */
+.dash-park--b { right: 5%; top: 8%; width: 24%; height: 24%; }
+/* Sungai (garis biru miring) */
+.dash-river { position: absolute; left: 0; right: 0; bottom: 4%; height: 12px; background: #C5DCF0; transform: skewY(3deg); }
+
+/* Lapisan garis rute di atas peta */
+.dash-path {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Garis rute putus-putus berwarna biru */
+.dash-path polyline {
+    stroke: #2563eb;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1 7;
+}
+
+/* Penanda bernomor untuk satu titik jemput */
+.dash-pin {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border: 3px solid var(--white);
+    border-radius: 50%;
+    background: var(--dark-green);
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+}
+
+/* Titik yang sudah selesai: hijau */
+.dash-pin--done { background: var(--accent); }
+/* Titik berikutnya dan titik yang sedang dituju: warna tua (yang dituju lalu dibuat biru) */
+.dash-pin--on_the_way,
+.dash-pin.is-next { background: var(--forest); }
+/* Titik yang sedang dituju: biru */
+.dash-pin--on_the_way { background: #2563eb; }
+
+/* Label di kiri atas peta (jumlah titik selesai) */
+.dash-route-label {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 3;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--white);
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(15, 61, 42, .12);
+}
+
+/* Kartu hijau tua di bawah peta: titik berikutnya dan tombol Buka Rute */
+.dash-next {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px 10px 14px;
+    border-radius: 12px;
+    background: var(--forest);
+    color: var(--white);
+}
+
+/* Baris kecil (slot jam) */
+.dash-next small {
+    display: block;
+    font-size: 11px;
+    opacity: .75;
+}
+
+/* Nama titik berikutnya */
+.dash-next strong {
+    display: block;
+    font-size: 14px;
+}
+
+/* Teks boleh menyusut agar tombol tidak terdorong keluar */
+.dash-next span {
+    min-width: 0;
+}
+
+/* Tombol Buka Rute */
+.dash-next b {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    border-radius: 9px;
+    background: var(--accent);
+    color: var(--forest);
+    font-size: 13px;
+}
+
+/* Ringkasan performa */
+.dash-banner {
+    margin-top: 16px;
+    padding: 28px 32px;
+    border-radius: 18px;
+    background: var(--forest);
+    color: var(--white);
+}
+
+/* Tulisan kecil huruf kapital di banner */
+.dash-banner-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #B5E07B;
+}
+
+/* Tiga ringkasan sejajar */
+.dash-banner-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 16px;
+}
+
+/* Satu ringkasan: ikon di kiri, teks di kanan */
+.dash-banner-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Angka ringkasan */
+.dash-banner-item strong {
+    display: block;
+    font-size: 20px;
+}
+
+/* Keterangan ringkasan */
+.dash-banner-item span:not(.dash-kpi-icon) {
+    font-size: 13px;
+    opacity: .8;
+}
+
+/* Dashboard di tablet (<= 1199px) */
+@media (max-width: 1199px) {
+    /* Kartu angka jadi dua kolom */
+    .dash-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* Grafik dan kolom samping ditumpuk */
+    .dash-main {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dashboard di HP dan tablet portrait (<= 895px) */
+@media (max-width: 895px) {
+    /* Judul dan periode ditumpuk */
+    .dash-head {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* Pembungkus judul kembali normal di HP */
+    .dash-head > div {
+        display: block;
+    }
+
+    /* Judul sedikit lebih kecil */
+    .dash-heading {
+        font-size: 24px;
+    }
+
+    /* Pilihan periode selebar layar */
+    .dash-tabs {
+        align-self: stretch;
+    }
+
+    /* Tombol periode berbagi lebar sama rata */
+    .dash-tabs a {
+        flex: 1;
+        padding: 8px 6px;
+        text-align: center;
+    }
+
+    /* Kartu angka lebih rapat */
+    .dash-kpi {
+        padding: 16px;
+    }
+
+    /* Angka kartu sedikit lebih kecil */
+    .dash-kpi-value {
+        font-size: 22px;
+    }
+
+    /* Kartu lebih rapat */
+    .dash-card {
+        padding: 18px;
+    }
+
+    /* Kartu peta tanpa jarak dalam */
+    .dash-route {
+        padding: 0;
+    }
+
+    /* Grafik di HP: sumbu dirapatkan dan tooltip hanya muncul saat batang diketuk */
+    .dash-plot {
+        grid-template-columns: 28px minmax(0, 1fr);
+    }
+
+    /* Jarak antarbatang dirapatkan */
+    .dash-bars,
+    .dash-xaxis {
+        gap: 3px;
+        padding: 0 2px;
+    }
+
+    /* Label sumbu X lebih kecil */
+    .dash-xaxis span {
+        font-size: 9px;
+    }
+
+    /* Angka sumbu Y lebih kecil */
+    .dash-yaxis span {
+        font-size: 10px;
+    }
+
+    /* Tooltip hanya muncul saat batang diketuk */
+    .dash-bar-col.is-last .dash-tip {
+        display: none;
+    }
+
+    /* Tooltip rata kanan agar tidak keluar layar */
+    .dash-bar-col:hover .dash-tip,
+    .dash-bar-col:focus .dash-tip {
+        display: block;
+        left: auto;
+        right: 0;
+        transform: none;
+    }
+
+    /* Sumbu Y dirapatkan, grafik lebih pendek */
+    .dash-plot {
+        grid-template-rows: minmax(200px, 1fr) auto;
+    }
+
+    /* Ringkasan performa ditumpuk */
+    .dash-banner-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    /* Kolom nama sedikit lebih sempit */
+    .dash-comp li {
+        grid-template-columns: 112px minmax(0, 1fr) 36px;
     }
 }
 

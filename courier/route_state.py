@@ -41,8 +41,8 @@ class Stop:
 
 
 def format_day_date(value):
-    """date(2026, 9, 29) -> 'Selasa, 29 Sep'."""
-    return f"{DAYS_ID[value.weekday()]}, {value.day} {MONTHS_ID[value.month - 1]}"
+    """date(2026, 9, 29) -> 'Selasa, 29 Sep 2026'."""
+    return f"{DAYS_ID[value.weekday()]}, {value.day} {MONTHS_ID[value.month - 1]} {value.year}"
 
 
 # Muatan maksimal armada kurir per penjemputan (kg), sesuai CourierProfile.vehicle_type.

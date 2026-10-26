@@ -43,7 +43,7 @@ CENTRAL_DEPOK = {"south": -6.43, "north": -6.36, "west": 106.78, "east": 106.86}
 
 # GreenLoop hanya menerima kulit buah dan sayur yang kering dan belum tercampur limbah lain,
 # jadi semua titik memakai jenis limbah yang sama.
-WASTE = "kulit buah & sayur"
+WASTE = "kulit buah & sayur kering"
 
 # Tag OpenStreetMap -> (jenis tampilan, jenis limbah). Hanya mitra penghasil limbah dapur.
 CATEGORIES = {

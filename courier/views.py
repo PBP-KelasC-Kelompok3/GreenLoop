@@ -25,6 +25,7 @@ from .utils import (
     get_pickup_history,
     profile_payload,
 )
+from .weather import current_weather
 
 # Jumlah baris tabel Rekap Timbangan per halaman
 RECAP_PAGE_SIZE = 8
@@ -35,7 +36,29 @@ RECAP_PAGE_SIZE = 8
 
 @role_required(['courier'])
 def show_dashboard(request):
-    return render(request, "courier/dashboard.html")
+    # Diimpor di sini agar views.py tidak bergantung pada route_views saat modul dimuat
+    from .dashboard import build_dashboard, build_map
+    from .maps import STATUS_DONE, STATUS_ON_THE_WAY
+    from .route_views import today_stops
+
+    profile, _ = CourierProfile.objects.get_or_create(user=request.user)
+    stops = today_stops(request)
+    pending = [s for s in stops if s.status != STATUS_DONE]
+    # Titik berikutnya: yang sedang dituju, kalau tidak ada maka yang pertama belum selesai
+    next_stop = next((s for s in pending if s.status == STATUS_ON_THE_WAY), pending[0] if pending else None)
+
+    # Angka, grafik, dan ringkasan mengikuti periode di URL (?periode=7, 30, atau 365)
+    context = build_dashboard(request.user, request.GET.get("periode", ""))
+    context.update({
+        "profile": profile,
+        "total_stops": len(stops),
+        "done_stops": len(stops) - len(pending),
+        "next_stop": next_stop,
+        "next_stop_number": stops.index(next_stop) + 1 if next_stop else None,
+        "map": build_map(stops),
+        "weather": current_weather(),
+    })
+    return render(request, "courier/dashboard.html", context)
 
 
 @role_required(['courier'])
