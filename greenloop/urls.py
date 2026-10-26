@@ -9,6 +9,7 @@ urlpatterns = [
     path('', home, name='home'),
     path('accounts/', include('accounts.urls')),
     path('mitra/waste-reward/', include('waste_reward.urls')),
+    path('katalog/', include('catalog.urls')),
 
     # Placeholder sementara untuk modul teman.
     path(

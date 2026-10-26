@@ -5,16 +5,19 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from .models import Product, Order
+from .forms import ProductForm
 
 def is_mitra(user):
-    return user.groups.filter(role='mitra').exists()
+    return user.groups.filter(name='mitra').exists()
 
 @login_required
 def katalog_page(request):
-    return render(request, 'katalog.html', {
+    form = ProductForm()
+    return render(request, 'catalog/katalog.html', {
         'midtrans_client_key': settings.MIDTRANS_CLIENT_KEY,
         'is_admin': request.user.is_superuser,
-        'is_mitra': is_mitra(request.user)
+        'is_mitra': is_mitra(request.user),
+        'form': form
     })
 
 def get_products(request):
@@ -40,14 +43,11 @@ def add_product(request):
         return HttpResponseForbidden("Hanya Admin yang dapat menambah produk.")
         
     if request.method == 'POST':
-        Product.objects.create(
-            name=request.POST.get('name'),
-            description=request.POST.get('description'),
-            price_b2c=request.POST.get('price_b2c'),
-            price_b2b=request.POST.get('price_b2b'),
-            stock=request.POST.get('stock')
-        )
-        return JsonResponse({"status": "created"}, status=201)
+        form = ProductForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({"status": "created"}, status=201)
+        return JsonResponse({"status": "error", "errors": form.errors}, status=400)
 
 @csrf_exempt
 def edit_product(request, id):
@@ -56,12 +56,11 @@ def edit_product(request, id):
         
     if request.method == 'POST':
         product = Product.objects.get(pk=id)
-        product.name = request.POST.get('name')
-        product.price_b2c = request.POST.get('price_b2c')
-        product.price_b2b = request.POST.get('price_b2b')
-        product.stock = request.POST.get('stock')
-        product.save()
-        return JsonResponse({"status": "updated"})
+        form = ProductForm(request.POST, instance=product)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({"status": "updated"})
+        return JsonResponse({"status": "error", "errors": form.errors}, status=400)
 
 @csrf_exempt
 def calculate_shipping(request):
