@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard | GreenLoop{% endblock title %}
+
+{% block content %}
+
+<section class="admin-dashboard">
+
+    <div class="admin-dashboard-header">
+        <div>
+            <p class="section-label">GREENLOOP ADMIN</p>
+            <h1>Dashboard Verifikasi</h1>
+            <p>
+                Review dan verifikasi kualitas limbah yang
+                diunggah oleh Mitra.
+            </p>
+        </div>
+    </div>
+
+
+    <div class="verification-card">
+
+        <div class="verification-card-header">
+            <div>
+                <h2>Verifikasi Foto Limbah</h2>
+                <p>
+                    Pastikan kualitas limbah sesuai sebelum
+                    pickup diteruskan ke Courier.
+                </p>
+            </div>
+
+            <span class="status-badge status-pending">
+                Pending
+            </span>
+        </div>
+
+
+        <div class="verification-content">
+
+            <div class="verification-image">
+                <div class="image-placeholder">
+                    Foto Limbah
+                </div>
+            </div>
+
+
+            <div class="verification-info">
+
+                <div class="info-row">
+                    <span>Mitra</span>
+                    <strong>Contoh Mitra</strong>
+                </div>
+
+                <div class="info-row">
+                    <span>Status</span>
+                    <strong>Menunggu Verifikasi</strong>
+                </div>
+
+                <div class="info-row">
+                    <span>Jenis Limbah</span>
+                    <strong>Kulit Buah & Sayur</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="verification-actions">
+
+            <button
+                type="button"
+                class="btn btn-primary"
+            >
+                Approve
+            </button>
+
+            <button
+                type="button"
+                class="btn btn-outline"
+            >
+                Reject
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock content %}

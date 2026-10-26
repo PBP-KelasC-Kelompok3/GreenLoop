@@ -1,0 +1,20 @@
+/* Container Card Edit Penjemputan */
+.edit-pickup-container {
+  max-width: 600px;
+}
+
+.edit-pickup-card {
+  border-radius: 16px;
+  border: none;
+}
+
+/* Tombol Simpan Perubahan Custom */
+.btn-save-pickup {
+  background-color: #1b5e20;
+  border-color: #1b5e20;
+}
+
+.btn-save-pickup:hover {
+  background-color: #144718;
+  border-color: #144718;
+}

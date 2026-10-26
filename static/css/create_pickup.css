@@ -1,0 +1,46 @@
+/* Container Form Penjemputan */
+.pickup-card-container {
+  max-width: 800px;
+  border-radius: 16px;
+  border: none;
+}
+
+/* Label & Input Form */
+.pickup-form-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 6px;
+  color: #2b2b2b;
+}
+
+.pickup-form-control {
+  border-radius: 10px;
+  padding: 10px 14px;
+  border: 1px solid #dee2e6;
+  font-size: 0.9rem;
+}
+
+.pickup-form-control:focus {
+  border-color: #198754;
+  box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
+}
+
+/* Box Area Unggah Foto */
+.photo-preview-box {
+  border: 2px dashed #198754;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.photo-preview-box:hover {
+  background-color: #f1f8f4;
+  border-color: #146c43;
+}
+
+.photo-preview-box .helper-text {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
