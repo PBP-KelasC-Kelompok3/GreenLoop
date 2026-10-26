@@ -14,10 +14,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # =========================================================
 
-MIDTRANS_CLIENT_KEY = 'Mid-client-tAgwyrCJr1rokmL1'
-MIDTRANS_SERVER_KEY = 'Mid-server-JKOf85CKiRNqbjRB_S42FrM7'
-RAJAONGKIR_API_KEY = 'Bhq2i7Bfa276a8019e51d239VSBOdD8q'
-
 SECRET_KEY = 'django-insecure-$tf4n)9sygw6c&m!m=xt75rhe#qbf4m#d5^)ikb-d%ko^_p&=k'
 
 DEBUG = True
