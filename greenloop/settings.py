@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts.apps.AccountsConfig',
     'waste_reward.apps.WasteRewardConfig',
+    'catalog',
 ]
 
 MIDDLEWARE = [
