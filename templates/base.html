@@ -114,13 +114,13 @@
                     {% elif user.userprofile.role == 'courier' %}
 
                         <li>
-                            <a href="{% url 'coming_soon' 'courier-dashboard' %}">
+                            <a href="{% url 'courier:show_dashboard' %}">
                                 Dashboard Courier
                             </a>
                         </li>
 
                         <li>
-                            <a href="{% url 'coming_soon' 'routes' %}">
+                            <a href="{% url 'courier:show_route_today' %}">
                                 Rute
                             </a>
                         </li>

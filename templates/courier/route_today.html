@@ -1,0 +1,89 @@
+{% extends 'courier/base_courier.html' %}
+{% load static %}
+
+{% block title %}Rute Hari Ini{% endblock title %}
+
+{% block extra_head %}
+{# Server tile OpenStreetMap menolak permintaan tanpa Referer; Django secara bawaan tidak mengirimnya ke situs lain #}
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+{% endblock extra_head %}
+
+{% block content %}
+{# ---- Judul + saklar status bertugas ---- #}
+<div class="route-head">
+    <div>
+        <h1 class="page-title">Rute Hari Ini · {{ route.dateDisplay }}</h1>
+        <p class="page-subtitle">{{ route.total }} titik terverifikasi untuk penjemputan hari ini.</p>
+    </div>
+
+    <label class="duty-switch" for="duty-toggle">
+        {% csrf_token %}
+        <span id="duty-label">{% if profile.is_on_duty %}Sedang Bertugas{% else %}Tidak Bertugas{% endif %}</span>
+        <input type="checkbox" id="duty-toggle" role="switch" {% if profile.is_on_duty %}checked{% endif %}>
+        <span class="duty-track" aria-hidden="true"></span>
+    </label>
+</div>
+
+<div class="route-layout">
+
+    {# ---- Kolom kiri: peta, lalu daftar petunjuk arah di bawahnya ---- #}
+    <div class="route-main">
+
+        <section class="route-map-card" aria-label="Peta rute">
+            <div id="route-map" class="route-map"></div>
+
+            {# Ringkasan rute dan pesan ditumpuk rapi di kiri atas agar tidak saling menutupi; diisi route.js #}
+            <div class="route-top">
+                <div class="route-summary" id="route-summary" hidden></div>
+                <p class="route-map-msg" id="route-map-msg" role="status" hidden></p>
+            </div>
+
+            {# Petunjuk belok berikutnya (kartu hijau, kiri bawah) #}
+            <div class="route-turn" id="route-turn" hidden></div>
+        </section>
+
+        {# Semua belokan menuju titik tujuan saat ini; diisi route.js #}
+        <section class="route-card route-directions">
+            <h2 class="route-card-title" id="route-dir-title">Petunjuk Arah</h2>
+            <ol class="route-steps" id="route-directions"></ol>
+        </section>
+
+    </div>
+
+    {# ---- Kolom kanan: daftar titik + detail ---- #}
+    <div class="route-side">
+
+        <section class="route-card">
+            <h2 class="route-card-title">Urutan Penjemputan</h2>
+            <ol class="route-list" id="route-list">
+                {% for s in route.stops %}
+                <li>
+                    <button type="button" class="route-item is-{{ s.status }}" data-stop="{{ s.id }}">
+                        <span class="route-badge">{{ s.order }}</span>
+                        <span class="route-item-text">
+                            <strong>{{ s.name }}</strong>
+                            <small>{{ s.slot }} · est. {{ s.estKg }} kg</small>
+                        </span>
+                        <span class="route-pill route-pill--{{ s.status }}">{{ s.statusLabel }}</span>
+                    </button>
+                </li>
+                {% endfor %}
+            </ol>
+        </section>
+
+        {# Diisi route.js sesuai titik yang dipilih #}
+        <section class="route-card route-detail" id="route-detail" aria-live="polite"></section>
+
+    </div>
+</div>
+
+<div class="route-toast" id="route-toast" role="status" hidden></div>
+
+{{ route|json_script:"route-data" }}
+{% endblock content %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="{% static 'courier/js/route.js' %}"></script>
+{% endblock extra_js %}

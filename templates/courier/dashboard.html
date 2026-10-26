@@ -1,0 +1,162 @@
+{% extends 'courier/base_courier.html' %}
+
+{% block title %}Dashboard Kurir{% endblock title %}
+
+{% block content %}
+{# ---- Judul, status live, dan pilihan periode ---- #}
+<div class="dash-head">
+    <div>
+        <!-- Tulisan kecil di atas judul dan judul besar -->
+        <p class="dash-eyebrow">Live courier dashboard</p>
+        <h1 class="dash-heading">Kinerja nyata, diperbarui setiap pikap</h1>
+
+        <!-- Lencana kecil: waktu pembaruan, status bertugas, armada, dan cuaca -->
+        <div class="dash-badges">
+            <span class="dash-badge is-live"><span class="dash-dot"></span>Live · diperbarui {{ updated_display }}</span>
+            <span class="dash-badge {% if profile.is_on_duty %}is-on{% endif %}">{% if profile.is_on_duty %}Sedang Bertugas{% else %}Tidak Bertugas{% endif %}</span>
+            <span class="dash-badge">{{ profile.get_vehicle_type_display }}{% if profile.plate_number %} · {{ profile.plate_number }}{% endif %}</span>
+            <!-- Cuaca hanya tampil bila layanan cuaca berhasil dihubungi -->
+            {% if weather %}
+            <span class="dash-badge {% if weather.rain %}is-warn{% endif %}" title="{% if weather.rain %}Sedang hujan, berkendara hati-hati{% else %}Cuaca Depok{% endif %}">{{ weather.temperature }}° {{ weather.text }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pilihan periode; tiap tombol memuat ulang halaman dengan ?periode=... -->
+    <nav class="dash-tabs" aria-label="Periode">
+        {% for key, label in ranges %}
+        <a href="?periode={{ key }}" class="{% if key == range_key %}is-active{% endif %}" {% if key == range_key %}aria-current="true"{% endif %}>{{ label }}</a>
+        {% endfor %}
+    </nav>
+</div>
+
+{# ---- Empat angka utama ---- #}
+<div class="dash-kpis">
+    <!-- Satu kartu untuk setiap angka; kartu pertama berwarna hijau tua -->
+    {% for k in kpis %}
+    <article class="dash-kpi {% if k.dark %}is-dark{% endif %}">
+        <!-- Ikon di kiri, persentase dibanding periode sebelumnya di kanan (tampil bila ada pembanding) -->
+        <div class="dash-kpi-top">
+            <span class="dash-kpi-icon"><i data-lucide="{{ k.icon }}" class="dash-svg" aria-hidden="true"></i></span>
+            {% if k.delta %}<span class="dash-delta dash-delta--{{ k.delta.tone }}" title="Dibanding periode sebelumnya">{{ k.delta.text }}</span>{% endif %}
+        </div>
+        <p class="dash-kpi-label">{{ k.label }}</p>
+        <p class="dash-kpi-value">{{ k.value }}</p>
+    </article>
+    {% endfor %}
+</div>
+
+<div class="dash-main">
+    {# ---- Grafik ---- #}
+    <section class="dash-card dash-chart" aria-label="{{ chart_title }}">
+        <!-- Judul grafik dan armada kurir -->
+        <div class="dash-card-head">
+            <div>
+                <h2 class="dash-card-title">{{ chart_title }}</h2>
+                <p class="dash-card-sub">{{ chart.subtitle }}</p>
+            </div>
+            <span class="dash-pill"><span class="dash-dot"></span>{{ profile.get_vehicle_type_display }}</span>
+        </div>
+
+        <!-- Grafik batang: sumbu Y, batang dengan garis bantu, lalu sumbu X -->
+        <div class="dash-plot">
+            <!-- Angka pada sumbu Y -->
+            <div class="dash-yaxis" aria-hidden="true">
+                {% for t in chart.ticks %}
+                <span style="--bottom-pos: {{ t.bottom }}%">{{ t.value }}</span>
+                {% endfor %}
+            </div>
+            <div class="dash-area">
+                <!-- Garis bantu mendatar -->
+                {% for t in chart.ticks %}
+                <i class="dash-grid-line" style="--bottom-pos: {{ t.bottom }}%"></i>
+                {% endfor %}
+                <!-- Satu batang per hari atau bulan -->
+                <div class="dash-bars">
+                    {% for b in chart.bars %}
+                    <div class="dash-bar-col {% if b.is_last %}is-last{% endif %}">
+                        <span class="dash-bar-fill" style="--bar-height: {{ b.height }}%">
+                            <!-- Tooltip tanggal dan berat -->
+                            <span class="dash-tip"><small>{{ b.tip_title }}</small><strong>{{ b.tip_value }}</strong></span>
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Label sumbu X -->
+            <div class="dash-xaxis" aria-hidden="true">
+                {% for b in chart.bars %}<span>{{ b.label }}</span>{% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <div class="dash-side">
+        {# ---- Sumber limbah (jenis mitra) ---- #}
+        <section class="dash-card dash-comp" aria-label="Sumber limbah">
+            <h2 class="dash-card-title">Sumber limbah</h2>
+            <p class="dash-card-sub">kulit buah &amp; sayur kering, menurut jenis mitra</p>
+            <!-- Ada data: tampilkan batang persentase -->
+            {% if composition %}
+            <ul>
+                {% for c in composition %}
+                <li>
+                    <span>{{ c.label }}</span>
+                    <span class="dash-comp-bar"><i class="dash-comp-fill dash-comp-fill--{{ forloop.counter }}" style="--comp-width: {{ c.percent }}%"></i></span>
+                    <strong>{{ c.percent }}%</strong>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="dash-empty">Belum ada pikap selesai pada periode ini.</p>
+            {% endif %}
+        </section>
+
+        {# ---- Rute hari ini (peta skema) ---- #}
+        <section class="dash-card dash-route" aria-label="Rute hari ini">
+            <div class="dash-route-map">
+                <!-- Hiasan latar peta skema (taman, sungai, jalan) -->
+                <i class="dash-park dash-park--a"></i><i class="dash-park dash-park--b"></i><i class="dash-river"></i>
+                <i class="dash-road dash-road--h1"></i><i class="dash-road dash-road--h2"></i>
+                <i class="dash-road dash-road--v1"></i><i class="dash-road dash-road--v2"></i>
+                <!-- Garis rute dan pin bernomor untuk setiap titik hari ini -->
+                {% if map.pins %}
+                <svg class="dash-path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                    <polyline points="{{ map.path }}" fill="none" vector-effect="non-scaling-stroke"/>
+                </svg>
+                {% for p in map.pins %}
+                <span class="dash-pin dash-pin--{{ p.status }}{% if p.is_next %} is-next{% endif %}" style="--pin-left: {{ p.x }}%; --pin-top: {{ p.y }}%" title="{{ p.name }}">{% if p.status == 'done' %}✓{% else %}{{ p.num }}{% endif %}</span>
+                {% endfor %}
+                {% endif %}
+                <!-- Label jumlah titik yang sudah selesai -->
+                <span class="dash-route-label">{{ done_stops }} dari {{ total_stops }} titik selesai · Depok</span>
+                <!-- Kartu titik berikutnya; bila semua selesai, tampil ucapan dan tautan ke riwayat -->
+                {% if next_stop %}
+                <a class="dash-next" href="{% url 'courier:show_route_today' %}">
+                    <span><small>Berikutnya · {{ next_stop.slot }}</small><strong>{{ next_stop.name }}</strong></span>
+                    <b>Buka Rute</b>
+                </a>
+                {% else %}
+                <a class="dash-next is-done" href="{% url 'courier:show_history' %}">
+                    <span><small>Semua titik selesai</small><strong>Kerja bagus hari ini!</strong></span>
+                    <b>Riwayat</b>
+                </a>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+
+{# ---- Ringkasan performa ---- #}
+<section class="dash-banner" aria-label="Ringkasan performa">
+    <p class="dash-banner-label">Ringkasan performa</p>
+    <!-- Tiga ringkasan: rata-rata berat, pikap terberat, dan jumlah hari aktif -->
+    <div class="dash-banner-grid">
+        {% for s in summary %}
+        <div class="dash-banner-item">
+            <span class="dash-kpi-icon"><i data-lucide="{{ s.icon }}" class="dash-svg" aria-hidden="true"></i></span>
+            <div><strong>{{ s.value }}</strong><span>{{ s.caption }}</span></div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock content %}
