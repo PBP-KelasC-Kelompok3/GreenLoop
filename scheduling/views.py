@@ -8,6 +8,7 @@ from django.utils import timezone
 from datetime import timedelta
 import json
 from django.db.models import Q
+from django.contrib.auth.models import User
 
 @login_required
 def mitra_dashboard(request):
@@ -171,79 +172,248 @@ def edit_pickup(request, pickup_id):
 
 @login_required
 def admin_dashboard(request):
-    if not (request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "Anda tidak memiliki hak akses ke Halaman Admin.")
-        return redirect('mitra_dashboard')
+    is_petugas = request.user.groups.filter(
+        name='Petugas GreenLoop'
+    ).exists()
+
+    if not (request.user.is_superuser or is_petugas):
+        messages.error(
+            request,
+            "Anda tidak memiliki hak akses ke Halaman Admin."
+        )
+        return redirect('home')
 
     # Ambil kata kunci pencarian dari URL (?q=nama)
     search_query = request.GET.get('q', '')
-    
-    all_pickups = PickupSchedule.objects.select_related('mitra').all().order_by('-created_at')
-    
+
+    all_pickups = PickupSchedule.objects.select_related(
+        'mitra'
+    ).all().order_by('-created_at')
+
     # Jika admin mengetik sesuatu di kolom pencarian
     if search_query:
         all_pickups = all_pickups.filter(
-            Q(mitra__username__icontains=search_query) | 
+            Q(mitra__username__icontains=search_query) |
             Q(mitra__email__icontains=search_query) |
             Q(id__icontains=search_query)
         )
 
-    pending_count = all_pickups.filter(status='PENDING').count()
-    in_progress_count = all_pickups.filter(status__in=['IN_PROGRESS', 'SCHEDULED']).count()
-    completed_count = all_pickups.filter(status='COMPLETED').count()
+    pending_count = all_pickups.filter(
+        status='PENDING'
+    ).count()
+
+    in_progress_count = all_pickups.filter(
+        status__in=['IN_PROGRESS', 'SCHEDULED']
+    ).count()
+
+    completed_count = all_pickups.filter(
+        status='COMPLETED'
+    ).count()
 
     context = {
         'all_pickups': all_pickups,
         'pending_count': pending_count,
         'in_progress_count': in_progress_count,
         'completed_count': completed_count,
-        'search_query': search_query, # Kirim balik ke template
+        'search_query': search_query,
     }
-    return render(request, 'scheduling/admin_dashboard.html', context)
+
+    return render(
+        request,
+        'scheduling/admin_dashboard.html',
+        context
+    )
+
+
+def assign_next_courier(pickup):
+    """Memilih kurir aktif berikutnya secara bergiliran."""
+
+    couriers = list(
+        User.objects.filter(
+            is_active=True,
+            userprofile__role='courier'
+        ).order_by('id')
+    )
+
+    if not couriers:
+        return None
+
+    last_courier_id = (
+        PickupSchedule.objects
+        .filter(courier__isnull=False)
+        .exclude(id=pickup.id)
+        .order_by('-created_at', '-id')
+        .values_list('courier_id', flat=True)
+        .first()
+    )
+
+    if last_courier_id is None:
+        return couriers[0]
+
+    for courier in couriers:
+        if courier.id > last_courier_id:
+            return courier
+
+    return couriers[0]
+
 
 @login_required
 def update_pickup_status(request, pickup_id, new_status=None):
+    is_petugas = request.user.groups.filter(
+        name='Petugas GreenLoop'
+    ).exists()
+
+    is_admin = request.user.is_superuser or is_petugas
+
+    profile = getattr(request.user, 'userprofile', None)
+    is_courier = bool(
+        profile and profile.role == 'courier'
+    )
+
+    if not (is_admin or is_courier):
+        messages.error(
+            request,
+            "Anda tidak memiliki hak akses untuk mengubah penjemputan."
+        )
+        return redirect('home')
+
     pickup = get_object_or_404(PickupSchedule, id=pickup_id)
-    
-    # 1. Jika diakses via Form POST (Selesaikan Penjemputan & Input Berat)
+
+    allowed_statuses = ['IN_PROGRESS', 'SCHEDULED', 'REJECTED']
+
+    # 1. Kurir menyelesaikan penjemputan melalui POST.
     if request.method == 'POST':
-        actual_weight = request.POST.get('actual_weight')
-        
+        if is_courier:
+            # Kurir hanya boleh menyelesaikan tugas miliknya.
+            if pickup.courier_id != request.user.id:
+                messages.error(
+                    request,
+                    "Penjemputan ini bukan tugas yang ditugaskan kepada Anda."
+                )
+                return redirect('courier_dashboard')
+
+            if pickup.status not in ['IN_PROGRESS', 'SCHEDULED']:
+                messages.error(
+                    request,
+                    "Penjemputan ini tidak tersedia untuk diselesaikan."
+                )
+                return redirect('courier_dashboard')
+
+        elif not is_admin:
+            messages.error(request, "Akses ditolak.")
+            return redirect('home')
+
+        actual_weight = request.POST.get(
+            'actual_weight', ''
+        ).strip()
+
+        if not actual_weight:
+            messages.error(
+                request,
+                "Berat aktual wajib diisi."
+            )
+            return redirect(
+                'courier_dashboard' if is_courier
+                else 'admin_dashboard'
+            )
+
+        try:
+            from decimal import Decimal, InvalidOperation
+
+            weight = Decimal(actual_weight)
+
+            if not weight.is_finite() or weight < 0:
+                raise InvalidOperation
+
+        except (InvalidOperation, ValueError):
+            messages.error(
+                request,
+                "Berat aktual harus berupa angka nol atau lebih."
+            )
+            return redirect(
+                'courier_dashboard' if is_courier
+                else 'admin_dashboard'
+            )
+
+        pickup.actual_weight = weight
+        pickup.points = int(weight * 10)
         pickup.status = 'COMPLETED'
-        
-        if actual_weight:
-            pickup.actual_weight = float(actual_weight)
-            # Perhitungan poin dinamis (berat * 10)
-            pickup.points = int(pickup.actual_weight * 10)
-            
-        # Hitung total penjemputan selesai milik mitra ini (termasuk yang sedang diselesaikan ini)
+
         completed_count = PickupSchedule.objects.filter(
-            mitra=pickup.mitra, 
+            mitra=pickup.mitra,
             status='COMPLETED'
         ).exclude(id=pickup.id).count() + 1
-        
-        # Cek apakah ini tepat pencapaian ke-10 (hanya 1 kali saja, tidak pakai kelipatan sisa bagi %)
-        if completed_count == 10:
-            pickup.certificate = "certificates/Certificate.png"
-            messages.info(request, f"🎉 Selamat! Penjemputan ke-10 untuk {pickup.mitra.username} tercapai! Sertifikat Anda kini tersedia di atas.")
-        elif completed_count > 10:
-            # Jika sudah lewat dari 10, pastikan sertifikat tetap tersemat atau aman
-            pickup.certificate = "certificates/Certificate.png"
-            
+
+        if completed_count >= 10:
+            pickup.certificate = 'certificates/Certificate.png'
+
         pickup.save()
-        messages.success(request, f"Penjemputan PK-00{pickup.id} berhasil diselesaikan. Berat aktual: {pickup.actual_weight} kg tercatat.")
-        
-        # Jika yang submit adalah kurir, kembalikan ke courier_dashboard
-        if 'courier' in request.META.get('HTTP_REFERER', ''):
+
+        messages.success(
+            request,
+            f"Penjemputan PK-00{pickup.id} berhasil diselesaikan. "
+            f"Berat aktual: {pickup.actual_weight} kg tercatat."
+        )
+
+        if is_courier:
             return redirect('courier_dashboard')
-            
-    # 2. Jika diakses via Link Instan (Proses / Tolak oleh Admin)
-    elif new_status:
+
+        return redirect('admin_dashboard')
+
+    # 2. Admin/petugas mengubah status melalui URL.
+    if new_status:
+        if not is_admin:
+            messages.error(
+                request,
+                "Hanya admin/petugas yang boleh mengubah status ini."
+            )
+            return redirect('courier_dashboard')
+
+        if new_status not in allowed_statuses:
+            messages.error(
+                request,
+                "Status penjemputan tidak valid."
+            )
+            return redirect('admin_dashboard')
+
+        # Tetapkan kurir jika belum ada penugasan.
+        if (
+            new_status in ['IN_PROGRESS', 'SCHEDULED']
+            and pickup.courier_id is None
+        ):
+            courier = assign_next_courier(pickup)
+
+            if courier is None:
+                messages.error(
+                    request,
+                    "Belum ada akun kurir aktif. "
+                    "Status penjemputan belum diubah."
+                )
+                return redirect('admin_dashboard')
+
+            pickup.courier = courier
+
+            messages.info(
+                request,
+                f"Kurir {courier.username} ditugaskan "
+                f"untuk penjemputan PK-00{pickup.id}."
+            )
+
         pickup.status = new_status
         pickup.save()
-        messages.success(request, f"Status penjemputan PK-00{pickup.id} diubah menjadi {new_status}!")
-        
-    return redirect('admin_dashboard')
+
+        messages.success(
+            request,
+            f"Status penjemputan PK-00{pickup.id} "
+            f"diubah menjadi {new_status}!"
+        )
+
+        return redirect('admin_dashboard')
+
+    return redirect(
+        'admin_dashboard' if is_admin
+        else 'courier_dashboard'
+    )
 
 @login_required
 def pickup_history(request):
@@ -285,16 +455,34 @@ def pickup_history(request):
     }
     return render(request, 'scheduling/pickup_history.html', context)
 
+
 @login_required
 def courier_dashboard(request):
-    """Dashboard khusus kurir untuk melihat tugas aktif dan input berat aktual."""
-    # Ambil penjemputan yang sedang diproses / siap ditimbang kurir
-    active_pickups = PickupSchedule.objects.filter(status__in=['IN_PROGRESS', 'SCHEDULED']).order_by('-created_at')
-    
+    """Dashboard kurir hanya menampilkan tugas yang ditugaskan kepadanya."""
+
+    profile = getattr(request.user, 'userprofile', None)
+
+    if not profile or profile.role != 'courier':
+        messages.error(
+            request,
+            "Halaman ini hanya dapat diakses oleh akun kurir."
+        )
+        return redirect('home')
+
+    active_pickups = PickupSchedule.objects.filter(
+        courier=request.user,
+        status__in=['IN_PROGRESS', 'SCHEDULED']
+    ).select_related('mitra').order_by('-created_at')
+
     context = {
         'pickups': active_pickups,
     }
-    return render(request, 'scheduling/courier_dashboard.html', context)
+
+    return render(
+        request,
+        'scheduling/courier_dashboard.html',
+        context
+    )
 
 @login_required
 def mitra_profile(request):

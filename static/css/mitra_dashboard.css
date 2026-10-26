@@ -13,7 +13,7 @@
 
 body {
   font-family: 'Poppins', sans-serif;
-  background-color:  #C0CCBB;
+  background-color:  #EAF5EC;
   color: var(--gl-text);
 }
 
@@ -197,3 +197,11 @@ div.card.bg-pickup-dark .text-white-50 {
 .fs-7 { font-size: .8rem !important; }
 .letter-spacing-1 { letter-spacing: 1px; }
 .text-dark-50 { color: rgba(0, 0, 0, .6) !important; }
+
+/* Mengatur agar khusus di halaman Ajukan Penjemputan, menu sidebar aktifnya berwarna hijau standar/terang */
+.sidebar .nav-link.active, 
+.sidebar .nav-item .active,
+.nav-link.active {
+  background-color: var(--gl-primary, #198754) !important;
+  color: #ffffff !important;
+}

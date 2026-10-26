@@ -87,8 +87,12 @@
           </a>
 
           <!-- 3. Riwayat Penjemputan -->
-          <a href="#" class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
+          <a href="{% url 'pickup_history' %}" 
+             class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3 {% if request.resolver_match.url_name == 'pickup_history' %}active{% endif %}">
             <div><i class="bi bi-list-task me-2"></i> Riwayat Penjemputan</div>
+            {% if request.resolver_match.url_name == 'pickup_history' %}
+              <span class="active-indicator"></span>
+            {% endif %}
           </a>
 
           <!-- 4. Waste & Reward -->
@@ -102,10 +106,13 @@
           </a>
 
           <!-- 6. Profil Mitra -->
-          <a href="#" class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
+          <a href="{% url 'mitra_profile' %}" 
+             class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3 {% if request.resolver_match.url_name == 'mitra_profile' %}active{% endif %}">
             <div><i class="bi bi-person me-2"></i> Profil Mitra</div>
+            {% if request.resolver_match.url_name == 'mitra_profile' %}
+              <span class="active-indicator"></span>
+            {% endif %}
           </a>
-        {% endif %}
 
       </nav>
     </div>
@@ -121,7 +128,7 @@
       {% if user.is_authenticated %}
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-link text-danger text-decoration-none fw-semibold small p-0 px-2 d-block border-0 bg-transparent">
+          <button type="submit" class="btn btn-link text-danger text-decoration-none p-0">
             <i class="bi bi-box-arrow-right me-2"></i>Keluar
           </button>
         </form>

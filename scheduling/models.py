@@ -34,6 +34,16 @@ class PickupSchedule(models.Model):
         related_name='pickup_schedules'
     )
 
+    courier = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='assigned_pickups',
+        null=True,
+        blank=True,
+        limit_choices_to={'userprofile__role': 'courier'},
+        verbose_name="Kurir yang Ditugaskan"
+    )
+
     waste_type = models.CharField(
         max_length=30,
         choices=WASTE_TYPE_CHOICES,
