@@ -298,41 +298,58 @@ def courier_dashboard(request):
 
 @login_required
 def mitra_profile(request):
-    profile, created = MitraProfile.objects.get_or_create(user=request.user)
-
-    # Statistik kalkulasi dinamis berdasarkan riwayat transaksi aktual mitra ini
-    completed_pickups = PickupSchedule.objects.filter(mitra=request.user, status='COMPLETED')
-    
-    total_limbah = completed_pickups.aggregate(Sum('actual_weight'))['actual_weight__sum'] or 0
-    total_penjemputan = completed_pickups.count()
-    total_poin = completed_pickups.aggregate(Sum('points'))['points__sum'] or 0
-    co2e_dicegah = round(float(total_limbah) * 0.75, 1)
+    profile, _ = MitraProfile.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
-        profile.business_name = request.POST.get('business_name')
-        profile.business_type = request.POST.get('business_type')
-        profile.pic_name = request.POST.get('pic_name')
-        profile.phone_number = request.POST.get('phone_number')
-        profile.operational_hours = request.POST.get('operational_hours')
-        profile.provinsi = request.POST.get('provinsi')
-        profile.kota = request.POST.get('kota')
-        profile.kecamatan = request.POST.get('kecamatan')
-        profile.kelurahan = request.POST.get('kelurahan')
-        profile.address_detail = request.POST.get('address_detail')
-        
-        # Simpan koordinat dari API Google Maps jika ada inputan dari JavaScript
-        if request.POST.get('latitude') and request.POST.get('longitude'):
-            profile.latitude = float(request.POST.get('latitude'))
-            profile.longitude = float(request.POST.get('longitude'))
-            
+        text_fields = [
+            'business_name', 'business_type', 'pic_name', 'phone_number',
+            'operational_hours', 'provinsi', 'kota', 'kecamatan',
+            'kelurahan', 'address_detail', 'courier_notes',
+        ]
+        for field in text_fields:
+            setattr(profile, field, request.POST.get(field, '').strip())
+
+        lat_raw = request.POST.get('latitude', '').strip()
+        lng_raw = request.POST.get('longitude', '').strip()
+
+        if lat_raw and lng_raw:
+            try:
+                lat, lng = float(lat_raw), float(lng_raw)
+                if -90 <= lat <= 90 and -180 <= lng <= 180:
+                    profile.latitude = lat
+                    profile.longitude = lng
+                    profile.location_locked = True   # lokasi jadi permanen
+                else:
+                    messages.error(request, 'Koordinat di luar jangkauan yang valid.')
+                    return redirect('mitra_profile')
+            except ValueError:
+                messages.error(request, 'Format koordinat tidak valid.')
+                return redirect('mitra_profile')
+        elif not profile.location_locked:
+            # mitra belum pernah menentukan titik dan tidak mengirim koordinat
+            messages.error(request, 'Tentukan titik lokasi di peta terlebih dahulu.')
+            return redirect('mitra_profile')
+        # kalau sudah locked dan tidak kirim koordinat: titik lama dipertahankan
+
         profile.save()
+        messages.success(request, 'Profil berhasil diperbarui.')
         return redirect('mitra_profile')
+
+    # ---- Statistik dinamis ----
+    completed = PickupSchedule.objects.filter(mitra=request.user, status='COMPLETED')
+    total_limbah = completed.aggregate(Sum('actual_weight'))['actual_weight__sum'] or 0
+    total_poin = completed.aggregate(Sum('points'))['points__sum'] or 0
 
     context = {
         'profile': profile,
         'total_limbah': total_limbah,
-        'total_penjemputan': total_penjemputan,
+        'total_penjemputan': completed.count(),
         'total_poin': total_poin,
-        'co2e_dicegah': co2e_dicegah,
+        'co2e_dicegah': round(float(total_limbah) * 0.75, 1),
+        'map_data': {
+            'lat': profile.latitude,
+            'lng': profile.longitude,
+            'locked': profile.location_locked,
+        },
     }
     return render(request, 'scheduling/mitra_profile.html', context)

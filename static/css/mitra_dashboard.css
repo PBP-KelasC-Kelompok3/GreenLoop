@@ -5,15 +5,15 @@
   --gl-primary: #1b4d2e;
   --gl-olive:   #506649;
   --gl-mid:     #789c6d;
-  --gl-sage:    #8bbd3b;
+  --gl-sage:    #e8f1da;
   --gl-dark:    #1b4d2e;
-  --gl-bg:      #d8f1cf;
+  --gl-bg:      #C0CCBB;
   --gl-text:    #1f2a1c;
 }
 
 body {
   font-family: 'Poppins', sans-serif;
-  background-color: var(--gl-bg);
+  background-color:  #C0CCBB;
   color: var(--gl-text);
 }
 

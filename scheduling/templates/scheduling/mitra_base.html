@@ -5,29 +5,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}GreenLoop{% endblock %}</title>
-  
+
   <!-- Bootstrap 5 & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  
-  <!-- CSS Utama Kerangka & Sidebar Base -->
+
+  <!-- CSS Kerangka & Sidebar -->
   <link rel="stylesheet" href="{% static 'css/mitra_base.css' %}">
-  
-  <!-- CSS Khusus Dashboard -->
-  <link rel="stylesheet" href="{% static 'css/mitra_dashboard.css' %}">
-  
+
   {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-light">
+<body>
 
 <div class="d-flex min-vh-100">
-  <!-- Sidebar Kiri Mitra -->
+
+  <!-- ================= SIDEBAR ================= -->
   <aside class="sidebar p-3 d-flex flex-column justify-content-between bg-white border-end sidebar-container">
     <div>
       <div class="d-flex align-items-center mb-3 px-2">
         <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop Logo" class="img-fluid sidebar-logo">
       </div>
-      
+
       <div class="mb-4 px-2">
         <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill small">
           <i class="bi bi-building me-1"></i> Mitra B2B
@@ -46,7 +44,10 @@
           <div><i class="bi bi-list-task me-2"></i> Riwayat Penjemputan</div>
         </a>
         <a href="#" class="nav-link-custom text-secondary d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
-          <div><i class="bi bi-gift me-2"></i> Waste & Reward</div>
+          <div><i class="bi bi-gift me-2"></i> Waste &amp; Reward</div>
+        </a>
+        <a href="#" class="nav-link-custom text-secondary d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
+          <div><i class="bi bi-cart me-2"></i> Belanja Produk</div>
         </a>
         <a href="{% url 'mitra_profile' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'mitra_profile' %}active{% else %}text-secondary{% endif %} d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
           <div><i class="bi bi-person me-2"></i> Profil Mitra</div>
@@ -59,7 +60,7 @@
         <div class="fw-bold text-dark mb-1 small"><i class="bi bi-geo-alt-fill text-success me-1"></i> Area Pilot: Kota Depok</div>
         <div class="text-muted pilot-area-subtext">Layanan penjemputan khusus wilayah Kota Depok.</div>
       </div>
-      
+
       {% if user.is_authenticated %}
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
@@ -71,40 +72,56 @@
     </div>
   </aside>
 
-  <!-- Content Area Utama -->
+  <!-- ================= KONTEN UTAMA ================= -->
   <main class="flex-grow-1 p-4 overflow-auto">
-    <!-- Header Topbar Global -->
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom bg-white p-3 rounded-4 shadow-sm">
-      <div>
-        <h4 class="fw-bold text-dark mb-0">{% block header_title %}Panel Mitra{% endblock %}</h4>
-        <small class="text-muted">{% block header_subtitle %}Kelola aktivitas dan data operasional Anda di GreenLoop.{% endblock %}</small>
+
+    <!-- Topbar: search, notifikasi, user -->
+    <div class="d-flex justify-content-between align-items-center gap-3 mb-4">
+      <div class="topbar-search position-relative flex-grow-1">
+        <i class="bi bi-search"></i>
+        <input type="text" class="form-control bg-white border-0 shadow-sm" placeholder="Cari penjemputan, voucher...">
       </div>
-      
+
       <div class="d-flex align-items-center gap-3">
-        {% block topbar_action %}{% endblock %}
+        <button type="button" class="notif-btn btn bg-white border-0 shadow-sm rounded-circle" aria-label="Notifikasi">
+          <i class="bi bi-bell"></i>
+          <span class="notif-dot"></span>
+        </button>
+
         <div class="d-flex align-items-center gap-2">
           <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold user-avatar-circle">
-            {{ request.user.username|slice:":2"|upper|default:"FZ" }}
+            {{ request.user.profile.business_name|default:request.user.username|slice:":2"|upper }}
           </div>
-          <div>
-            <div class="fw-bold small mb-0">{{ request.user.get_full_name|default:request.user.username }}</div>
-            <div class="text-muted user-role-text">Mitra B2B</div>
+          <div class="lh-sm">
+            <div class="fw-bold small mb-0">{{ request.user.profile.business_name|default:request.user.username }}</div>
+            <div class="text-muted user-role-text">Mitra B2B{% if request.user.profile.business_type %} &middot; {{ request.user.profile.business_type }}{% endif %}</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Alert Messages -->
+    <!-- Judul halaman + tombol aksi -->
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">{% block header_title %}Panel Mitra{% endblock %}</h3>
+        <small class="text-muted">{% block header_subtitle %}Kelola aktivitas dan data operasional Anda di GreenLoop.{% endblock %}</small>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        {% block topbar_action %}{% endblock %}
+      </div>
+    </div>
+
+    <!-- Pesan sukses / error -->
     {% if messages %}
       {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
           {{ message }}
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
       {% endfor %}
     {% endif %}
 
-    <!-- Bagian Konten yang Di-extends Halaman Lain -->
+    <!-- Konten halaman -->
     {% block content %}
     {% endblock %}
   </main>

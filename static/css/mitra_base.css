@@ -1,4 +1,18 @@
-/* Sidebar Layout & Dimensions Sempurna */
+/* ===== Palette GreenLoop ===== */
+:root {
+  --gl-primary: #008a5f;
+  --gl-olive:   #506649;
+  --gl-mid:     #789c6d;
+  --gl-sage:    #c0ccbb;
+  --gl-dark:    #34452f;
+  --gl-bg:      #C0CCBB;
+}
+
+body {
+  background-color: #C0CCBB !important;
+}
+
+/* ===== Sidebar ===== */
 aside.sidebar {
   width: 260px !important;
   min-height: 100vh !important;
@@ -16,18 +30,78 @@ aside.sidebar {
 
 .sidebar-menu-title {
   font-size: 10px;
+  letter-spacing: 1px;
 }
 
 .pilot-area-subtext {
   font-size: 11px;
 }
 
-/* User Avatar & Topbar */
+/* Menu sidebar */
+.nav-link-custom {
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color .2s ease, color .2s ease;
+}
+.nav-link-custom:hover {
+  background-color: rgba(192, 204, 187, .35);
+  color: var(--gl-dark) !important;
+}
+.nav-link-custom.active {
+  background-color: var(--gl-olive) !important;
+  color: #fff !important;
+}
+
+/* Kotak Area Pilot (hijau muda seperti desain) */
+.sidebar .bg-light.rounded-3 {
+  background-color: rgba(192, 204, 187, .4) !important;
+  border-color: var(--gl-sage) !important;
+}
+
+/* ===== Topbar ===== */
 .user-avatar-circle {
   width: 38px;
   height: 38px;
+  background-color: var(--gl-olive) !important;
 }
 
 .user-role-text {
   font-size: 11px;
+}
+
+.topbar-search { max-width: 380px; }
+.topbar-search i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9aa597;
+  pointer-events: none;
+}
+.topbar-search .form-control {
+  padding-left: 2.4rem;
+  border-radius: 12px;
+  font-size: .85rem;
+  height: 42px;
+}
+
+.notif-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gl-olive);
+}
+.notif-dot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  background: #e5484d;
+  border-radius: 50%;
+  border: 2px solid #fff;
 }
