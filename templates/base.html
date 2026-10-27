@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_head %}{% endblock extra_head %}
 </head>
 
 <body class="{% block body_class %}{% endblock body_class %}">
@@ -111,16 +112,22 @@
                             </a>
                         </li>
 
+                        <li>
+                            <a href="{% url 'waste_reward:dashboard' %}"{% if request.resolver_match.app_name == 'waste_reward' %} class="nav-current" aria-current="page"{% endif %}>
+                                Waste &amp; Reward
+                            </a>
+                        </li>
+
                     {% elif user.userprofile.role == 'courier' %}
 
                         <li>
-                            <a href="{% url 'coming_soon' 'courier-dashboard' %}">
+                            <a href="{% url 'courier:show_dashboard' %}">
                                 Dashboard Courier
                             </a>
                         </li>
 
                         <li>
-                            <a href="{% url 'coming_soon' 'routes' %}">
+                            <a href="{% url 'courier:show_route_today' %}">
                                 Rute
                             </a>
                         </li>

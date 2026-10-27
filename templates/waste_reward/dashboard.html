@@ -1,0 +1,130 @@
+{% extends 'waste_reward/base_mitra.html' %}
+{% load static %}
+
+{% block title %}Waste &amp; Reward | GreenLoop{% endblock title %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/waste_reward.css' %}">
+{% endblock extra_head %}
+
+{% block content %}
+<div class="reward-app">
+    <div class="reward-content">
+        <div class="reward-heading-row">
+            <div class="reward-heading">
+                <span class="reward-eyebrow">MITRA B2B</span>
+                <h1>Waste &amp; Reward</h1>
+                <p>Setoran limbah terverifikasi jadi poin yang bisa kamu tukarkan dengan voucher.</p>
+            </div>
+            <form class="reward-search" method="get" role="search">
+                <label class="visually-hidden" for="reward-search-input">Cari riwayat atau voucher</label>
+                <img src="{% static 'img/waste_reward/icon_search.svg' %}" alt="">
+                <input id="reward-search-input" type="search" name="q" value="{{ request.GET.q }}" placeholder="Cari riwayat, voucher…">
+            </form>
+        </div>
+
+        {% if messages %}
+            <div class="reward-messages" aria-live="polite">
+                {% for message in messages %}
+                    <p class="reward-message {{ message.tags }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <section class="balance-rules-grid" aria-label="Saldo poin dan aturan konversi">
+            <article class="balance-card">
+                <img class="balance-decoration" src="{% static 'img/waste_reward/dot_rewards.svg' %}" alt="">
+                <span class="balance-label">Saldo Waste Points</span>
+                <span class="level-badge">Level {{ level }}</span>
+                <div class="balance-total"><strong>{{ balance }}</strong><span>poin</span></div>
+                {% if level == 'Platinum' %}
+                    <div class="level-progress-copy"><span>Level tertinggi</span><span>Platinum</span></div>
+                {% else %}
+                    <div class="level-progress-copy">
+                        <span>Menuju {{ next_level }}</span>
+                        <span>{{ balance }} / {{ next_threshold }}</span>
+                    </div>
+                {% endif %}
+                <progress class="progress-meter" value="{{ progress }}" max="100" aria-label="Progres menuju {{ next_level }}">{{ progress }}%</progress>
+                {% if level != 'Platinum' %}<p class="next-level-hint">{{ points_to_next }} poin lagi menuju {{ next_level }}</p>{% endif %}
+            </article>
+
+            <article class="conversion-card">
+                <div class="conversion-heading">
+                    <h2>Aturan Konversi</h2>
+                    <span class="conversion-badge">Waste-to-Points</span>
+                </div>
+                <div class="conversion-equation">
+                    <span class="equation-piece"><img src="{% static 'img/waste_reward/icon_scale.svg' %}" alt=""><strong>1 kg</strong></span>
+                    <span class="equation-equals" aria-hidden="true">=</span>
+                    <span class="equation-piece points-piece"><img src="{% static 'img/waste_reward/icon_gift_outline.svg' %}" alt=""><strong>5 poin</strong></span>
+                </div>
+                <p class="conversion-example">Contoh: 35,2 kg × 5 = 176 poin (dibulatkan ke bawah)</p>
+                <p class="conversion-note">Berlaku untuk limbah organik yang lolos verifikasi. Berat bersih dicatat kurir saat penjemputan.</p>
+            </article>
+        </section>
+
+        <section class="voucher-section" aria-labelledby="voucher-heading">
+            <div class="section-heading-row">
+                <div><h2 id="voucher-heading">Tukar Poin jadi Voucher</h2><p>Pilih voucher untuk digunakan saat belanja produk GreenLoop.</p></div>
+                <span class="reward-section-note">Poin terpotong setelah penukaran berhasil</span>
+            </div>
+            <div class="voucher-grid">
+                {% for voucher in vouchers %}
+                    <article class="voucher-card{% if voucher.kind == 'wholesale' %} voucher-card-featured{% endif %}">
+                        <div class="voucher-value">
+                            <span class="voucher-kind"><img src="{% if voucher.kind == 'wholesale' %}{% static 'img/waste_reward/icon_ticket_featured.svg' %}{% else %}{% static 'img/waste_reward/icon_ticket.svg' %}{% endif %}" alt="">{{ voucher.get_kind_display }}</span>
+                            <strong>{{ voucher.value_label }}</strong>
+                        </div>
+                        <div class="voucher-action-row">
+                            <div><strong>{{ voucher.points_cost_display }} poin</strong><small>Berlaku {{ voucher.valid_days }} hari</small></div>
+                            <form method="post" action="{% url 'waste_reward:redeem' voucher.id %}">
+                                {% csrf_token %}
+                                <button type="submit" {% if not voucher.can_redeem %}disabled title="Poin belum cukup"{% endif %}>Tukar</button>
+                            </form>
+                        </div>
+                    </article>
+                {% empty %}
+                    <p class="empty-state">Belum ada voucher yang tersedia.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="reward-bottom-grid">
+            <div class="history-section">
+                <div class="section-heading-row"><div><h2>Riwayat Poin</h2><p>Transaksi Waste Points terbaru.</p></div></div>
+                <div class="history-table-wrap">
+                    <table class="history-table">
+                        <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Berat</th><th>Poin</th><th>Saldo</th></tr></thead>
+                        <tbody>
+                            {% for item in transactions %}
+                                <tr>
+                                    <td>{{ item.created_at|date:'d M Y' }}</td>
+                                    <td>{{ item.description }}</td>
+                                    <td>{{ item.weight_display }}</td>
+                                    <td class="{% if item.is_credit %}credit{% else %}debit{% endif %}">{% if item.is_credit %}+{% else %}−{% endif %}{{ item.points_display }}</td>
+                                    <td>{{ item.balance_display }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td class="table-empty" colspan="5">Belum ada transaksi poin. Poin masuk setelah penjemputan terverifikasi.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <aside class="my-vouchers" aria-labelledby="my-vouchers-heading">
+                <div class="my-vouchers-heading"><div><h2 id="my-vouchers-heading">Voucher Saya</h2><p>Voucher yang sudah ditukar.</p></div><span>{{ available_voucher_count }} aktif</span></div>
+                {% for owned in owned_vouchers %}
+                    <article class="owned-voucher{% if not owned.available %} owned-voucher-used{% endif %}">
+                        <strong>{{ owned.voucher.title }} {{ owned.voucher.value_label }}</strong>
+                        <div class="voucher-code-row"><code>{{ owned.code }}</code><span>{% if owned.available %}Siap dipakai{% else %}Tidak aktif{% endif %}</span></div>
+                        <small>{% if owned.available %}Aktif s.d. {{ owned.expires_at|date:'d M Y' }}{% elif owned.used_at %}Dipakai {{ owned.used_at|date:'d M Y' }}{% else %}Masa berlaku habis{% endif %}</small>
+                    </article>
+                {% empty %}
+                    <p class="owned-empty">Voucher yang kamu tukar akan muncul di sini.</p>
+                {% endfor %}
+            </aside>
+        </section>
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,12 @@
+<div>
+    <label for="id_{{ name }}" class="field-label">{{ label }}</label>
+    <input
+        id="id_{{ name }}"
+        name="{{ name }}"
+        type="{{ type|default:'text' }}"
+        value="{{ value|default:'' }}"
+        autocomplete="{{ autocomplete|default:'off' }}"
+        class="field-input"
+        required>
+    <p class="field-error" data-error-for="{{ name }}" hidden></p>
+</div>

@@ -1,0 +1,127 @@
+{% extends 'scheduling/mitra_base.html' %}
+{% load static %}
+
+{% block title %}GreenLoop - Ajukan Penjemputan{% endblock %}
+
+{% block header_title %}Ajukan Penjemputan Sampah{% endblock %}
+{% block header_subtitle %}Smart Pick-Up Scheduler · isi jadwal, estimasi volume, dan unggah foto limbah.{% endblock %}
+
+{% block extra_css %}
+<!-- CSS Khusus Terpisah untuk Ajukan Penjemputan -->
+<link rel="stylesheet" href="{% static 'css/create_pickup.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="card pickup-card shadow-sm p-4 bg-white mx-auto pickup-card-container">
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="row g-4">
+      
+      <!-- Jenis Limbah -->
+      <div class="col-md-6">
+        <label for="{{ form.waste_type.id_for_label }}" class="pickup-form-label">Jenis Limbah Organik</label>
+        {{ form.waste_type }}
+        {% if form.waste_type.errors %}
+          <div class="text-danger small mt-1">{{ form.waste_type.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Estimasi Berat (kg) -->
+      <div class="col-md-6">
+        <label for="{{ form.estimated_weight.id_for_label }}" class="pickup-form-label">Estimasi Berat (kg)</label>
+        <div class="input-group">
+          {{ form.estimated_weight }}
+          <span class="input-group-text bg-light fw-bold text-muted">kg</span>
+        </div>
+        {% if form.estimated_weight.errors %}
+          <div class="text-danger small mt-1">{{ form.estimated_weight.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Tanggal Penjemputan -->
+      <div class="col-md-6">
+        <label for="{{ form.pickup_date.id_for_label }}" class="pickup-form-label">Tanggal Penjemputan</label>
+        {{ form.pickup_date }}
+        {% if form.pickup_date.errors %}
+          <div class="text-danger small mt-1">{{ form.pickup_date.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Slot Waktu -->
+      <div class="col-md-6">
+        <label for="{{ form.pickup_time_slot.id_for_label }}" class="pickup-form-label">Slot Waktu Penjemputan</label>
+        {{ form.pickup_time_slot }}
+        {% if form.pickup_time_slot.errors %}
+          <div class="text-danger small mt-1">{{ form.pickup_time_slot.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Jenis Armada Pengangkut -->
+      <div class="col-12">
+        <label for="{{ form.armada.id_for_label }}" class="pickup-form-label">Jenis Armada Pengangkut</label>
+        {% if form.armada %}
+          {{ form.armada }}
+        {% else %}
+          <select name="armada" class="form-select pickup-form-control" required>
+            <option value="Motor Box">Motor Box (Kapasitas s/d 50 kg)</option>
+            <option value="Pickup Bak" selected>Pickup Bak (Kapasitas s/d 500 kg)</option>
+            <option value="Truk Kecil">Truk Kecil (Kapasitas > 500 kg)</option>
+          </select>
+        {% endif %}
+        {% if form.armada.errors %}
+          <div class="text-danger small mt-1">{{ form.armada.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Foto Kondisi Sampah -->
+      <div class="col-12">
+        <label for="{{ form.waste_photo.id_for_label }}" class="pickup-form-label">Foto Kondisi Sampah Organik</label>
+        <div class="photo-preview-box mb-2">
+          <i class="bi bi-camera-fill text-success fs-3 d-block mb-1"></i>
+          <div class="small fw-semibold text-dark">Unggah foto limbah secara akurat</div>
+          <div class="helper-text mb-3">Format JPG/PNG, maksimal 5MB.</div>
+          {{ form.waste_photo }}
+        </div>
+        {% if form.waste_photo.errors %}
+          <div class="text-danger small mt-1">{{ form.waste_photo.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Catatan Tambahan -->
+      <div class="col-12">
+        <label for="{{ form.notes.id_for_label }}" class="pickup-form-label">Catatan Tambahan (Opsional)</label>
+        {{ form.notes }}
+        {% if form.notes.errors %}
+          <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Tombol Aksi -->
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+      <a href="{% url 'mitra_dashboard' %}" class="btn btn-light px-4 rounded-3 fw-semibold text-secondary">Batal</a>
+      <button type="submit" class="btn btn-success px-4 rounded-3 fw-semibold shadow-sm">
+        <i class="bi bi-send me-1"></i> Kirim Pengajuan
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Script khusus form styling
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if (el.tagName === 'SELECT') {
+      el.classList.add('form-select', 'pickup-form-control');
+    } else if (el.type !== 'file' && el.type !== 'submit' && el.type !== 'hidden') {
+      el.classList.add('form-control', 'pickup-form-control');
+    } else if (el.type === 'file') {
+      el.classList.add('form-control');
+    }
+  });
+</script>
+{% endblock %}
