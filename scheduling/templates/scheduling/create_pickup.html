@@ -3,125 +3,367 @@
 
 {% block title %}GreenLoop - Ajukan Penjemputan{% endblock %}
 
-{% block header_title %}Ajukan Penjemputan Sampah{% endblock %}
-{% block header_subtitle %}Smart Pick-Up Scheduler · isi jadwal, estimasi volume, dan unggah foto limbah.{% endblock %}
+{% block header_title %}Ajukan Penjemputan{% endblock %}
+{% block header_subtitle %}Smart Pick-Up Scheduler · pilih jadwal, isi estimasi volume, dan unggah foto limbah.{% endblock %}
 
 {% block extra_css %}
-<!-- CSS Khusus Terpisah untuk Ajukan Penjemputan -->
 <link rel="stylesheet" href="{% static 'css/create_pickup.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="card pickup-card shadow-sm p-4 bg-white mx-auto pickup-card-container">
-  <form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
+<form method="POST" enctype="multipart/form-data" id="pickup-form" class="pk-grid" novalidate>
+  {% csrf_token %}
 
-    <div class="row g-4">
-      
-      <!-- Jenis Limbah -->
-      <div class="col-md-6">
-        <label for="{{ form.waste_type.id_for_label }}" class="pickup-form-label">Jenis Limbah Organik</label>
-        {{ form.waste_type }}
-        {% if form.waste_type.errors %}
-          <div class="text-danger small mt-1">{{ form.waste_type.errors.0 }}</div>
-        {% endif %}
+  {# ===== FIELD ASLI DJANGO (disembunyikan) ===== #}
+  <div class="d-none">
+    {{ form.pickup_date }}
+    {{ form.pickup_time_slot }}
+    {{ form.waste_type }}
+    {{ form.armada }}
+  </div>
+
+  {% if form.non_field_errors %}
+    <div class="pk-error pk-span-2">{{ form.non_field_errors.0 }}</div>
+  {% endif %}
+
+  <!-- ================= KOLOM KIRI ================= -->
+  <div class="pk-col">
+    <!-- Pilih Tanggal + Slot Waktu -->
+    <section class="pk-card">
+      <div class="pk-card-head">
+        <h2 class="pk-card-title">Pilih Tanggal</h2>
+        <div class="pk-month-nav">
+          <button type="button" id="cal-prev" aria-label="Bulan sebelumnya"><i class="bi bi-chevron-left"></i></button>
+          <span id="cal-title">Bulan Tahun</span>
+          <button type="button" id="cal-next" aria-label="Bulan berikutnya"><i class="bi bi-chevron-right"></i></button>
+        </div>
       </div>
 
-      <!-- Estimasi Berat (kg) -->
-      <div class="col-md-6">
-        <label for="{{ form.estimated_weight.id_for_label }}" class="pickup-form-label">Estimasi Berat (kg)</label>
-        <div class="input-group">
+      <div class="pk-cal-week">
+        <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
+      </div>
+      <div class="pk-cal-grid" id="cal-grid"></div>
+
+      <div class="pk-legend">
+        <span><i class="pk-dot pk-dot-selected"></i> Dipilih</span>
+        <span><i class="pk-dot pk-dot-off"></i> Minggu (libur)</span>
+      </div>
+
+      <div id="date-error" class="pk-error d-none">Silakan pilih tanggal penjemputan terlebih dahulu.</div>
+      {% if form.pickup_date.errors %}
+        <div class="pk-error">{{ form.pickup_date.errors.0 }}</div>
+      {% endif %}
+
+      <hr class="pk-divider">
+
+      <h3 class="pk-sub-title">Slot Waktu <span id="slot-date-label"></span></h3>
+      <div class="pk-slots" id="slot-list"></div>
+      {% if form.pickup_time_slot.errors %}
+        <div class="pk-error">{{ form.pickup_time_slot.errors.0 }}</div>
+      {% endif %}
+    </section>
+
+    <!-- Jenis Limbah + Catatan -->
+    <section class="pk-card">
+      <h2 class="pk-card-title mb-3">Jenis Limbah Organik</h2>
+      <div class="pk-chips" id="waste-chips"></div>
+      {% if form.waste_type.errors %}
+        <div class="pk-error">{{ form.waste_type.errors.0 }}</div>
+      {% endif %}
+
+      <label for="{{ form.notes.id_for_label }}" class="pk-label mt-4">Catatan untuk kurir (opsional)</label>
+      <div class="pk-notes">{{ form.notes }}</div>
+      {% if form.notes.errors %}
+        <div class="pk-error">{{ form.notes.errors.0 }}</div>
+      {% endif %}
+    </section>
+  </div>
+
+  <!-- ================= KOLOM KANAN ================= -->
+  <div class="pk-col">
+    <!-- Estimasi Volume + Armada -->
+    <section class="pk-card">
+      <h2 class="pk-card-title mb-3">Estimasi Volume &amp; Jenis Armada</h2>
+
+      <label for="{{ form.estimated_weight.id_for_label }}" class="pk-label">Estimasi volume limbah</label>
+      <div class="pk-weight-row">
+        <div class="pk-weight-input">
           {{ form.estimated_weight }}
-          <span class="input-group-text bg-light fw-bold text-muted">kg</span>
+          <span>kg</span>
         </div>
-        {% if form.estimated_weight.errors %}
-          <div class="text-danger small mt-1">{{ form.estimated_weight.errors.0 }}</div>
-        {% endif %}
+        <input type="range" id="weight-range" min="0" max="500" step="1" value="0" aria-label="Geser untuk estimasi berat">
       </div>
+      {% if form.estimated_weight.errors %}
+        <div class="pk-error">{{ form.estimated_weight.errors.0 }}</div>
+      {% endif %}
+      <div class="pk-hint" id="armada-hint">Isi berat untuk melihat armada yang disarankan. (Rata-rata 4 minggu: 38 kg)</div>
 
-      <!-- Tanggal Penjemputan -->
-      <div class="col-md-6">
-        <label for="{{ form.pickup_date.id_for_label }}" class="pickup-form-label">Tanggal Penjemputan</label>
-        {{ form.pickup_date }}
-        {% if form.pickup_date.errors %}
-          <div class="text-danger small mt-1">{{ form.pickup_date.errors.0 }}</div>
-        {% endif %}
+      <div class="pk-armada" id="armada-list">
+        <button type="button" class="pk-armada-card" data-value="Motor Box">
+          <span class="pk-reco d-none">Disarankan</span>
+          <span class="pk-armada-icon"><i class="bi bi-box-seam"></i></span>
+          <strong>Motor Box</strong>
+          <small>maks. 25 kg</small>
+        </button>
+        <button type="button" class="pk-armada-card" data-value="Pickup Bak">
+          <span class="pk-reco d-none">Disarankan</span>
+          <span class="pk-armada-icon"><i class="bi bi-truck"></i></span>
+          <strong>Pickup Bak</strong>
+          <small>25–150 kg</small>
+        </button>
+        <button type="button" class="pk-armada-card" data-value="Truk Kecil">
+          <span class="pk-reco d-none">Disarankan</span>
+          <span class="pk-armada-icon"><i class="bi bi-truck-flatbed"></i></span>
+          <strong>Truk Kecil</strong>
+          <small>&gt; 150 kg</small>
+        </button>
       </div>
+      {% if form.armada.errors %}
+        <div class="pk-error">{{ form.armada.errors.0 }}</div>
+      {% endif %}
+    </section>
 
-      <!-- Slot Waktu -->
-      <div class="col-md-6">
-        <label for="{{ form.pickup_time_slot.id_for_label }}" class="pickup-form-label">Slot Waktu Penjemputan</label>
-        {{ form.pickup_time_slot }}
-        {% if form.pickup_time_slot.errors %}
-          <div class="text-danger small mt-1">{{ form.pickup_time_slot.errors.0 }}</div>
-        {% endif %}
+    <!-- Foto Limbah + Aksi -->
+    <section class="pk-card">
+      <div class="pk-card-head">
+        <h2 class="pk-card-title">
+          Foto Limbah 
+          <span class="badge bg-light text-primary border ms-1 fw-normal" style="font-size: 0.65rem;">Digital Image Validation</span>
+        </h2>
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.65rem;">wajib</span>
       </div>
+      <p class="pk-muted">Unggah foto kulit buah/sayur segar. Kurir hanya ditugaskan setelah foto disetujui admin.</p>
 
-      <!-- Jenis Armada Pengangkut -->
-      <div class="col-12">
-        <label for="{{ form.armada.id_for_label }}" class="pickup-form-label">Jenis Armada Pengangkut</label>
-        {% if form.armada %}
-          {{ form.armada }}
-        {% else %}
-          <select name="armada" class="form-select pickup-form-control" required>
-            <option value="Motor Box">Motor Box (Kapasitas s/d 50 kg)</option>
-            <option value="Pickup Bak" selected>Pickup Bak (Kapasitas s/d 500 kg)</option>
-            <option value="Truk Kecil">Truk Kecil (Kapasitas > 500 kg)</option>
-          </select>
-        {% endif %}
-        {% if form.armada.errors %}
-          <div class="text-danger small mt-1">{{ form.armada.errors.0 }}</div>
-        {% endif %}
-      </div>
+      <label for="{{ form.waste_photo.id_for_label }}" class="pk-dropzone" id="dropzone">
+        <i class="bi bi-cloud-arrow-up"></i>
+        <strong>Tarik &amp; lepas foto, atau klik untuk memilih</strong>
+        <small>JPG / PNG · maks. 5 MB · 1 foto</small>
+      </label>
+      <div class="d-none">{{ form.waste_photo }}</div>
 
-      <!-- Foto Kondisi Sampah -->
-      <div class="col-12">
-        <label for="{{ form.waste_photo.id_for_label }}" class="pickup-form-label">Foto Kondisi Sampah Organik</label>
-        <div class="photo-preview-box mb-2">
-          <i class="bi bi-camera-fill text-success fs-3 d-block mb-1"></i>
-          <div class="small fw-semibold text-dark">Unggah foto limbah secara akurat</div>
-          <div class="helper-text mb-3">Format JPG/PNG, maksimal 5MB.</div>
-          {{ form.waste_photo }}
+      <div class="pk-preview d-none" id="photo-preview">
+        <div class="pk-thumb">
+          <img src="" alt="Preview foto limbah" id="photo-img">
+          <button type="button" id="photo-remove" aria-label="Hapus foto"><i class="bi bi-x-lg"></i></button>
         </div>
-        {% if form.waste_photo.errors %}
-          <div class="text-danger small mt-1">{{ form.waste_photo.errors.0 }}</div>
-        {% endif %}
+        <small class="pk-muted" id="photo-name"></small>
+      </div>
+      <div id="photo-error" class="pk-error d-none"></div>
+      {% if form.waste_photo.errors %}
+        <div class="pk-error">{{ form.waste_photo.errors.0 }}</div>
+      {% endif %}
+
+      <div class="pk-notice">
+        <i class="bi bi-info-circle"></i>
+        <div>Setelah dikirim, status pengajuan menjadi <b>Menunggu Verifikasi</b> (≈ 30 menit).</div>
       </div>
 
-      <!-- Catatan Tambahan -->
-      <div class="col-12">
-        <label for="{{ form.notes.id_for_label }}" class="pickup-form-label">Catatan Tambahan (Opsional)</label>
-        {{ form.notes }}
-        {% if form.notes.errors %}
-          <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
-        {% endif %}
+      <div class="pk-actions">
+        <a href="{% url 'mitra_dashboard' %}" class="pk-btn pk-btn-light">Simpan Draf</a>
+        <button type="submit" class="pk-btn pk-btn-primary">
+          <i class="bi bi-send"></i> Kirim Pengajuan
+        </button>
       </div>
-
-    </div>
-
-    <!-- Tombol Aksi -->
-    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-      <a href="{% url 'mitra_dashboard' %}" class="btn btn-light px-4 rounded-3 fw-semibold text-secondary">Batal</a>
-      <button type="submit" class="btn btn-success px-4 rounded-3 fw-semibold shadow-sm">
-        <i class="bi bi-send me-1"></i> Kirim Pengajuan
-      </button>
-    </div>
-
-  </form>
-</div>
+    </section>
+  </div>
+</form>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // Script khusus form styling
-  document.querySelectorAll('input, select, textarea').forEach(el => {
-    if (el.tagName === 'SELECT') {
-      el.classList.add('form-select', 'pickup-form-control');
-    } else if (el.type !== 'file' && el.type !== 'submit' && el.type !== 'hidden') {
-      el.classList.add('form-control', 'pickup-form-control');
-    } else if (el.type === 'file') {
-      el.classList.add('form-control');
+(function () {
+  var MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  var MONTHS_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  var DAYS = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+
+  var dateInput  = document.getElementById('{{ form.pickup_date.id_for_label }}');
+  var slotSelect = document.getElementById('{{ form.pickup_time_slot.id_for_label }}');
+  var wasteSelect= document.getElementById('{{ form.waste_type.id_for_label }}');
+  var armadaSel  = document.getElementById('{{ form.armada.id_for_label }}');
+  var weightIn   = document.getElementById('{{ form.estimated_weight.id_for_label }}');
+  var photoIn    = document.getElementById('{{ form.waste_photo.id_for_label }}');
+  var form       = document.getElementById('pickup-form');
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+
+  function parseDate(s) {
+    if (!s) return null;
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    m = s.match(/^(\d{2})[-\/](\d{2})[-\/](\d{4})$/);
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+    return null;
+  }
+
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var selected = parseDate(dateInput.getAttribute('value') || dateInput.value);
+  if (selected) dateInput.value = iso(selected);
+  var view = new Date((selected || today).getFullYear(), (selected || today).getMonth(), 1);
+
+  var grid = document.getElementById('cal-grid');
+  var title = document.getElementById('cal-title');
+  var prev = document.getElementById('cal-prev');
+  var next = document.getElementById('cal-next');
+  var slotDateLabel = document.getElementById('slot-date-label');
+  var dateError = document.getElementById('date-error');
+
+  function renderCalendar() {
+    title.textContent = MONTHS[view.getMonth()] + ' ' + view.getFullYear();
+    prev.disabled = (view.getFullYear() === today.getFullYear() && view.getMonth() <= today.getMonth());
+    grid.innerHTML = '';
+
+    var offset = (new Date(view.getFullYear(), view.getMonth(), 1).getDay() + 6) % 7; 
+    var total = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+
+    for (var i = 0; i < offset; i++) grid.appendChild(document.createElement('span'));
+
+    for (var d = 1; d <= total; d++) {
+      var date = new Date(view.getFullYear(), view.getMonth(), d);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = d;
+      btn.className = 'pk-day';
+      var off = date < today || date.getDay() === 0;
+      if (off) btn.disabled = true;
+      if (selected && iso(date) === iso(selected)) btn.classList.add('is-selected');
+      if (iso(date) === iso(today)) btn.classList.add('is-today');
+      (function (dt) {
+        btn.addEventListener('click', function () {
+          selected = dt;
+          dateInput.value = iso(dt);
+          dateError.classList.add('d-none');
+          renderCalendar();
+          updateSlotLabel();
+        });
+      })(date);
+      grid.appendChild(btn);
+    }
+  }
+
+  function updateSlotLabel() {
+    slotDateLabel.textContent = selected
+      ? '· ' + DAYS[selected.getDay()] + ', ' + selected.getDate() + ' ' + MONTHS_SHORT[selected.getMonth()] + ' ' + selected.getFullYear()
+      : '· pilih tanggal dulu';
+  }
+
+  prev.addEventListener('click', function () { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); renderCalendar(); });
+  next.addEventListener('click', function () { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); renderCalendar(); });
+
+  var slotList = document.getElementById('slot-list');
+  function renderSlots() {
+    slotList.innerHTML = '';
+    Array.prototype.forEach.call(slotSelect.options, function (opt) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pk-slot' + (opt.value === slotSelect.value ? ' is-selected' : '');
+      var time = opt.textContent.replace(' WIB', '').replace(' - ', '–');
+      btn.innerHTML = '<strong>' + time + '</strong><small>' + (opt.value === slotSelect.value ? 'Dipilih' : 'Tersedia') + '</small>';
+      btn.addEventListener('click', function () { slotSelect.value = opt.value; renderSlots(); });
+      slotList.appendChild(btn);
+    });
+  }
+
+  var chips = document.getElementById('waste-chips');
+  function renderChips() {
+    chips.innerHTML = '';
+    Array.prototype.forEach.call(wasteSelect.options, function (opt) {
+      if (!opt.value) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pk-chip' + (opt.value === wasteSelect.value ? ' is-selected' : '');
+      btn.textContent = opt.textContent;
+      btn.addEventListener('click', function () { wasteSelect.value = opt.value; renderChips(); });
+      chips.appendChild(btn);
+    });
+  }
+
+  var range = document.getElementById('weight-range');
+  var armadaCards = document.querySelectorAll('.pk-armada-card');
+  var hint = document.getElementById('armada-hint');
+
+  function renderArmada() {
+    armadaCards.forEach(function (c) {
+      c.classList.toggle('is-selected', c.dataset.value === armadaSel.value);
+    });
+  }
+  function recommend() {
+    var w = parseFloat(weightIn.value);
+    armadaCards.forEach(function (c) { c.querySelector('.pk-reco').classList.add('d-none'); });
+    if (!w || w <= 0) { hint.textContent = 'Isi berat untuk melihat armada yang disarankan. (Rata-rata 4 minggu: 38 kg)'; return; }
+    var val = w <= 25 ? 'Motor Box' : (w <= 150 ? 'Pickup Bak' : 'Truk Kecil');
+    armadaCards.forEach(function (c) {
+      if (c.dataset.value === val) c.querySelector('.pk-reco').classList.remove('d-none');
+    });
+    hint.textContent = 'Untuk ' + w + ' kg, armada yang disarankan: ' + val + '.';
+  }
+  armadaCards.forEach(function (c) {
+    c.addEventListener('click', function () { armadaSel.value = c.dataset.value; renderArmada(); });
+  });
+  weightIn.addEventListener('input', function () {
+    range.value = Math.min(parseFloat(weightIn.value) || 0, +range.max);
+    recommend();
+  });
+  range.addEventListener('input', function () {
+    weightIn.value = range.value > 0 ? range.value : '';
+    recommend();
+  });
+
+  var dropzone = document.getElementById('dropzone');
+  var preview = document.getElementById('photo-preview');
+  var img = document.getElementById('photo-img');
+  var photoName = document.getElementById('photo-name');
+  var photoErr = document.getElementById('photo-error');
+  var removeBtn = document.getElementById('photo-remove');
+
+  function showPhotoError(msg) { photoErr.textContent = msg; photoErr.classList.remove('d-none'); }
+  function clearPhoto() {
+    photoIn.value = '';
+    preview.classList.add('d-none');
+    img.removeAttribute('src');
+  }
+  function handleFile(file) {
+    photoErr.classList.add('d-none');
+    if (!file) { clearPhoto(); return; }
+    if (['image/jpeg', 'image/png'].indexOf(file.type) === -1) { clearPhoto(); showPhotoError('Format harus JPG atau PNG.'); return; }
+    if (file.size > 5 * 1024 * 1024) { clearPhoto(); showPhotoError('Ukuran foto maksimal 5 MB.'); return; }
+    img.src = URL.createObjectURL(file);
+    photoName.textContent = file.name;
+    preview.classList.remove('d-none');
+  }
+  photoIn.addEventListener('change', function () { handleFile(photoIn.files[0]); });
+  removeBtn.addEventListener('click', clearPhoto);
+
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.add('is-drag'); });
+  });
+  ['dragleave', 'drop'].forEach(function (ev) {
+    dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.remove('is-drag'); });
+  });
+  dropzone.addEventListener('drop', function (e) {
+    var file = e.dataTransfer.files[0];
+    if (!file) return;
+    var dt = new DataTransfer();
+    dt.items.add(file);
+    photoIn.files = dt.files;
+    handleFile(file);
+  });
+
+  form.addEventListener('submit', function (e) {
+    if (!dateInput.value) {
+      e.preventDefault();
+      dateError.classList.remove('d-none');
+      dateError.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   });
+
+  if (weightIn.value) range.value = Math.min(parseFloat(weightIn.value) || 0, +range.max);
+  renderCalendar();
+  updateSlotLabel();
+  renderSlots();
+  renderChips();
+  renderArmada();
+  recommend();
+})();
 </script>
 {% endblock %}

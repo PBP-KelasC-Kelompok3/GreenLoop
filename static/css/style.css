@@ -143,6 +143,8 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 
 .nav-auth { display: flex; align-items: center; gap: 14px; }
 .nav-auth .btn { padding: 9px 22px; }
+.nav-auth form { margin: 0; }
+.nav-auth button { font: inherit; cursor: pointer; }
 .nav-user { font-size: 13px; color: var(--green); }
 
 .nav-toggle { display: none; }

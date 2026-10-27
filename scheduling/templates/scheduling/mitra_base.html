@@ -5,113 +5,170 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}GreenLoop{% endblock %}</title>
-  
-  <!-- Bootstrap 5 & Icons -->
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  
-  <!-- CSS Utama Kerangka & Sidebar Base -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- base dulu, baru css halaman supaya css halaman bisa menimpa -->
   <link rel="stylesheet" href="{% static 'css/mitra_base.css' %}">
-  
-  <!-- CSS Khusus Dashboard -->
   <link rel="stylesheet" href="{% static 'css/mitra_dashboard.css' %}">
-  
+
   {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-light">
+<body>
 
-<div class="d-flex min-vh-100">
-  <!-- Sidebar Kiri Mitra -->
-  <aside class="sidebar p-3 d-flex flex-column justify-content-between bg-white border-end sidebar-container">
+<div class="app-shell d-flex min-vh-100">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar p-3 d-flex flex-column justify-content-between" id="sidebar">
     <div>
-      <div class="d-flex align-items-center mb-3 px-2">
-        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop Logo" class="img-fluid sidebar-logo">
-      </div>
-      
-      <div class="mb-4 px-2">
-        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill small">
-          <i class="bi bi-building me-1"></i> Mitra B2B
-        </span>
+      <div class="d-flex align-items-center justify-content-between mb-3 px-2">
+        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo">
+        <button type="button" class="btn-close d-lg-none" id="sidebar-close" aria-label="Tutup"></button>
       </div>
 
-      <small class="text-uppercase text-muted fw-bold px-2 mb-2 d-block sidebar-menu-title">MENU</small>
+      <div class="mb-4 px-2">
+        {% if request.resolver_match.url_name == 'admin_dashboard' %}
+          <span class="role-badge">Panel Admin</span>
+        {% elif request.resolver_match.url_name == 'courier_dashboard' %}
+          <span class="role-badge">Panel Kurir</span>
+        {% else %}
+          <span class="role-badge">Mitra B2B</span>
+        {% endif %}
+      </div>
+
+      <small class="sidebar-menu-title text-uppercase fw-semibold px-2 mb-2 d-block">Menu</small>
       <nav class="nav flex-column gap-1">
-        <a href="{% url 'mitra_dashboard' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'mitra_dashboard' %}active{% else %}text-secondary{% endif %} d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
-          <div><i class="bi bi-grid-fill me-2"></i> Dashboard</div>
-        </a>
-        <a href="{% url 'create_pickup' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'create_pickup' %}active{% else %}text-secondary{% endif %} d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
-          <div><i class="bi bi-calendar-plus me-2"></i> Ajukan Penjemputan</div>
-        </a>
-        <a href="{% url 'pickup_history' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'pickup_history' %}active{% else %}text-secondary{% endif %} d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
-          <div><i class="bi bi-list-task me-2"></i> Riwayat Penjemputan</div>
-        </a>
-        <a href="#" class="nav-link-custom text-secondary d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
-          <div><i class="bi bi-gift me-2"></i> Waste & Reward</div>
-        </a>
-        <a href="{% url 'mitra_profile' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'mitra_profile' %}active{% else %}text-secondary{% endif %} d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
-          <div><i class="bi bi-person me-2"></i> Profil Mitra</div>
-        </a>
+
+        {% if request.resolver_match.url_name == 'admin_dashboard' %}
+          <a href="{% url 'admin_dashboard' %}" class="sidebar-nav-item active">
+            <i class="bi bi-shield-check"></i><span>Panel Admin</span>
+          </a>
+
+        {% elif request.resolver_match.url_name == 'courier_dashboard' %}
+          <a href="{% url 'courier_dashboard' %}" class="sidebar-nav-item active">
+            <i class="bi bi-truck"></i><span>Tugas Penjemputan</span>
+          </a>
+
+        {% else %}
+          <a href="{% url 'mitra_dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'mitra_dashboard' %}active{% endif %}">
+            <i class="bi bi-grid-fill"></i><span>Dashboard</span>
+          </a>
+          <a href="{% url 'create_pickup' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'create_pickup' %}active{% endif %}">
+            <i class="bi bi-calendar-plus"></i><span>Ajukan Penjemputan</span>
+          </a>
+          <a href="{% url 'pickup_history' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'pickup_history' %}active{% endif %}">
+            <i class="bi bi-list-task"></i><span>Riwayat Penjemputan</span>
+          </a>
+          <a href="{% url 'waste_reward:dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.app_name == 'waste_reward' %}active{% endif %}">
+            <i class="bi bi-gift"></i><span>Waste &amp; Reward</span>
+          </a>
+          <a href="#" class="sidebar-nav-item">
+            <i class="bi bi-cart3"></i><span>Belanja Produk</span>
+          </a>
+          <a href="{% url 'mitra_profile' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'mitra_profile' %}active{% endif %}">
+            <i class="bi bi-person"></i><span>Profil Mitra</span>
+          </a>
+        {% endif %}
+
       </nav>
     </div>
 
     <div>
-      <div class="p-3 bg-light rounded-3 mb-3 border">
-        <div class="fw-bold text-dark mb-1 small"><i class="bi bi-geo-alt-fill text-success me-1"></i> Area Pilot: Kota Depok</div>
-        <div class="text-muted pilot-area-subtext">Layanan penjemputan khusus wilayah Kota Depok.</div>
+      <div class="pilot-box p-3 rounded-3 mb-3">
+        <div class="pilot-title"><i class="bi bi-geo-alt-fill me-1"></i> Area Pilot: Kota Depok</div>
+        <div class="pilot-area-subtext">Layanan penjemputan saat ini khusus wilayah Kota Depok.</div>
       </div>
-      
+
       {% if user.is_authenticated %}
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-link text-danger text-decoration-none fw-semibold small p-0 px-2 border-0 bg-transparent">
-            <i class="bi bi-box-arrow-right me-2"></i>Keluar
+          <button type="submit" class="logout-btn">
+            <i class="bi bi-box-arrow-right"></i><span>Keluar</span>
           </button>
         </form>
       {% endif %}
     </div>
   </aside>
 
-  <!-- Content Area Utama -->
-  <main class="flex-grow-1 p-4 overflow-auto">
-    <!-- Header Topbar Global -->
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom bg-white p-3 rounded-4 shadow-sm">
-      <div>
-        <h4 class="fw-bold text-dark mb-0">{% block header_title %}Panel Mitra{% endblock %}</h4>
-        <small class="text-muted">{% block header_subtitle %}Kelola aktivitas dan data operasional Anda di GreenLoop.{% endblock %}</small>
-      </div>
-      
-      <div class="d-flex align-items-center gap-3">
-        {% block topbar_action %}{% endblock %}
-        <div class="d-flex align-items-center gap-2">
-          <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center fw-bold user-avatar-circle">
-            {{ request.user.username|slice:":2"|upper|default:"FZ" }}
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <!-- ================= AREA KANAN ================= -->
+  <div class="main-wrapper flex-grow-1">
+
+    <!-- Topbar (tanpa search) -->
+    <header class="topbar d-flex align-items-center justify-content-between">
+      <button type="button" class="menu-toggle btn d-lg-none" id="sidebar-open" aria-label="Buka menu">
+        <i class="bi bi-list fs-4"></i>
+      </button>
+
+      <div class="topbar-right d-flex align-items-center gap-3 ms-auto">
+        <button type="button" class="notif-btn" aria-label="Notifikasi">
+          <i class="bi bi-bell"></i>
+          <span class="notif-dot"></span>
+        </button>
+
+        <div class="topbar-user d-flex align-items-center gap-2">
+          <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center">
+            {{ request.user.profile.business_name|default:request.user.username|slice:":2"|upper }}
           </div>
-          <div>
-            <div class="fw-bold small mb-0">{{ request.user.get_full_name|default:request.user.username }}</div>
-            <div class="text-muted user-role-text">Mitra B2B</div>
+          <div class="lh-sm d-none d-sm-block">
+            <div class="user-name">{{ request.user.profile.business_name|default:request.user.username }}</div>
+            <div class="user-role">Mitra B2B</div>
           </div>
         </div>
       </div>
-    </div>
+    </header>
 
-    <!-- Alert Messages -->
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <main class="main-area p-3 p-lg-4">
+
+      <!-- Judul halaman -->
+      <section class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+          <h1 class="page-title">
+            {% block header_title %}<span id="hero-greet">Halo</span>, {{ request.user.profile.business_name|default:request.user.username }}{% endblock %}
+          </h1>
+          <p class="page-subtitle">
+            {% block header_subtitle %}Pantau penjemputan, poin, dan dampak lingkungan usahamu.{% endblock %}
+          </p>
         </div>
-      {% endfor %}
-    {% endif %}
+        <div>
+          {% block topbar_action %}{% endblock %}
+        </div>
+      </section>
 
-    <!-- Bagian Konten yang Di-extends Halaman Lain -->
-    {% block content %}
-    {% endblock %}
-  </main>
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
 </div>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (function () {
+    var h = new Date().getHours();
+    var greet = document.getElementById('hero-greet');
+    if (greet) {
+      greet.textContent = h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 18 ? 'Selamat sore' : 'Selamat malam';
+    }
+
+    var sb = document.getElementById('sidebar'), bd = document.getElementById('sidebar-backdrop');
+    function openSb()  { sb.classList.add('show');    bd.classList.add('show'); }
+    function closeSb() { sb.classList.remove('show'); bd.classList.remove('show'); }
+    document.getElementById('sidebar-open').addEventListener('click', openSb);
+    document.getElementById('sidebar-close').addEventListener('click', closeSb);
+    bd.addEventListener('click', closeSb);
+  })();
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>
