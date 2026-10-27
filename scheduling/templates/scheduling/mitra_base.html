@@ -55,6 +55,9 @@
           </a>
 
         {% else %}
+          <a href="{% url 'home' %}" data-transition-target="home" class="sidebar-nav-item">
+            <i class="bi bi-house"></i><span>Beranda</span>
+          </a>
           <a href="{% url 'mitra_dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'mitra_dashboard' %}active{% endif %}">
             <i class="bi bi-grid-fill"></i><span>Dashboard</span>
           </a>

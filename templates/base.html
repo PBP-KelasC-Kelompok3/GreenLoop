@@ -110,14 +110,8 @@
                     {% elif user.userprofile.role == 'courier' %}
 
                         <li>
-                            <a href="{% url 'courier:show_dashboard' %}">
+                            <a data-transition-target="courier-dashboard" href="{% url 'courier:show_dashboard' %}">
                                 Dashboard Courier
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="{% url 'courier:show_route_today' %}">
-                                Rute
                             </a>
                         </li>
 
