@@ -1,15 +1,215 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Daftar | GreenLoop{% endblock title %}
+
+{% block body_class %}auth-body{% endblock body_class %}
+{% block header %}{% endblock header %}
+{% block footer %}{% endblock footer %}
 
 {% block content %}
 
-<h1>Register</h1>
+<div class="auth auth-register">
 
-<form method="post">
-    {% csrf_token %}
+    <aside class="auth-aside">
+        <a class="wordmark" href="{% url 'home' %}" aria-label="GreenLoop, kembali ke beranda">
+            <img src="{% static 'img/Logo_Mark.png' %}" alt="" width="60" height="60">
+            <span>GREEN<b>LOOP</b></span>
+        </a>
 
-    {{ form.as_p }}
+        <div class="auth-aside-body">
+            <h2>Gabung jadi Mitra GreenLoop</h2>
+            <p>
+                Kafe, restoran, dan hotel di Kota Depok bisa menyetor limbah organik
+                secara terjadwal dan mendapat Waste Points.
+            </p>
 
-    <button type="submit">Register</button>
-</form>
+            <ul class="checklist">
+                <li>Penjemputan limbah terjadwal</li>
+                <li>1 kg limbah terverifikasi = 5 poin</li>
+                <li>Poin jadi voucher belanja sabun</li>
+                <li>Laporan dampak untuk branding hijau</li>
+            </ul>
+        </div>
+
+        <p class="auth-aside-foot">&copy; 2026 GreenLoop &middot; PBP Kelompok 3</p>
+    </aside>
+
+    <section class="auth-main">
+        <div class="auth-box auth-box-wide">
+
+            <header class="auth-top">
+                <h1>Buat Akun</h1>
+                <p>Sudah punya akun? <a href="{% url 'login' %}">Masuk</a></p>
+            </header>
+
+            <form method="post" class="auth-form" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <p class="auth-alert" role="alert">{{ form.non_field_errors.0 }}</p>
+                {% endif %}
+
+                <!-- Pilihan peran (Admin tidak tersedia untuk publik) -->
+                <fieldset class="role-choice">
+                    <legend class="sr-only">Daftar sebagai</legend>
+                    {% for radio in form.role %}
+                        <label class="role-option" for="{{ radio.id_for_label }}">
+                            {{ radio.tag }}
+                            <span class="icon-box">
+                                {% if radio.data.value == 'mitra' %}
+                                    <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>
+                                {% elif radio.data.value == 'courier' %}
+                                    <svg viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+                                {% else %}
+                                    <svg viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                                {% endif %}
+                            </span>
+                            <span class="role-text">
+                                {% if radio.data.value == 'mitra' %}
+                                    <strong>Mitra B2B</strong><small>Kafe / restoran / hotel</small>
+                                {% elif radio.data.value == 'courier' %}
+                                    <strong>Kurir</strong><small>Penjemputan lapangan</small>
+                                {% else %}
+                                    <strong>Konsumen</strong><small>Belanja produk eco-enzyme</small>
+                                {% endif %}
+                            </span>
+                        </label>
+                    {% endfor %}
+                </fieldset>
+                {% if form.role.errors %}<p class="field-error">{{ form.role.errors.0 }}</p>{% endif %}
+
+                <!-- Akun (semua peran) -->
+                <div class="grid-2">
+                    <div class="field">
+                        <label for="{{ form.username.id_for_label }}">Username</label>
+                        <input type="text" name="username" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" autocomplete="username" placeholder="kafe_senja" required>
+                        {% if form.username.errors %}<p class="field-error">{{ form.username.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div class="field">
+                        <label for="{{ form.email.id_for_label }}">Email</label>
+                        <input type="email" name="email" id="{{ form.email.id_for_label }}" value="{{ form.email.value|default:'' }}" autocomplete="email" placeholder="halo@kafesenja.id" required>
+                        {% if form.email.errors %}<p class="field-error">{{ form.email.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div class="field">
+                        <label for="{{ form.password1.id_for_label }}">Kata Sandi</label>
+                        <input type="password" name="password1" id="{{ form.password1.id_for_label }}" autocomplete="new-password" placeholder="Minimal 8 karakter" required>
+                        {% if form.password1.errors %}<p class="field-error">{{ form.password1.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div class="field">
+                        <label for="{{ form.password2.id_for_label }}">Ulangi Kata Sandi</label>
+                        <input type="password" name="password2" id="{{ form.password2.id_for_label }}" autocomplete="new-password" placeholder="Ulangi kata sandi" required>
+                        {% if form.password2.errors %}<p class="field-error">{{ form.password2.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Data usaha: tampil hanya untuk Mitra -->
+                <div class="role-fields role-fields-mitra">
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="{{ form.business_name.id_for_label }}">Nama Usaha</label>
+                            <input type="text" name="business_name" id="{{ form.business_name.id_for_label }}" value="{{ form.business_name.value|default:'' }}" placeholder="Kafe Senja Margonda">
+                            {% if form.business_name.errors %}<p class="field-error">{{ form.business_name.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.business_type.id_for_label }}">Jenis Usaha</label>
+                            <select name="business_type" id="{{ form.business_type.id_for_label }}">
+                                {% for value, label in form.fields.business_type.choices %}
+                                    <option value="{{ value }}"{% if form.business_type.value == value %} selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.business_type.errors %}<p class="field-error">{{ form.business_type.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.pic_name.id_for_label }}">Nama Penanggung Jawab</label>
+                            <input type="text" name="pic_name" id="{{ form.pic_name.id_for_label }}" value="{{ form.pic_name.value|default:'' }}" placeholder="Rafi Pratama">
+                            {% if form.pic_name.errors %}<p class="field-error">{{ form.pic_name.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.phone_number.id_for_label }}">No. WhatsApp</label>
+                            <input type="tel" name="phone_number" id="{{ form.phone_number.id_for_label }}" value="{{ form.phone_number.value|default:'' }}" placeholder="0812-3456-7890" autocomplete="tel">
+                            {% if form.phone_number.errors %}<p class="field-error">{{ form.phone_number.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <h2 class="form-heading">Lokasi Usaha</h2>
+                    <p class="form-hint">Sistem memvalidasi apakah alamat masuk jangkauan area pilot.</p>
+
+                    <div class="grid-4">
+                        <div class="field">
+                            <label for="{{ form.provinsi.id_for_label }}">Provinsi</label>
+                            <input type="text" name="provinsi" id="{{ form.provinsi.id_for_label }}" value="{{ form.provinsi.value|default:'' }}" placeholder="Jawa Barat">
+                            {% if form.provinsi.errors %}<p class="field-error">{{ form.provinsi.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.kota.id_for_label }}">Kota / Kabupaten</label>
+                            <input type="text" name="kota" id="{{ form.kota.id_for_label }}" value="{{ form.kota.value|default:'' }}" placeholder="Kota Depok">
+                            {% if form.kota.errors %}<p class="field-error">{{ form.kota.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.kecamatan.id_for_label }}">Kecamatan</label>
+                            <input type="text" name="kecamatan" id="{{ form.kecamatan.id_for_label }}" value="{{ form.kecamatan.value|default:'' }}" placeholder="Beji">
+                            {% if form.kecamatan.errors %}<p class="field-error">{{ form.kecamatan.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.kelurahan.id_for_label }}">Kelurahan</label>
+                            <input type="text" name="kelurahan" id="{{ form.kelurahan.id_for_label }}" value="{{ form.kelurahan.value|default:'' }}" placeholder="Pondok Cina">
+                            {% if form.kelurahan.errors %}<p class="field-error">{{ form.kelurahan.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="pilot-note">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                        <div>
+                            <strong>Area pilot GreenLoop: Kota Depok</strong>
+                            <span>Layanan penjemputan limbah saat ini tersedia untuk alamat di Kota Depok.</span>
+                        </div>
+                    </div>
+                    <p class="form-hint">Di luar Depok? Akun tetap dapat dibuat sebagai Konsumen; fitur penjemputan aktif saat area diperluas.</p>
+
+                    <div class="field">
+                        <label for="{{ form.address_detail.id_for_label }}">Alamat Lengkap</label>
+                        <input type="text" name="address_detail" id="{{ form.address_detail.id_for_label }}" value="{{ form.address_detail.value|default:'' }}" placeholder="Jl. Margonda Raya No. 358, RT 03/RW 05">
+                        {% if form.address_detail.errors %}<p class="field-error">{{ form.address_detail.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Data kurir: tampil hanya untuk Kurir (opsional) -->
+                <div class="role-fields role-fields-courier">
+                    <h2 class="form-heading">Data Kurir <span class="optional">opsional</span></h2>
+                    <p class="form-hint">Bisa dilengkapi nanti di halaman Profil &amp; Pengaturan kurir.</p>
+                    <div class="grid-3">
+                        <div class="field">
+                            <label for="{{ form.full_name.id_for_label }}">Nama Lengkap</label>
+                            <input type="text" name="full_name" id="{{ form.full_name.id_for_label }}" value="{{ form.full_name.value|default:'' }}" autocomplete="name">
+                            {% if form.full_name.errors %}<p class="field-error">{{ form.full_name.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.plate_number.id_for_label }}">Plat Nomor</label>
+                            <input type="text" name="plate_number" id="{{ form.plate_number.id_for_label }}" value="{{ form.plate_number.value|default:'' }}" placeholder="B 1234 KZT">
+                            {% if form.plate_number.errors %}<p class="field-error">{{ form.plate_number.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.vehicle_type.id_for_label }}">Jenis Armada</label>
+                            <select name="vehicle_type" id="{{ form.vehicle_type.id_for_label }}">
+                                {% for value, label in form.fields.vehicle_type.choices %}
+                                    <option value="{{ value }}"{% if form.vehicle_type.value == value %} selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.vehicle_type.errors %}<p class="field-error">{{ form.vehicle_type.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Buat Akun
+                </button>
+            </form>
+
+        </div>
+    </section>
+
+</div>
 
 {% endblock content %}
