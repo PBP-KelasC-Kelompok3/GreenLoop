@@ -39,6 +39,10 @@ from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 
 
+from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
+
+
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -54,24 +58,30 @@ def login_view(request):
             profile = getattr(user, 'userprofile', None)
             role = profile.role if profile else None
 
-            # Login terlebih dahulu
-            login(request, user)
-
-            # Admin dan petugas langsung ke Panel Admin
+            # Periksa apakah pengguna termasuk petugas
             is_petugas = user.groups.filter(
                 name='Petugas GreenLoop'
             ).exists()
 
-            if user.is_superuser or user.is_staff or role == 'admin' or is_petugas:
+            # Login pengguna
+            login(request, user)
+
+            # Petugas dan admin langsung ke dashboard admin
+            if (
+                is_petugas
+                or user.is_superuser
+                or user.is_staff
+                or role == 'admin'
+            ):
                 return redirect('admin_dashboard')
 
-            # Kurir langsung ke dashboard kurir
-            elif role == 'courier':
+            # Kurir ke dashboard kurir
+            if role == 'courier':
                 return redirect('courier_dashboard')
 
-            # Mitra langsung ke dashboard mitra
-            elif role == 'mitra':
-                return redirect('mitra_dashboard')
+            # Di fungsi register dan login_view:
+            if role == 'mitra' or (profile and profile.role == 'mitra'):
+                return redirect('/scheduling/dashboard/')  
 
             # Pengguna lainnya ke beranda
             return redirect('home')

@@ -1,0 +1,264 @@
+
+/* ========================================
+   GREENLOOP ADMIN DASHBOARD
+   Modern Green Theme
+======================================== */
+
+:root {
+  --admin-primary: #17603b;
+  --admin-primary-hover: #104a2d;
+  --admin-green: #248653;
+  --admin-mint: #edf6ef;
+  --admin-bg: #f5f8f6;
+  --admin-white: #ffffff;
+  --admin-text: #202b24;
+  --admin-muted: #758078;
+  --admin-border: #e1e9e2;
+  --admin-warning: #f4b400;
+  --admin-info: #16bce0;
+}
+
+/* Latar halaman */
+body {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Area konten utama */
+.main-area,
+.main-content {
+  background: var(--admin-bg);
+  min-width: 0;
+}
+
+/* Kartu admin */
+.admin-card,
+.dashboard-card,
+.stat-card {
+  background: var(--admin-white);
+  border: 1px solid #edf1ed;
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(24, 65, 39, 0.05);
+  transition: box-shadow 0.2s ease,
+              transform 0.2s ease;
+}
+
+.admin-card:hover,
+.dashboard-card:hover,
+.stat-card:hover {
+  box-shadow: 0 7px 20px rgba(24, 65, 39, 0.08);
+}
+
+/* Judul halaman */
+.page-title,
+.admin-title {
+  color: var(--admin-primary);
+  font-size: 1.55rem;
+  font-weight: 700;
+}
+
+.page-subtitle,
+.admin-subtitle {
+  color: var(--admin-muted);
+  font-size: 0.875rem;
+}
+
+/* Header admin */
+.admin-header {
+  background: var(--admin-white);
+  border: 1px solid var(--admin-border);
+  border-radius: 18px;
+  padding: 20px 24px;
+  box-shadow: 0 3px 12px rgba(24, 65, 39, 0.04);
+}
+
+/* Tombol utama */
+.btn-admin,
+.btn-forest {
+  background: var(--admin-primary);
+  border: 1px solid var(--admin-primary);
+  color: white;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.btn-admin:hover,
+.btn-forest:hover {
+  background: var(--admin-primary-hover);
+  border-color: var(--admin-primary-hover);
+  color: white;
+}
+
+/* Kolom pencarian */
+.admin-search,
+input.form-control {
+  border-color: var(--admin-border);
+  border-radius: 12px;
+}
+
+.admin-search:focus,
+input.form-control:focus {
+  border-color: var(--admin-green);
+  box-shadow: 0 0 0 3px rgba(36, 134, 83, 0.12);
+}
+
+/* Tabel penjemputan */
+.admin-table {
+  width: 100%;
+  background: white;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-table thead th {
+  background: #f0f6f1;
+  color: var(--admin-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--admin-border);
+  white-space: nowrap;
+}
+
+.admin-table tbody td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #edf1ed;
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:hover {
+  background: #f7fbf7;
+}
+
+/* Foto bukti penjemputan */
+.img-preview-thumb {
+  display: block;
+  width: 100px;
+  height: 85px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--admin-border);
+  transition: transform 0.2s ease,
+              box-shadow 0.2s ease;
+}
+
+.img-preview-thumb:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.admin-photo-button {
+  display: inline-block;
+  padding: 4px;
+  background: white;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+}
+
+/* Status penjemputan */
+.status-pending {
+  background: #fff4cc;
+  color: #936600;
+}
+
+.status-process {
+  background: #dff6fc;
+  color: #087d98;
+}
+
+.status-completed {
+  background: #e1f4e6;
+  color: #17603b;
+}
+
+/* Responsif */
+@media (max-width: 768px) {
+  .admin-header {
+    padding: 16px;
+  }
+
+  .page-title,
+  .admin-title {
+    font-size: 1.25rem;
+  }
+
+  .img-preview-thumb {
+    width: 75px;
+    height: 65px;
+  }
+
+  .admin-table thead th,
+  .admin-table tbody td {
+    padding: 10px 8px;
+  }
+}
+
+
+/* ===== Foto Bukti Penjemputan Admin ===== */
+.proof-photo-cell {
+  width: 130px;
+  min-width: 130px;
+  vertical-align: middle;
+}
+
+.proof-photo-button {
+  position: relative;
+  display: block;
+  width: 110px;
+  height: 85px;
+  padding: 4px;
+  overflow: hidden;
+  border: 1px solid #dbe7dd;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.proof-photo-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.proof-photo-button:hover {
+  border-color: #008a5f;
+  box-shadow: 0 4px 12px rgba(15, 61, 42, 0.15);
+  transform: translateY(-2px);
+}
+
+.proof-photo-overlay {
+  position: absolute;
+  inset: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.25rem;
+  background: rgba(15, 61, 42, 0.45);
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.proof-photo-button:hover .proof-photo-overlay {
+  opacity: 1;
+}
+
+/* Tampilan layar kecil */
+@media (max-width: 768px) {
+  .proof-photo-cell {
+    width: 100px;
+    min-width: 100px;
+  }
+
+  .proof-photo-button {
+    width: 85px;
+    height: 68px;
+  }
+}
+
