@@ -1,20 +1,20 @@
 :root {
-    --reward-forest: #123a20;
-    --reward-green: #1e5b2e;
-    --reward-lime: #b5e07a;
-    --reward-mint: #eaf5da;
-    --reward-page: #f6f8f3;
-    --reward-border: #e2e8dd;
-    --reward-muted: #66756b;
+    --reward-forest: #0f3d2a;
+    --reward-green: #008a5f;
+    --reward-lime: #3dbe7e;
+    --reward-mint: #eaf5ec;
+    --reward-page: #eaf5ec;
+    --reward-border: #c0ccbb;
+    --reward-muted: #506649;
 }
 
 .reward-app,
 .reward-app * { box-sizing: border-box; }
 
 .reward-app {
-    min-height: 70vh;
-    color: #17261b;
-    background: var(--reward-page);
+    min-height: 100%;
+    color: var(--reward-forest);
+    background: transparent;
     font-size: 14px;
 }
 
