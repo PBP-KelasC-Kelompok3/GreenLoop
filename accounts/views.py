@@ -34,15 +34,6 @@ def register(request):
         {'form': form}
     )
 
-
-from django.contrib.auth import authenticate, login
-from django.shortcuts import render, redirect
-
-
-from django.contrib.auth import authenticate, login
-from django.shortcuts import render, redirect
-
-
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -73,7 +64,7 @@ def login_view(request):
                 or user.is_staff
                 or role == 'admin'
             ):
-                return redirect('admin_dashboard')
+                return redirect('/scheduling/admin-panel/')
 
             # Kurir ke dashboard kurir
             if role == 'courier':

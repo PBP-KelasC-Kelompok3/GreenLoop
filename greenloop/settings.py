@@ -162,7 +162,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 LOGIN_URL = 'login'  # Sesuaikan dengan name url login kamu di app accounts
 
 # Setelah login sukses, otomatis masuk ke Dashboard Mitra
-LOGIN_REDIRECT_URL = 'mitra_dashboard'
+LOGIN_REDIRECT_URL = '/scheduling/dashboard/'
 
 # Setelah logout, kembali ke halaman utama (home)
-LOGOUT_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = '/'

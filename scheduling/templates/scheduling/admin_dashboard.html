@@ -218,7 +218,7 @@
       </div>
     </div>
 
-    <!-- DASHBOARD LAYOUT 3 KOLOM UTAMA -->
+    <!-- DASHBOARD LAYOUT UTAMA (3 Kolom digabung dengan Sinkronisasi Tab) -->
     <div class="row g-3">
 
       <!-- KOLOM 1: Antrean Verifikasi -->
@@ -258,77 +258,117 @@
         </div>
       </div>
 
-      <!-- KOLOM 2: Detail Penjemputan & Preview Foto -->
-      <div class="col-lg-6">
+      <!-- KOLOM 2 & KOLOM 3 DIGABUNG DALAM SATU TAB-PANE YANG SINKRON -->
+      <div class="col-lg-9">
         <div class="tab-content">
           {% for pickup in all_pickups %}
             <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="content-pickup-{{ pickup.id }}" role="tabpanel">
-              <div class="admin-content-card">
+              <div class="row g-3">
                 
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                  <div>
-                    <h5 class="fw-bold text-dark mb-0">PK-{{ pickup.id|stringformat:"04d" }} - {{ pickup.mitra.get_full_name|default:pickup.mitra.username }}</h5>
-                    <small class="text-muted">{{ pickup.mitra.email|default:"Email tidak tersedia" }}</small>
-                  </div>
-                  <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">{{ pickup.get_status_display }}</span>
-                </div>
-
-                <!-- Foto Utama Limbah (Bisa Klik Pop-up Besar) -->
-                <div class="position-relative mb-3">
-                  {% if pickup.waste_photo %}
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ pickup.id }}">
-                      <img src="{{ pickup.waste_photo.url }}" class="main-preview-img shadow-sm" alt="Bukti Limbah" style="cursor: zoom-in;">
-                    </a>
-                    <div class="position-absolute bottom-0 end-0 m-2 bg-dark bg-opacity-75 text-white px-2 py-1 rounded small" style="font-size: 11px;">
-                      <i class="bi bi-zoom-in me-1"></i> Klik untuk memperbesar
+                <!-- DETAIL PENJEMPUTAN (Area Tengah) -->
+                <div class="col-lg-8">
+                  <div class="admin-content-card h-100">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <div>
+                        <h5 class="fw-bold text-dark mb-0">PK-{{ pickup.id|stringformat:"04d" }} - {{ pickup.mitra.get_full_name|default:pickup.mitra.username }}</h5>
+                        <small class="text-muted">{{ pickup.mitra.email|default:"Email tidak tersedia" }}</small>
+                      </div>
+                      <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">{{ pickup.get_status_display }}</span>
                     </div>
-                  {% else %}
-                    <div class="main-preview-img bg-light border d-flex align-items-center justify-content-center text-muted">
-                      Belum ada foto yang diunggah
+
+                    <!-- Foto Utama Limbah (Bisa Klik Pop-up Besar) -->
+                    <div class="position-relative mb-3">
+                      {% if pickup.waste_photo %}
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ pickup.id }}">
+                          <img src="{{ pickup.waste_photo.url }}" class="main-preview-img shadow-sm" alt="Bukti Limbah" style="cursor: zoom-in;">
+                        </a>
+                        <div class="position-absolute bottom-0 end-0 m-2 bg-dark bg-opacity-75 text-white px-2 py-1 rounded small" style="font-size: 11px;">
+                          <i class="bi bi-zoom-in me-1"></i> Klik untuk memperbesar
+                        </div>
+                      {% else %}
+                        <div class="main-preview-img bg-light border d-flex align-items-center justify-content-center text-muted">
+                          Belum ada foto yang diunggah
+                        </div>
+                      {% endif %}
                     </div>
-                  {% endif %}
+
+                    <!-- Informasi Ringkas Grid -->
+                    <div class="info-grid">
+                      <div>
+                        <div class="info-label">JADWAL PENJEMPUTAN</div>
+                        <div class="info-value">{{ pickup.pickup_date|date:"D, d M Y" }} (Slot {{ pickup.pickup_time_slot }})</div>
+                      </div>
+                      <div>
+                        <div class="info-label">ESTIMASI BOBOT</div>
+                        <div class="info-value">{{ pickup.estimated_weight }} kg</div>
+                      </div>
+                      <div>
+                        <div class="info-label">JENIS LIMBAH</div>
+                        <div class="info-value">{{ pickup.get_waste_type_display }}</div>
+                      </div>
+                      <div>
+                        <div class="info-label">CATATAN MITRA</div>
+                        <div class="info-value">{{ pickup.notes|default:"-" }}</div>
+                      </div>
+                    </div>
+
+                    <!-- Checklist Kelayakan Admin (Dinamis & Permanen jika sudah diproses) -->
+                    <div class="mt-4 pt-3 border-top">
+                      <div class="fw-bold small text-dark mb-2">Checklist Kelayakan (Verifikasi Admin)</div>
+                      
+                      <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="check1_{{ pickup.id }}" {% if pickup.status != 'PENDING' and pickup.status != 'pending' %}checked disabled{% endif %}>
+                        <label class="form-check-label small text-secondary" for="check1_{{ pickup.id }}">
+                          Limbah organik segar / terpilah sesuai standar
+                        </label>
+                      </div>
+
+                      <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="check2_{{ pickup.id }}" {% if pickup.status != 'PENDING' and pickup.status != 'pending' %}checked disabled{% endif %}>
+                        <label class="form-check-label small text-secondary" for="check2_{{ pickup.id }}">
+                          Tidak tercampur plastik / limbah anorganik berbahaya
+                        </label>
+                      </div>
+
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="check3_{{ pickup.id }}" {% if pickup.status != 'PENDING' and pickup.status != 'pending' %}checked disabled{% endif %}>
+                        <label class="form-check-label small text-secondary" for="check3_{{ pickup.id }}">
+                          Volume dan estimasi berat sesuai dengan kenyataan foto
+                        </label>
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
 
-                <!-- Informasi Ringkas Grid -->
-                <div class="info-grid">
-                  <div>
-                    <div class="info-label">JADWAL PENJEMPUTAN</div>
-                    <div class="info-value">{{ pickup.pickup_date|date:"D, d M Y" }} (Slot {{ pickup.pickup_time_slot }})</div>
-                  </div>
-                  <div>
-                    <div class="info-label">ESTIMASI BOBOT</div>
-                    <div class="info-value">{{ pickup.estimated_weight }} kg</div>
-                  </div>
-                  <div>
-                    <div class="info-label">JENIS LIMBAH</div>
-                    <div class="info-value">{{ pickup.get_waste_type_display }}</div>
-                  </div>
-                  <div>
-                    <div class="info-label">CATATAN MITRA</div>
-                    <div class="info-value">{{ pickup.notes|default:"-" }}</div>
-                  </div>
-                </div>
+                <!-- AKSI ADMIN (Area Kanan - Otomatis Menyesuaikan Status per ID) -->
+                <div class="col-lg-4">
+                  <div class="action-box-card">
+                    <h6 class="fw-bold mb-2">Aksi Verifikasi</h6>
 
-                <!-- Checklist Kelayakan Admin -->
-                <div class="mt-4 pt-3 border-top">
-                  <div class="fw-bold small text-dark mb-2">Checklist Kelayakan (Verifikasi Admin)</div>
-                  <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" id="check1_{{ pickup.id }}">
-                    <label class="form-check-label small text-secondary" for="check1_{{ pickup.id }}">
-                      Limbah organik segar / terpilah sesuai standar
-                    </label>
-                  </div>
-                  <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" id="check2_{{ pickup.id }}">
-                    <label class="form-check-label small text-secondary" for="check2_{{ pickup.id }}">
-                      Tidak tercampur plastik / limbah anorganik berbahaya
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="check3_{{ pickup.id }}">
-                    <label class="form-check-label small text-secondary" for="check3_{{ pickup.id }}">
-                      Volume dan estimasi berat sesuai dengan kenyataan foto
-                    </label>
+                    {% if pickup.status == 'PENDING' or pickup.status == 'pending' or pickup.status == 'Pending Verification' %}
+                      <p class="text-muted small mb-4">Setujui untuk melanjutkan ke proses penjemputan atau tolak jika tidak sesuai.</p>
+                      <div class="d-flex flex-column gap-2">
+                        <a href="{% url 'update_pickup_status' pickup.id 'IN_PROGRESS' %}" class="btn btn-approve d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Proses dan setujui penjemputan ini?');">
+                          <i class="bi bi-check-lg"></i> Setujui Penjemputan
+                        </a>
+                        <a href="{% url 'update_pickup_status' pickup.id 'REJECTED' %}" class="btn btn-reject-outline d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Tolak permintaan ini?');">
+                          <i class="bi bi-x-lg"></i> Tolak
+                        </a>
+                      </div>
+                    {% elif pickup.status == 'COMPLETED' or pickup.status == 'completed' or pickup.status == 'Selesai' %}
+                      <p class="text-muted small mb-3">Penjemputan ini telah selesai diproses.</p>
+                      <div class="alert alert-success border text-center small mb-0 py-2">
+                        <i class="bi bi-check-circle-fill me-1"></i> Status: <strong>Selesai</strong>
+                      </div>
+                    {% else %}
+                      <p class="text-muted small mb-3">Penjemputan ini sedang dalam proses penanganan.</p>
+                      <div class="alert alert-light border text-center text-muted small mb-0 py-2">
+                        Status: <strong>{{ pickup.get_status_display }}</strong>
+                      </div>
+                    {% endif %}
+
                   </div>
                 </div>
 
@@ -337,40 +377,6 @@
           {% empty %}
             <div class="admin-content-card text-center py-5 text-muted">
               Belum ada data penjemputan untuk diverifikasi.
-            </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- KOLOM 3: Aksi Admin -->
-      <div class="col-lg-3">
-        <div class="tab-content">
-          {% for pickup in all_pickups %}
-            <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="content-pickup-{{ pickup.id }}" role="tabpanel">
-              <div class="action-box-card">
-                <h6 class="fw-bold mb-2">Aksi Verifikasi</h6>
-                <p class="text-muted small mb-4">Setujui untuk melanjutkan ke proses penjemputan atau tolak jika tidak sesuai.</p>
-
-                {% if pickup.status == 'PENDING' %}
-                  <div class="d-flex flex-column gap-2">
-                    <a href="{% url 'update_pickup_status' pickup.id 'IN_PROGRESS' %}" class="btn btn-approve d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Proses dan setujui penjemputan ini?');">
-                      <i class="bi bi-check-lg"></i> Setujui Penjemputan
-                    </a>
-                    <a href="{% url 'update_pickup_status' pickup.id 'REJECTED' %}" class="btn btn-reject-outline d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Tolak permintaan ini?');">
-                      <i class="bi bi-x-lg"></i> Tolak
-                    </a>
-                  </div>
-                {% else %}
-                  <div class="alert alert-light border text-center text-muted small mb-0">
-                    Status saat ini: <strong>{{ pickup.get_status_display }}</strong>. Tidak ada aksi lanjutan.
-                  </div>
-                {% endif %}
-
-              </div>
-            </div>
-          {% empty %}
-            <div class="action-box-card text-center text-muted small">
-              Tidak ada aksi.
             </div>
           {% endfor %}
         </div>
