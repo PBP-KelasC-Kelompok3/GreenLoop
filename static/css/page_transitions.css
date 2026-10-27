@@ -16,19 +16,25 @@
     to { opacity: 0; transform: translate3d(14px, 0, 0); }
 }
 
-body.page-transition-in-from-home > .app-shell {
+body.page-transition-in-from-home > .app-shell,
+body.page-transition-in-from-home > .layout {
     animation: greenloop-enter-from-right .42s cubic-bezier(.2,.75,.25,1) both;
 }
 
-body.page-transition-in-from-dashboard > main {
+body.page-transition-in-from-dashboard > main,
+body.page-transition-in-from-dashboard > .app-shell,
+body.page-transition-in-from-dashboard > .layout > .main {
     animation: greenloop-enter-from-left .42s cubic-bezier(.2,.75,.25,1) both;
 }
 
-body.page-transition-out-to-dashboard > main {
+body.page-transition-out-to-dashboard > main,
+body.page-transition-out-to-dashboard > .app-shell,
+body.page-transition-out-to-dashboard > .layout > .main {
     animation: greenloop-leave-left .18s ease-in both;
 }
 
-body.page-transition-out-to-home > .app-shell {
+body.page-transition-out-to-home > .app-shell,
+body.page-transition-out-to-home > .layout {
     animation: greenloop-leave-right .18s ease-in both;
 }
 
@@ -36,8 +42,14 @@ body.page-transition-out-to-home > .app-shell {
     html { scroll-behavior: auto; }
 
     body.page-transition-in-from-home > .app-shell,
+    body.page-transition-in-from-home > .layout,
     body.page-transition-in-from-dashboard > main,
+    body.page-transition-in-from-dashboard > .app-shell,
+    body.page-transition-in-from-dashboard > .layout > .main,
     body.page-transition-out-to-dashboard > main,
+    body.page-transition-out-to-dashboard > .app-shell,
+    body.page-transition-out-to-dashboard > .layout > .main,
+    body.page-transition-out-to-home > .layout,
     body.page-transition-out-to-home > .app-shell {
         animation-duration: .01ms;
     }

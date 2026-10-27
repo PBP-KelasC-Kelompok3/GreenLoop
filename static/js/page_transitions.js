@@ -3,13 +3,32 @@
     const currentPage = body.dataset.page;
     const transitionKey = 'greenloop-transition-from';
 
+    // Chrome can restore the previous page from its back/forward cache with
+    // the exit animation still applied, leaving the page invisible.
+    window.addEventListener('pageshow', function (event) {
+        if (!event.persisted) return;
+
+        body.classList.remove(
+            'page-transition-in-from-home',
+            'page-transition-in-from-dashboard',
+            'page-transition-out-to-dashboard',
+            'page-transition-out-to-home'
+        );
+
+        try {
+            sessionStorage.removeItem(transitionKey);
+        } catch (error) {
+            // The restored page remains visible if session storage is unavailable.
+        }
+    });
+
     try {
         const previousPage = sessionStorage.getItem(transitionKey);
         sessionStorage.removeItem(transitionKey);
 
-        if (currentPage === 'mitra-dashboard' && previousPage === 'home') {
+        if (['mitra-dashboard', 'courier-dashboard'].includes(currentPage) && previousPage === 'home') {
             body.classList.add('page-transition-in-from-home');
-        } else if (currentPage === 'home' && previousPage === 'mitra-dashboard') {
+        } else if (currentPage === 'home' && ['mitra-dashboard', 'courier-dashboard'].includes(previousPage)) {
             body.classList.add('page-transition-in-from-dashboard');
         }
 
@@ -31,8 +50,8 @@
 
         const targetPage = link.dataset.transitionTarget;
         const isHomeDashboardTransition =
-            (currentPage === 'home' && targetPage === 'mitra-dashboard') ||
-            (currentPage === 'mitra-dashboard' && targetPage === 'home');
+            (currentPage === 'home' && ['mitra-dashboard', 'courier-dashboard'].includes(targetPage)) ||
+            (['mitra-dashboard', 'courier-dashboard'].includes(currentPage) && targetPage === 'home');
         if (!isHomeDashboardTransition) return;
 
         event.preventDefault();

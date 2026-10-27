@@ -13,10 +13,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{% static 'courier/css/courier.css' %}">
+    <link rel="stylesheet" href="{% static 'css/page_transitions.css' %}">
 
     {% block extra_head %}{% endblock extra_head %}
 </head>
-<body>
+<body data-page="courier-dashboard">
 
 <div class="layout" id="layout">
 
@@ -40,6 +41,7 @@
 <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@latest/Leaflet.GoogleMutant.js"></script> -->
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="{% static 'courier/js/layout.js' %}"></script>
+<script src="{% static 'js/page_transitions.js' %}"></script>
 {% block extra_js %}{% endblock extra_js %}
 </body>
 </html>

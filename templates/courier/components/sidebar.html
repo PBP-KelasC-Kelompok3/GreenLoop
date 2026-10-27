@@ -2,13 +2,16 @@
 {% with current=request.resolver_match.url_name %}
 <aside class="sidebar" id="sidebar">
 
-    <a class="brand" href="{% url 'courier:show_dashboard' %}">
+    <a class="brand" href="{% url 'home' %}" data-transition-target="home" aria-label="Kembali ke Beranda">
         <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop">
     </a>
     <span class="role-pill">Kurir Lapangan</span>
 
     <p class="menu-label">Menu</p>
     <nav class="menu">
+        <a href="{% url 'home' %}" class="menu-item" data-transition-target="home">
+            <i data-lucide="house"></i><span>Beranda</span>
+        </a>
         <a href="{% url 'courier:show_dashboard' %}" class="menu-item {% if current == 'show_dashboard' %}active{% endif %}">
             <i data-lucide="layout-dashboard"></i><span>Dashboard Kurir</span>
         </a>
