@@ -1,27 +1,90 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Masuk | GreenLoop{% endblock title %}
+
+{# Halaman auth tampil penuh (split-screen): tanpa navbar dan footer umum #}
+{% block body_class %}auth-body{% endblock body_class %}
+{% block header %}{% endblock header %}
+{% block footer %}{% endblock footer %}
 
 {% block content %}
 
-<h1>Login</h1>
+<div class="auth">
 
-<form method="post">
-    {% csrf_token %}
+    <aside class="auth-aside">
+        <a class="wordmark" href="{% url 'home' %}" aria-label="GreenLoop, kembali ke beranda">
+            <img src="{% static 'img/Logo_Mark.png' %}" alt="" width="60" height="60">
+            <span>GREEN<b>LOOP</b></span>
+        </a>
 
-    <div>
-        <label for="username">Username</label>
-        <input type="text" name="username" id="username" required>
-    </div>
+        <div class="auth-aside-body">
+            <h2>Setiap setoran limbah, satu langkah menuju kota yang lebih hijau.</h2>
+            <p>
+                Satu akun untuk semua peran: belanja produk, jadwalkan penjemputan,
+                atau jalankan rute kurir.
+            </p>
+        </div>
 
-    <div>
-        <label for="password">Password</label>
-        <input type="password" name="password" id="password" required>
-    </div>
+        <p class="auth-aside-foot">&copy; 2026 GreenLoop &middot; PBP Kelompok 3</p>
+    </aside>
 
-    {% if error %}
-        <p>{{ error }}</p>
-    {% endif %}
+    <section class="auth-main">
+        <div class="auth-box">
 
-    <button type="submit">Login</button>
-</form>
+            <a class="auth-logo" href="{% url 'home' %}">
+                <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" width="192" height="36">
+            </a>
+
+            <h1>Masuk ke akun Anda</h1>
+            <p class="auth-sub">Selamat datang kembali! Silakan masuk untuk melanjutkan.</p>
+
+            <form method="post" class="auth-form" novalidate>
+                {% csrf_token %}
+
+                {% if error %}
+                    <p class="auth-alert" role="alert">{{ error }}</p>
+                {% endif %}
+
+                <div class="field">
+                    <label for="username">Username</label>
+                    <div class="input-wrap">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <input type="text" name="username" id="username" required autofocus autocomplete="username" placeholder="Masukkan username">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="password">Kata Sandi</label>
+                    <div class="input-wrap">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <input type="password" name="password" id="password" required autocomplete="current-password" placeholder="Masukkan kata sandi">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Masuk</button>
+            </form>
+
+            <div class="role-note">
+                <p>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                    Akses otomatis sesuai peran akun
+                </p>
+                <ul>
+                    <li>Konsumen</li>
+                    <li>Mitra B2B</li>
+                    <li>Kurir</li>
+                    <li>Admin</li>
+                </ul>
+            </div>
+
+            <p class="auth-switch">
+                Belum punya akun? <a href="{% url 'register' %}">Daftar sekarang</a>
+            </p>
+
+        </div>
+    </section>
+
+</div>
 
 {% endblock content %}

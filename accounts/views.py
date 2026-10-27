@@ -1,6 +1,7 @@
 
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.shortcuts import redirect, render
 
 
@@ -12,15 +13,22 @@ def register(request):
         form = RegisterForm(request.POST)
 
         if form.is_valid():
-            user = form.save()
+            with transaction.atomic():
+                user = form.save()
 
-            user.userprofile.role = form.cleaned_data['role']
-            user.userprofile.save()
+                user.userprofile.role = form.cleaned_data['role']
+                user.userprofile.save()
+
+                # Data usaha (Mitra) / kendaraan (Kurir) ke profil masing-masing
+                form.save_role_profile(user)
 
             login(request, user)
             return redirect('home')
     else:
-        form = RegisterForm()
+        # ?role=mitra memilih kartu peran sejak awal (dipakai tombol "Daftar Mitra")
+        initial_role = request.GET.get('role')
+        initial = {'role': initial_role} if initial_role in ('consumer', 'mitra', 'courier') else {}
+        form = RegisterForm(initial=initial)
 
     return render(request, 'accounts/register.html', {'form': form})
 
