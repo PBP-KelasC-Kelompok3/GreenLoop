@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction
 from .models import PickupSchedule, MitraProfile
 from .forms import PickupScheduleForm
 from django.db.models import Sum
@@ -9,6 +10,7 @@ from datetime import timedelta
 import json
 from django.db.models import Q
 from django.contrib.auth.models import User
+from waste_reward.services import award_verified_pickup, get_balance
 
 @login_required
 def mitra_dashboard(request):
@@ -27,8 +29,8 @@ def mitra_dashboard(request):
     # 3. Estimasi CO2e Dicegah (0.5 kg CO2e per kg limbah)
     co2_saved = round(total_waste * 0.5, 1)
 
-    # 4. Hitung Poin Dinamis (1 kg limbah = 10 poin)
-    calculated_points = int(total_waste * 10)
+    # Reward ledger is the single source of truth for member points.
+    calculated_points = get_balance(request.user)
 
     # 5. Penjemputan Terdekat
     next_pickup = (
@@ -52,21 +54,21 @@ def mitra_dashboard(request):
         current_tier = 'Bronze'
         next_tier = 'Silver'
         target_points = 1000
-    elif calculated_points < 2000:
+    elif calculated_points < 3000:
         current_tier = 'Silver'
         next_tier = 'Gold'
-        target_points = 2000
-    elif calculated_points < 3000:
+        target_points = 3000
+    elif calculated_points < 5000:
         current_tier = 'Gold'
         next_tier = 'Platinum'
-        target_points = 3000
+        target_points = 5000
     else:
         current_tier = 'Platinum'
         next_tier = 'Max Level'
         target_points = calculated_points
 
     points_needed = max(0, target_points - calculated_points)
-    kg_needed = round(points_needed / 10, 1)
+    kg_needed = round(points_needed / 5, 1)
     level_progress_pct = (
         min(100, int((calculated_points / target_points) * 100))
         if target_points > 0
@@ -322,37 +324,44 @@ def update_pickup_status(request, pickup_id, new_status=None):
 
             weight = Decimal(actual_weight)
 
-            if not weight.is_finite() or weight < 0:
+            if not weight.is_finite() or weight <= 0:
                 raise InvalidOperation
 
         except (InvalidOperation, ValueError):
             messages.error(
                 request,
-                "Berat aktual harus berupa angka nol atau lebih."
+                "Berat aktual harus lebih dari 0 kg."
             )
             return redirect(
                 'courier_dashboard' if is_courier
                 else 'admin_dashboard'
             )
 
-        pickup.actual_weight = weight
-        pickup.points = int(weight * 10)
-        pickup.status = 'COMPLETED'
+        with transaction.atomic():
+            reward_transaction = award_verified_pickup(
+                pickup.mitra,
+                weight,
+                f'pickup-{pickup.pk}',
+            )
+            pickup.actual_weight = weight
+            pickup.points = reward_transaction.points_delta
+            pickup.status = 'COMPLETED'
 
-        completed_count = PickupSchedule.objects.filter(
-            mitra=pickup.mitra,
-            status='COMPLETED'
-        ).exclude(id=pickup.id).count() + 1
+            completed_count = PickupSchedule.objects.filter(
+                mitra=pickup.mitra,
+                status='COMPLETED'
+            ).exclude(id=pickup.id).count() + 1
 
-        if completed_count >= 10:
-            pickup.certificate = 'certificates/Certificate.png'
+            if completed_count >= 10:
+                pickup.certificate = 'certificates/Certificate.png'
 
-        pickup.save()
+            pickup.save()
 
         messages.success(
             request,
             f"Penjemputan PK-00{pickup.id} berhasil diselesaikan. "
-            f"Berat aktual: {pickup.actual_weight} kg tercatat."
+            f"Berat aktual: {pickup.actual_weight} kg tercatat, "
+            f"{pickup.points} poin ditambahkan."
         )
 
         if is_courier:

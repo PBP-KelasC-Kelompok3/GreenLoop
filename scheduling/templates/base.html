@@ -96,7 +96,7 @@
           </a>
 
           <!-- 4. Waste & Reward -->
-          <a href="#" class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
+          <a href="{% url 'waste_reward:dashboard' %}" class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3 {% if request.resolver_match.app_name == 'waste_reward' %}active{% endif %}">
             <div><i class="bi bi-gift me-2"></i> Waste & Reward</div>
           </a>
 

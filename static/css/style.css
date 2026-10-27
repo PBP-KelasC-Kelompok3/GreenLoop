@@ -102,6 +102,8 @@ img { max-width: 100%; }
 .nav-links a.nav-current { color: var(--primary); font-weight: 700; }
 
 .nav-auth { display: flex; align-items: center; gap: 16px; }
+.nav-auth form { margin: 0; }
+.nav-auth button { font: inherit; cursor: pointer; }
 .nav-user { font-size: 14px; color: var(--green); }
 
 .nav-toggle { display: none; }

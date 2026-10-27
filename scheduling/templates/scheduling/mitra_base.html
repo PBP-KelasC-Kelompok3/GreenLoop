@@ -61,7 +61,7 @@
           <a href="{% url 'pickup_history' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'pickup_history' %}active{% endif %}">
             <i class="bi bi-list-task"></i><span>Riwayat Penjemputan</span>
           </a>
-          <a href="#" class="sidebar-nav-item">
+          <a href="{% url 'waste_reward:dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.app_name == 'waste_reward' %}active{% endif %}">
             <i class="bi bi-gift"></i><span>Waste &amp; Reward</span>
           </a>
           <a href="#" class="sidebar-nav-item">

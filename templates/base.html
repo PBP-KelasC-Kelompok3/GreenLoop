@@ -94,13 +94,13 @@
                     {% elif user.userprofile.role == 'mitra' %}
 
                         <li>
-                            <a href="{% url 'coming_soon' 'mitra-dashboard' %}">
+                            <a href="{% url 'mitra_dashboard' %}">
                                 Dashboard Mitra
                             </a>
                         </li>
 
                         <li>
-                            <a href="{% url 'coming_soon' 'pickup' %}">
+                            <a href="{% url 'create_pickup' %}">
                                 Pickup
                             </a>
                         </li>
@@ -154,12 +154,10 @@
                         Hi, {{ user.username }}
                     </span>
 
-                    <a
-                        class="btn btn-outline"
-                        href="{% url 'logout' %}"
-                    >
-                        Logout
-                    </a>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button class="btn btn-outline" type="submit">Logout</button>
+                    </form>
 
                 {% else %}
 
