@@ -12,11 +12,12 @@
 
   <!-- base dulu, baru css halaman supaya css halaman bisa menimpa -->
   <link rel="stylesheet" href="{% static 'css/mitra_base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/page_transitions.css' %}">
   <link rel="stylesheet" href="{% static 'css/mitra_dashboard.css' %}">
 
   {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body data-page="mitra-dashboard">
 
 <div class="app-shell d-flex min-vh-100">
 
@@ -24,7 +25,9 @@
   <aside class="sidebar p-3 d-flex flex-column justify-content-between" id="sidebar">
     <div>
       <div class="d-flex align-items-center justify-content-between mb-3 px-2">
-        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo">
+        <a href="{% url 'home' %}" data-transition-target="home" aria-label="Kembali ke Beranda">
+          <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo">
+        </a>
         <button type="button" class="btn-close d-lg-none" id="sidebar-close" aria-label="Tutup"></button>
       </div>
 
@@ -153,6 +156,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/page_transitions.js' %}"></script>
 <script>
   (function () {
     var h = new Date().getHours();

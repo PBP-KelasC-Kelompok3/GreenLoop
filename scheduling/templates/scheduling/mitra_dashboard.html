@@ -3,8 +3,8 @@
 
 {% block title %}GreenLoop - Dashboard Mitra B2B{% endblock %}
 
-{% block header_title %}Dashboard Mitra B2B 🏢{% endblock %}
-{% block header_subtitle %}Pantau penjemputan, poin, dan dampak lingkungan usaha Anda secara real-time.📱{% endblock %}
+{% block header_title %}Dashboard Mitra B2B{% endblock %}
+{% block header_subtitle %}Pantau penjemputan, poin, dan dampak lingkungan usaha Anda secara real-time.{% endblock %}
 
 {% block topbar_action %}
 <a href="{% url 'create_pickup' %}" class="btn btn-success rounded-3 fw-semibold px-3 shadow-sm">
@@ -28,7 +28,7 @@
         <div class="p-2 bg-success-subtle rounded-3 text-success">
           <i class="bi bi-recycle fs-5"></i>
         </div>
-        <span class="badge bg-success-subtle text-success rounded-pill">+12%</span>
+        <span class="badge bg-success-subtle text-success rounded-pill">Terverifikasi</span>
       </div>
       <small class="text-muted d-block fw-semibold">Total limbah disetor</small>
       <h3 class="fw-bold text-dark mb-0 mt-1">{{ total_waste }} <span class="fs-6 fw-normal text-muted">kg</span></h3>
@@ -42,10 +42,10 @@
         <div class="p-2 bg-white bg-opacity-25 rounded-3 text-white">
           <i class="bi bi-coin fs-5"></i>
         </div>
-        <span class="badge bg-white text-dark rounded-pill fw-semibold">Silver</span>
+        <span class="badge bg-white text-dark rounded-pill fw-semibold">{{ current_tier }}</span>
       </div>
       <small class="text-white-50 d-block fw-semibold">Saldo Waste Points</small>
-      <h3 class="fw-bold text-white mb-0 mt-1">{{ user_points }} <span class="fs-6 fw-normal text-white-50">PTS</span></h3>
+      <h3 class="fw-bold text-white mb-0 mt-1">{{ user_points_display }} <span class="fs-6 fw-normal text-white-50">PTS</span></h3>
     </div>
   </div>
 
@@ -57,7 +57,7 @@
           <i class="bi bi-truck fs-5"></i>
         </div>
       </div>
-      <small class="text-muted d-block fw-semibold">Penjemputan bulan ini</small>
+      <small class="text-muted d-block fw-semibold">Penjemputan selesai bulan ini</small>
       <h3 class="fw-bold text-dark mb-0 mt-1">{{ pickups_this_month }} <span class="fs-6 fw-normal text-muted">kali</span></h3>
     </div>
   </div>
@@ -69,7 +69,7 @@
         <div class="p-2 bg-info-subtle rounded-3 text-info">
           <i class="bi bi-tree fs-5"></i>
         </div>
-        <span class="badge bg-info-subtle text-info rounded-pill">+9%</span>
+        <span class="badge bg-info-subtle text-info rounded-pill">Estimasi</span>
       </div>
       <small class="text-muted d-block fw-semibold">CO2e dicegah</small>
       <h3 class="fw-bold text-dark mb-0 mt-1">{{ co2_saved }} <span class="fs-6 fw-normal text-muted">kg</span></h3>
@@ -234,7 +234,7 @@
     </div>
   </div>
 
-  <!-- Widget Tukar Poin -->
+  <!-- Widget Waste & Reward -->
   <div class="col-md-5">
     <div class="card border-0 shadow-sm rounded-4 p-4 text-white h-100 bg-pickup-dark">
       <span class="text-uppercase fw-bold text-success-subtle mb-3 d-block fs-7 letter-spacing-1">Tukar Poin</span>
@@ -243,21 +243,21 @@
         <div>
           <div class="d-flex align-items-center gap-2 mb-1">
             <i class="bi bi-ticket-perforated-fill fs-5 text-dark"></i>
-            <h6 class="fw-bold mb-0 text-dark">Diskon Rp 25.000</h6>
+            <h6 class="fw-bold mb-0 text-dark">Voucher GreenLoop</h6>
           </div>
-          <small class="text-dark-50 d-block mb-2">Belanja sabun eco-enzyme</small>
-          <span class="fw-bold text-dark fs-6">450 poin</span>
+          <small class="text-dark-50 d-block mb-2">Gunakan saldo Waste Points untuk menukar voucher.</small>
+          <span class="fw-bold text-dark fs-6">Saldo {{ user_points_display }} poin</span>
         </div>
         
-        <button class="btn btn-dark text-white rounded-4 px-3 py-2 fw-semibold btn-sm shadow-sm">
-          Tukar
-        </button>
+        <a href="{% url 'waste_reward:dashboard' %}" class="btn btn-dark text-white rounded-4 px-3 py-2 fw-semibold btn-sm shadow-sm text-nowrap">
+          Lihat Voucher
+        </a>
       </div>
 
       <div class="mt-auto">
         <div class="d-flex justify-content-between align-items-center small fw-semibold text-white mb-2">
           <span>Level {{ current_tier }} {% if next_tier != 'Max Level' %}menuju {{ next_tier }}{% endif %}</span>
-          <span>{{ user_points }} / {{ target_points }}</span>
+          <span>{{ user_points_display }} / {{ target_points_display }}</span>
         </div>
 
         <div class="progress rounded-pill level-progress-track my-2">
