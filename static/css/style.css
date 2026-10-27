@@ -81,6 +81,8 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 .badge-soft { background: var(--mint); color: var(--primary); }
 
+html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+
 /* ---------- Navbar ---------- */
 .site-header {
     position: sticky;
@@ -113,6 +115,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 
 .nav-links {
+    position: relative;
     display: flex;
     gap: 30px;
     list-style: none;
@@ -131,6 +134,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
     display: block;
     padding: 28px 0 25px;
     border-bottom: 3px solid transparent;
+    transition: color .22s ease, border-color .22s ease;
 }
 .nav-links a:hover,
 .nav-auth a:not(.btn):hover { color: var(--forest-2); }
@@ -138,7 +142,26 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .nav-links a.nav-current {
     color: var(--forest);
     font-weight: 600;
-    border-bottom-color: var(--forest-2);
+    border-bottom-color: transparent;
+}
+
+.nav-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
+    padding: 0;
+    border-radius: 3px 3px 0 0;
+    background: var(--forest-2);
+    list-style: none;
+    pointer-events: none;
+    transform: translateX(0);
+    transition: width .3s cubic-bezier(.2,.75,.25,1), transform .3s cubic-bezier(.2,.75,.25,1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-indicator { transition: none; }
 }
 
 .nav-auth { display: flex; align-items: center; gap: 14px; }
@@ -646,6 +669,7 @@ main { min-height: 70vh; }
     .nav-links { flex-direction: column; margin: 0; gap: 0; }
     .nav-links a { padding: 12px 0; border-bottom: 1px solid var(--line); }
     .nav-links a.nav-current { border-bottom-color: var(--line); color: var(--primary); }
+    .nav-indicator { display: none; }
     .nav-auth { flex-wrap: wrap; padding-top: 16px; }
 
     .auth, .auth-register { grid-template-columns: 1fr; min-height: 0; }
@@ -658,6 +682,7 @@ main { min-height: 70vh; }
 
     .footer-cols { gap: 40px; }
 }
+
 
 @media (max-width: 600px) {
     .hero h1 { font-size: 30px; }

@@ -18,17 +18,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/page_transitions.css' %}">
     {% block extra_head %}{% endblock extra_head %}
 </head>
 
-<body class="{% block body_class %}{% endblock body_class %}">
+<body class="{% block body_class %}{% endblock body_class %}" data-page="{% if request.resolver_match.url_name == 'home' %}home{% else %}other{% endif %}">
 
 {% block header %}
 <header class="site-header">
 
     <nav class="navbar" aria-label="Navigasi utama">
 
-        <a class="brand" href="{% url 'home' %}">
+        <a class="brand" href="{% url 'home' %}" data-transition-target="home">
             <img
                 src="{% static 'img/Logo_Lockup.png' %}"
                 alt="GreenLoop"
@@ -56,7 +57,7 @@
             <ul class="nav-links">
 
                 <li>
-                    <a href="{% url 'home' %}"{% if request.resolver_match.url_name == 'home' %} class="nav-current" aria-current="page"{% endif %}>
+                    <a data-nav-section="home" href="{% url 'home' %}"{% if request.resolver_match.url_name == 'home' %} class="nav-current" aria-current="page"{% endif %}>
                         Beranda
                     </a>
                 </li>
@@ -71,13 +72,13 @@
                 {% endif %}
 
                 <li>
-                    <a href="{% url 'home' %}#impact">
+                    <a data-nav-section="impact" href="{% url 'home' %}#impact">
                         Dampak
                     </a>
                 </li>
 
                 <li>
-                    <a href="{% url 'home' %}#cara-kerja">
+                    <a data-nav-section="cara-kerja" href="{% url 'home' %}#cara-kerja">
                         Cara Kerja
                     </a>
                 </li>
@@ -101,20 +102,8 @@
                     {% elif user.userprofile.role == 'mitra' %}
 
                         <li>
-                            <a href="{% url 'mitra_dashboard' %}">
+                            <a data-nav-section="mitra-dashboard" data-transition-target="mitra-dashboard" href="{% url 'mitra_dashboard' %}"{% if request.resolver_match.url_name == 'mitra_dashboard' %} class="nav-current" aria-current="page"{% endif %}>
                                 Dashboard Mitra
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="{% url 'create_pickup' %}">
-                                Pickup
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="{% url 'waste_reward:dashboard' %}"{% if request.resolver_match.app_name == 'waste_reward' %} class="nav-current" aria-current="page"{% endif %}>
-                                Waste &amp; Reward
                             </a>
                         </li>
 
@@ -136,6 +125,7 @@
 
                 {% endif %}
 
+                <li class="nav-indicator" aria-hidden="true"></li>
             </ul>
 
 
@@ -252,6 +242,7 @@
 </footer>
 {% endblock footer %}
 
+<script src="{% static 'js/page_transitions.js' %}"></script>
 
 </body>
 </html>

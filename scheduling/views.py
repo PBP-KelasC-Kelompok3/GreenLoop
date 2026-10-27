@@ -31,11 +31,15 @@ def mitra_dashboard(request):
 
     # 1. Total Limbah Disetor (kg)
     total_waste = (
-        completed_pickups.aggregate(Sum('estimated_weight'))['estimated_weight__sum'] or 0
+        completed_pickups.aggregate(Sum('actual_weight'))['actual_weight__sum'] or 0
     )
 
-   # 2. Total Penjemputan Selesai (kali)
-    pickups_this_month = completed_pickups.count()
+    # 2. Penjemputan selesai pada bulan berjalan.
+    today = timezone.localdate()
+    pickups_this_month = completed_pickups.filter(
+        pickup_date__year=today.year,
+        pickup_date__month=today.month,
+    ).count()
 
     # 3. Estimasi CO2e Dicegah (0.5 kg CO2e per kg limbah)
     co2_saved = round(total_waste * 0.5, 1)
@@ -90,7 +94,6 @@ def mitra_dashboard(request):
     weekly_labels = []
     weekly_data = []
 
-    today = timezone.now().date()
     for i in range(7, -1, -1):
         start_of_week = today - timedelta(days=today.weekday() + (i * 7))
         end_of_week = start_of_week + timedelta(days=6)
@@ -98,7 +101,7 @@ def mitra_dashboard(request):
         sum_weight = (
             completed_pickups.filter(
                 pickup_date__range=[start_of_week, end_of_week]
-            ).aggregate(Sum('estimated_weight'))['estimated_weight__sum'] or 0
+            ).aggregate(Sum('actual_weight'))['actual_weight__sum'] or 0
         )
 
         weekly_labels.append(f'M{8-i}')
@@ -110,6 +113,7 @@ def mitra_dashboard(request):
         'pickups_this_month': pickups_this_month,
         'co2_saved': co2_saved,
         'user_points': calculated_points,
+        'user_points_display': f'{calculated_points:,}'.replace(',', '.'),
         'weekly_labels': json.dumps(weekly_labels),
         'weekly_data': json.dumps(weekly_data),
         'title': 'Dashboard Mitra',
@@ -118,6 +122,7 @@ def mitra_dashboard(request):
         'current_tier': current_tier,
         'next_tier': next_tier,
         'target_points': target_points,
+        'target_points_display': f'{target_points:,}'.replace(',', '.'),
         'kg_needed': kg_needed,
         'level_progress_pct': level_progress_pct,
     }
