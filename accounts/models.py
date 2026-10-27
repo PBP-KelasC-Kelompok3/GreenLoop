@@ -7,6 +7,7 @@ class UserProfile(models.Model):
         ('consumer', 'Consumer'),
         ('mitra', 'Mitra'),
         ('courier', 'Courier'),
+        ('admin', 'Admin'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)

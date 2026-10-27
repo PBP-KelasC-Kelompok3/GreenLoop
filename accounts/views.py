@@ -2,6 +2,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 
+
 from .forms import RegisterForm
 
 
@@ -11,6 +12,9 @@ def redirect_after_login(user):
 
     if profile is not None and profile.role == 'courier':
         return redirect('courier:show_dashboard')
+
+    if profile is not None and profile.role == 'admin':
+        return redirect('admin_dashboard')
 
     return redirect('home')
 
@@ -55,7 +59,6 @@ def login_view(request):
         )
 
     return render(request, 'accounts/login.html')
-
 
 def logout_view(request):
     logout(request)
