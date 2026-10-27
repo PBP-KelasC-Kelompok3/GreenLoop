@@ -1,0 +1,110 @@
+<!-- Hasil Rekap Timbangan (ringkasan + tabel). Dipakai oleh halaman penuh dan oleh AJAX (recap_list) -->
+{% load courier_extras %}
+<!-- Kartu ringkasan: total berat, poin, jumlah, dan rata-rata dari data yang sudah difilter -->
+<div class="recap-summary">
+    <div class="summary-card">
+        <span>Total berat</span>
+        <strong>{{ summary.total|kg }} kg</strong>
+    </div>
+    <div class="summary-card">
+        <span>Waste Points</span>
+        <strong>{{ summary.points|num_id }}</strong>
+    </div>
+    <div class="summary-card">
+        <span>Jumlah penimbangan</span>
+        <strong>{{ summary.count }}</strong>
+    </div>
+    <div class="summary-card">
+        <span>Rata-rata per pikap</span>
+        <strong>{{ summary.average|kg }} kg</strong>
+    </div>
+</div>
+
+<!-- Kartu tabel daftar timbangan -->
+<section class="table-card">
+    <div class="table-card-head">
+        <h2>Daftar timbangan</h2>
+        <p>Periode: {{ period_label }}</p>
+    </div>
+
+    <!-- Ada data: tampilkan tabel. Kosong: tampilkan pesan di bagian else -->
+    {% if page_obj.object_list %}
+        <table class="data-table">
+            <!-- Judul kolom -->
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>Mitra / lokasi</th>
+                    <th class="num">Berat</th>
+                    <th class="num">Poin</th>
+                    <th>Catatan</th>
+                    <th class="col-actions"><span class="sr-only">Aksi</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Satu baris untuk setiap catatan timbangan -->
+                {% for log in page_obj %}
+                <tr>
+                    <td data-label="Tanggal">{{ log.collected_at|date_id }}</td>
+                    <td data-label="Mitra / lokasi" class="cell-strong">{{ log.partner_name }}</td>
+                    <td data-label="Berat" class="num">{{ log.weight_kg|kg }} kg</td>
+                    <td data-label="Poin" class="num cell-points">+{{ log.points|num_id }}</td>
+                    <td data-label="Catatan" class="cell-notes">{{ log.notes|default:"–" }}</td>
+                    <!-- Tombol ubah dan hapus; data baris dibawa lewat atribut data-* untuk dibaca recap.js -->
+                    <td class="col-actions">
+                        <button type="button" class="icon-action" data-action="edit"
+                                aria-label="Ubah data {{ log.partner_name }}"
+                                data-update-url="{% url 'courier:update_weight_log' log.pk %}"
+                                data-partner="{{ log.partner_name }}"
+                                data-date="{{ log.collected_at|date:'Y-m-d' }}"
+                                data-weight="{{ log.weight_kg|stringformat:'.1f' }}"
+                                data-notes="{{ log.notes }}">
+                            <i data-lucide="pencil"></i>
+                        </button>
+                        <button type="button" class="icon-action icon-action--danger" data-action="delete"
+                                aria-label="Hapus data {{ log.partner_name }}"
+                                data-delete-url="{% url 'courier:delete_weight_log' log.pk %}"
+                                data-summary="{{ log.partner_name }} · {{ log.collected_at|date_id }} · {{ log.weight_kg|kg }} kg">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Keterangan jumlah data dan nomor halaman -->
+        <div class="table-foot">
+            <p>Menampilkan {{ page_obj.start_index }}–{{ page_obj.end_index }} dari {{ page_obj.paginator.count }} penimbangan</p>
+
+            {% if page_obj.paginator.num_pages > 1 %}
+            <!-- Nomor halaman (hanya muncul bila lebih dari satu halaman) -->
+            <nav class="pagination" aria-label="Halaman">
+                <button type="button" class="page-btn" data-page="{% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}"
+                        {% if not page_obj.has_previous %}disabled{% endif %} aria-label="Sebelumnya">‹</button>
+
+                {% for p in page_range %}
+                    {% if p == ellipsis %}
+                        <span class="page-gap">…</span>
+                    {% else %}
+                        <button type="button" class="page-btn page-num {% if p == page_obj.number %}is-active{% endif %}"
+                                data-page="{{ p }}" {% if p == page_obj.number %}aria-current="page"{% endif %}>{{ p }}</button>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Pengganti deretan nomor halaman di layar HP -->
+                <span class="page-info">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span>
+
+                <button type="button" class="page-btn" data-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.number }}{% endif %}"
+                        {% if not page_obj.has_next %}disabled{% endif %} aria-label="Berikutnya">›</button>
+            </nav>
+            {% endif %}
+        </div>
+    {% else %}
+        <!-- Pesan saat tidak ada data pada periode ini -->
+        <div class="empty-state">
+            <p class="empty-title">Belum ada data timbangan</p>
+            <p>Tidak ada catatan pada periode ini. Ubah filter di atas atau klik <strong>Tambah Timbangan</strong>.</p>
+        </div>
+    {% endif %}
+</section>

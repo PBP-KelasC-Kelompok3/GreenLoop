@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
     path('accounts/', include('accounts.urls')),
+    path('courier/', include('courier.urls')),
     path('scheduling/', include('scheduling.urls')),
     path('mitra/waste-reward/', include('waste_reward.urls')),
     path('admin-dashboard/', admin_dashboard, name='admin_dashboard'),

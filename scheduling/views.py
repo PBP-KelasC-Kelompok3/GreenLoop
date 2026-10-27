@@ -12,6 +12,17 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from waste_reward.services import award_verified_pickup, get_balance
 
+
+def _can_manage_pickups(user):
+    profile = getattr(user, 'userprofile', None)
+    return bool(
+        user.is_superuser
+        or user.is_staff
+        or user.groups.filter(name='Petugas GreenLoop').exists()
+        or (profile and profile.role == 'admin')
+    )
+
+
 @login_required
 def mitra_dashboard(request):
     """Dashboard Mitra B2B dengan agregasi statistik, poin, dan grafik dinamis."""
@@ -174,11 +185,7 @@ def edit_pickup(request, pickup_id):
 
 @login_required
 def admin_dashboard(request):
-    is_petugas = request.user.groups.filter(
-        name='Petugas GreenLoop'
-    ).exists()
-
-    if not (request.user.is_superuser or is_petugas):
+    if not _can_manage_pickups(request.user):
         messages.error(
             request,
             "Anda tidak memiliki hak akses ke Halaman Admin."
@@ -261,11 +268,7 @@ def assign_next_courier(pickup):
 
 @login_required
 def update_pickup_status(request, pickup_id, new_status=None):
-    is_petugas = request.user.groups.filter(
-        name='Petugas GreenLoop'
-    ).exists()
-
-    is_admin = request.user.is_superuser or is_petugas
+    is_admin = _can_manage_pickups(request.user)
 
     profile = getattr(request.user, 'userprofile', None)
     is_courier = bool(

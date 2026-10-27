@@ -1,0 +1,38 @@
+{% load static %}
+{% with current=request.resolver_match.url_name %}
+<aside class="sidebar" id="sidebar">
+    <a class="brand" href="{% url 'waste_reward:dashboard' %}">
+        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop">
+    </a>
+    <span class="role-pill">Mitra B2B</span>
+
+    <p class="menu-label">Menu Mitra</p>
+    <nav class="menu" aria-label="Navigasi mitra">
+        <a href="{% url 'waste_reward:dashboard' %}" class="menu-item {% if request.resolver_match.app_name == 'waste_reward' %}active{% endif %}">
+            <i data-lucide="layout-dashboard"></i><span>Waste &amp; Reward</span>
+        </a>
+        <a href="{% url 'mitra_dashboard' %}" class="menu-item {% if current == 'mitra_dashboard' %}active{% endif %}">
+            <i data-lucide="gauge"></i><span>Dashboard Mitra</span>
+        </a>
+        <a href="{% url 'create_pickup' %}" class="menu-item {% if current == 'create_pickup' %}active{% endif %}">
+            <i data-lucide="calendar-plus"></i><span>Jadwalkan Pickup</span>
+        </a>
+        <a href="{% url 'pickup_history' %}" class="menu-item {% if current == 'pickup_history' %}active{% endif %}">
+            <i data-lucide="history"></i><span>Riwayat Pickup</span>
+        </a>
+        <a href="{% url 'mitra_profile' %}" class="menu-item {% if current == 'mitra_profile' %}active{% endif %}">
+            <i data-lucide="user-round"></i><span>Profil Mitra</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <div class="pilot-card">
+            <p class="pilot-title"><i data-lucide="map-pin"></i> Area Pilot: Kota Depok</p>
+            <p>Layanan penjemputan saat ini khusus wilayah Kota Depok.</p>
+        </div>
+        <a href="{% url 'logout' %}" class="logout">
+            <i data-lucide="log-out"></i><span>Keluar</span>
+        </a>
+    </div>
+</aside>
+{% endwith %}
