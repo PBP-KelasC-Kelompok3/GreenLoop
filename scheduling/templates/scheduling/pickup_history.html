@@ -1,0 +1,132 @@
+{% extends 'scheduling/mitra_base.html' %}
+{% load static %}
+
+{% block title %}GreenLoop - Riwayat Penjemputan{% endblock %}
+
+{% block header_title %}Riwayat Penjemputan{% endblock %}
+{% block header_subtitle %}Pantau status verifikasi foto, penugasan kurir, dan berat aktual setiap penjemputan.{% endblock %}
+
+{% block topbar_action %}
+  <!-- Tombol Unduh Sertifikat Mitra (Muncul otomatis jika sudah >= 10 selesai) -->
+  {% if completed_count >= 10 %}
+  <a href="{% static 'certificates/Certificate.png' %}" download class="btn btn-success btn-sm rounded-pill fw-semibold px-3 shadow-sm">
+      <i class="bi bi-award-fill me-1"></i> Unduh Sertifikat
+  </a>
+  {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<!-- CSS Khusus Terpisah untuk Riwayat Penjemputan -->
+<link rel="stylesheet" href="{% static 'css/pickup_history.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Filter Status Pills (Dinamis sesuai Database) -->
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+  <a href="?status=ALL" class="filter-pill {% if current_status == 'ALL' or not current_status %}active{% endif %}">
+    Semua <span class="badge bg-white text-dark ms-1">{{ total_count }}</span>
+  </a>
+  <a href="?status=PENDING" class="filter-pill {% if current_status == 'PENDING' %}active{% endif %}">
+    Menunggu Verifikasi <span class="badge bg-light text-muted ms-1">{{ pending_count }}</span>
+  </a>
+  <a href="?status=APPROVED" class="filter-pill {% if current_status == 'APPROVED' %}active{% endif %}">
+    Disetujui <span class="badge bg-light text-muted ms-1">{{ approved_count }}</span>
+  </a>
+  <a href="?status=IN_PROGRESS" class="filter-pill {% if current_status == 'IN_PROGRESS' %}active{% endif %}">
+    Dalam Perjalanan <span class="badge bg-light text-muted ms-1">{{ in_progress_count }}</span>
+  </a>
+  <a href="?status=COMPLETED" class="filter-pill {% if current_status == 'COMPLETED' %}active{% endif %}">
+    Selesai <span class="badge bg-light text-muted ms-1">{{ completed_count }}</span>
+  </a>
+  <a href="?status=REJECTED" class="filter-pill {% if current_status == 'REJECTED' %}active{% endif %}">
+    Ditolak <span class="badge bg-light text-muted ms-1">{{ rejected_count }}</span>
+  </a>
+</div>
+
+<!-- Tabel Utama Riwayat -->
+<div class="card history-card shadow-sm p-4 mb-4 bg-white">
+  <div class="table-responsive">
+    <table class="table table-history align-middle table-hover mb-0">
+      <thead>
+        <tr class="small">
+          <th>ID</th>
+          <th>TANGGAL & SLOT</th>
+          <th>ESTIMASI</th>
+          <th>BERAT AKTUAL</th>
+          <th>ARMADA</th>
+          <th>FOTO</th>
+          <th>STATUS VERIFIKASI</th>
+          <th class="text-end">POIN</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pickup in pickups %}
+        <tr>
+          <td class="fw-bold">PK-00{{ pickup.id }}</td>
+          <td>
+            <div>{{ pickup.pickup_date|date:"d M Y" }}</div>
+            <small class="text-muted">{{ pickup.pickup_time_slot }}</small>
+          </td>
+          <td>{{ pickup.estimated_weight }} kg</td>
+          <td>{% if pickup.actual_weight %}{{ pickup.actual_weight }} kg{% else %}&mdash;{% endif %}</td>
+          <td>{{ pickup.armada }}</td>
+          <td>
+            {% if pickup.waste_photo %}
+              <img src="{{ pickup.waste_photo.url }}" alt="Foto" class="border shadow-sm history-thumb-img">
+            {% else %}
+              <span class="text-muted small">&mdash;</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if pickup.status == 'COMPLETED' %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">Selesai</span>
+            {% elif pickup.status == 'PENDING' %}
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 rounded-pill">Menunggu Verifikasi</span>
+            {% elif pickup.status == 'IN_PROGRESS' or pickup.status == 'SCHEDULED' %}
+                <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 rounded-pill">Dalam Perjalanan</span>
+            {% elif pickup.status == 'APPROVED' %}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill">Disetujui - Kurir Ditugaskan</span>
+            {% else %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill">Ditolak</span>
+            {% endif %}
+          </td>
+          <td class="text-end fw-semibold text-success">
+            {% if pickup.status == 'COMPLETED' %}+{{ pickup.points }}{% else %}&mdash;{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">
+            Belum ada riwayat penjemputan sampah untuk kategori ini.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Card Informasi Penolakan Dinamis (Hanya muncul jika ada penolakan di database) -->
+{% for rej in rejected_pickups %}
+<div class="card rejection-alert-card shadow-sm p-4 mb-3">
+  <div class="row align-items-center">
+    <div class="col-md-2 text-center">
+      {% if rej.waste_photo %}
+        <img src="{{ rej.waste_photo.url }}" alt="Foto Ditolak" class="rounded-3 shadow-sm border rejection-thumb-img">
+      {% else %}
+        <img src="https://placehold.co/80x80?text=Foto" alt="Foto" class="rounded-3 shadow-sm border rejection-thumb-img">
+      {% endif %}
+    </div>
+    <div class="col-md-7">
+      <h6 class="fw-bold text-danger mb-1">PK-00{{ rej.id }} ditolak &bull; {{ rej.pickup_date|date:"d M Y" }}</h6>
+      <p class="text-secondary small mb-0">Catatan admin: {{ rej.notes|default:"Foto menunjukkan limbah tidak sesuai standar. Silakan ajukan kembali." }}</p>
+    </div>
+    <div class="col-md-3 text-end">
+      <a href="{% url 'create_pickup' %}" class="btn btn-danger btn-sm px-4 py-2 rounded-3 fw-semibold shadow-sm">
+        Ajukan Ulang
+      </a>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

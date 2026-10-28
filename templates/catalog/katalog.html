@@ -6,16 +6,17 @@
 {% endblock meta %}
 
 {% block content %}
-<div class="katalog-container">
+<div class="catalog-page page-wrap">
     <h1>Katalog Produk {% if is_mitra %}(B2B Mitra){% else %}(B2C Konsumen){% endif %}</h1>
     
     <div class="header-actions">
-        <input type="text" id="searchInput" class="form-input" placeholder="Cari produk..." onkeyup="loadProducts()" style="width: 250px; margin: 0;">
+        <input type="text" id="searchInput" class="form-input" placeholder="Cari produk..." onkeyup="loadProducts()">
         
         {% if is_admin %}
         <button class="btn" onclick="openProductModal()">+ Tambah Produk</button>
         {% endif %}
         <button class="btn btn-info" onclick="loadOrders()">Lacak Pesanan Saya</button>
+		
     </div>
 
     <div id="productContainer" class="product-grid"></div>
@@ -68,13 +69,13 @@
                     `<button class="btn btn-info" style="width:100%; margin-top:5px;" onclick="openProductModal(${p.id}, '${p.name}', '${p.description}', ${p.price}, ${p.price}, ${p.stock})">✏️ Edit Produk</button>` : '';
                 
                 container.innerHTML += `
-                    <div class="card">
+                    <div class="product-card">
                         <h3>${p.name}</h3>
-                        <p style="font-size: 0.9em; color: #555; font-weight: normal;">${p.description}</p>
+                        <p>${p.description}</p>
                         <div class="price">Rp ${p.price.toLocaleString('id-ID')}</div>
-                        <p style="font-size: 0.9em; font-weight: normal;">Sisa Stok: <strong>${p.stock}</strong></p>
+                        <p>Sisa Stok: <strong>${p.stock}</strong></p>
                         
-                        <button class="btn" style="width:100%;" onclick="openCheckoutModal(${p.id})">🛒 Beli Sekarang</button>
+                        <button class="btn" onclick="openCheckoutModal(${p.id})">Beli Sekarang</button>
                         ${adminButtons}
                     </div>
                 `;

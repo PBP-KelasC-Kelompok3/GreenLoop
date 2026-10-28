@@ -1,0 +1,17 @@
+<header class="topbar">
+
+    <button class="icon-btn menu-toggle" id="menuToggle" type="button" aria-label="Buka menu">
+        <i data-lucide="menu"></i>
+    </button>
+
+    <div class="topbar-right">
+        <div class="user">
+            <span class="avatar">{{ user.username|slice:":2"|upper }}</span>
+            <span class="user-text">
+                <strong>{{ user.get_full_name|default:user.username }}</strong>
+                <small>Kurir</small>
+            </span>
+        </div>
+    </div>
+
+</header>

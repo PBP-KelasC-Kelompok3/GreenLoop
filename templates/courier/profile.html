@@ -1,0 +1,169 @@
+{% extends 'courier/base_courier.html' %}
+{% load static courier_extras %}
+
+{% block title %}Profil & Pengaturan{% endblock title %}
+
+{% block content %}
+<h1 class="page-title">Profil &amp; Pengaturan</h1>
+<p class="page-subtitle">Kelola data diri, kendaraan, dan keamanan akun Anda.</p>
+
+<section class="profile-card">
+
+    <div class="profile-header">
+
+        {# ---- Identitas ---- #}
+        <div class="profile-identity">
+            <div class="profile-avatar" data-bind="initials">{{ user|initials }}</div>
+            <h2 class="profile-name" data-bind="display_name">{{ display_name }}</h2>
+            <p class="profile-username">@{{ user.username }}</p>
+            <span class="pill">Kurir Lapangan</span>
+        </div>
+
+        {# ---- Data diri ---- #}
+        <dl class="profile-info">
+            <div class="info-item">
+                <dt class="info-label">Email</dt>
+                <dd class="info-value" data-bind="email">{{ user.email|default:"-" }}</dd>
+            </div>
+
+            <div class="info-item">
+                <dt class="info-label">Plat nomor</dt>
+                <dd class="info-value" data-bind="plate_number">{{ profile.plate_number|default:"-" }}</dd>
+            </div>
+
+            <div class="info-item">
+                <dt class="info-label">Armada</dt>
+                <dd class="info-value" data-bind="vehicle_label">{{ profile.get_vehicle_type_display }}</dd>
+            </div>
+
+            <div class="info-item">
+                <dt class="info-label">Status</dt>
+                <dd class="info-value">
+                    {% if profile.is_on_duty %}
+                        <span class="pill pill--ok">Sedang Bertugas</span>
+                    {% else %}
+                        <span class="pill pill--off">Tidak Bertugas</span>
+                    {% endif %}
+                </dd>
+            </div>
+
+            <div class="info-item">
+                <dt class="info-label">Bergabung</dt>
+                <dd class="info-value">{{ joined_display }}</dd>
+            </div>
+        </dl>
+
+        {# ---- Statistik ---- #}
+        <div class="profile-stats">
+            {% include 'courier/components/stat_card.html' with value=stats.pickups_done label="Pikap selesai" %}
+            {% include 'courier/components/stat_card.html' with value=stats.total_kg|floatformat:"-1" label="Total kg" %}
+            {% include 'courier/components/stat_card.html' with value=stats.points label="Waste Points" %}
+        </div>
+
+    </div>
+
+    {# ---- Akun & Keamanan ---- #}
+    <div class="account-section">
+
+        <button type="button" class="accordion-toggle accordion-toggle--main"
+                data-accordion-toggle aria-controls="panel-security" aria-expanded="false">
+            <span class="accordion-title">
+                <i data-lucide="shield-check"></i>
+                Akun &amp; Keamanan
+            </span>
+            <span class="chevron"><i data-lucide="chevron-down"></i></span>
+        </button>
+
+        <div id="panel-security" class="accordion-group" hidden>
+
+            {# -- Edit Profil -- #}
+            <div class="accordion-item">
+                <button type="button" class="accordion-toggle"
+                        data-accordion-toggle aria-controls="panel-edit" aria-expanded="false">
+                    <span class="accordion-title">
+                        <i data-lucide="user"></i>
+                        <span>
+                            <span class="accordion-name">Edit Profil</span>
+                            <span class="accordion-desc">Nama, email, plat nomor, dan jenis armada</span>
+                        </span>
+                    </span>
+                    <span class="chevron"><i data-lucide="chevron-down"></i></span>
+                </button>
+
+                <div id="panel-edit" class="accordion-panel" hidden>
+                    <form method="post" action="{% url 'courier:update_profile' %}"
+                          class="profile-form" data-ajax-form novalidate>
+                        {% csrf_token %}
+
+                        <p class="form-message" data-form-message role="status" hidden></p>
+
+                        <div class="form-grid">
+                            {% include 'courier/components/form_field.html' with label="Nama lengkap" name="full_name" value=display_name autocomplete="name" %}
+                            {% include 'courier/components/form_field.html' with label="Email" name="email" type="email" value=user.email autocomplete="email" %}
+                            {% include 'courier/components/form_field.html' with label="Plat nomor" name="plate_number" value=profile.plate_number %}
+
+                            <div>
+                                <label for="id_vehicle_type" class="field-label">Jenis armada</label>
+                                <select id="id_vehicle_type" name="vehicle_type" class="field-input">
+                                    {% for value, label in vehicle_choices %}
+                                        <option value="{{ value }}" {% if value == profile.vehicle_type %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="field-error" data-error-for="vehicle_type" hidden></p>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-submit">
+                                <i data-lucide="check"></i>
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {# -- Ganti Kata Sandi -- #}
+            <div class="accordion-item">
+                <button type="button" class="accordion-toggle"
+                        data-accordion-toggle aria-controls="panel-password" aria-expanded="false">
+                    <span class="accordion-title">
+                        <i data-lucide="lock"></i>
+                        <span>
+                            <span class="accordion-name">Ganti Kata Sandi</span>
+                            <span class="accordion-desc">Gunakan kata sandi yang kuat dan tidak dipakai di tempat lain</span>
+                        </span>
+                    </span>
+                    <span class="chevron"><i data-lucide="chevron-down"></i></span>
+                </button>
+
+                <div id="panel-password" class="accordion-panel" hidden>
+                    <form method="post" action="{% url 'courier:change_password' %}"
+                          class="profile-form" data-ajax-form data-reset-on-success novalidate>
+                        {% csrf_token %}
+
+                        <p class="form-message" data-form-message role="status" hidden></p>
+
+                        {% include 'courier/components/form_field.html' with label="Kata sandi saat ini" name="old_password" type="password" autocomplete="current-password" %}
+
+                        <div class="form-grid">
+                            {% include 'courier/components/form_field.html' with label="Kata sandi baru" name="new_password1" type="password" autocomplete="new-password" %}
+                            {% include 'courier/components/form_field.html' with label="Ulangi kata sandi baru" name="new_password2" type="password" autocomplete="new-password" %}
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-submit">Ganti Kata Sandi</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</section>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'courier/js/profile.js' %}"></script>
+{% endblock extra_js %}

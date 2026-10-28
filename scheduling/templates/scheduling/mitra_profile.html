@@ -1,0 +1,345 @@
+{% extends 'scheduling/mitra_base.html' %}
+{% load static %}
+
+{% block title %}GreenLoop - Profil Mitra{% endblock %}
+
+{% block header_title %}Profil Mitra{% endblock %}
+{% block header_subtitle %}Kelola informasi usaha dan alamat penjemputan.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="{% static 'css/mitra_profile.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show rounded-3" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<!-- Banner + Tab -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+  <div class="profile-banner text-white p-4 d-flex align-items-center justify-content-between position-relative">
+    <div class="d-flex align-items-center gap-3">
+      <div class="profile-avatar rounded-circle fw-bold d-flex align-items-center justify-content-center shadow-sm">
+        {{ profile.business_name|default:request.user.username|slice:":2"|upper }}
+      </div>
+      <div>
+        <h4 class="fw-bold mb-1 text-white">{{ profile.business_name|default:request.user.username }}</h4>
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+          <span class="badge bg-light text-success fw-semibold">Terverifikasi</span>
+          <span class="badge badge-silver fw-semibold">Level Silver</span>
+          <small class="opacity-75">Mitra sejak {{ request.user.date_joined|date:"M Y" }}</small>
+          {% if profile.kota %}
+            <small class="opacity-75">&bull; {{ profile.kecamatan }}, {{ profile.kota }}</small>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-sm btn-light text-success rounded-pill fw-semibold px-3 shadow-sm">
+      <i class="bi bi-camera me-1"></i> Edit Foto
+    </button>
+  </div>
+
+  <div class="bg-white px-4 pt-2 border-bottom">
+    <div class="nav border-0 gap-3" role="tablist">
+      <button type="button" class="profile-tab-link active" id="tab-usaha-btn"
+              data-bs-toggle="tab" data-bs-target="#tab-usaha" role="tab">Informasi Usaha</button>
+      <button type="button" class="profile-tab-link" id="tab-alamat-btn"
+              data-bs-toggle="tab" data-bs-target="#tab-alamat" role="tab">Alamat Penjemputan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Satu form untuk kedua tab -->
+<form method="POST" action="" id="profile-form">
+  {% csrf_token %}
+  <input type="hidden" id="lat-input" name="latitude">
+  <input type="hidden" id="lng-input" name="longitude">
+
+  <div class="tab-content">
+
+    <!-- ================= TAB 1: INFORMASI USAHA ================= -->
+    <div class="tab-pane fade show active" id="tab-usaha" role="tabpanel">
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Nama Usaha</label>
+                <input type="text" name="business_name" value="{{ profile.business_name|default:'' }}" class="form-control rounded-3" placeholder="Nama usaha/toko">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Jenis Usaha</label>
+                <select name="business_type" class="form-select rounded-3">
+                  <option value="">-- Pilih Jenis Usaha --</option>
+                  <option value="Kafe / Coffee Shop" {% if profile.business_type == 'Kafe / Coffee Shop' %}selected{% endif %}>Kafe / Coffee Shop</option>
+                  <option value="Restoran" {% if profile.business_type == 'Restoran' %}selected{% endif %}>Restoran</option>
+                  <option value="Hotel" {% if profile.business_type == 'Hotel' %}selected{% endif %}>Hotel</option>
+                  <option value="Katering" {% if profile.business_type == 'Katering' %}selected{% endif %}>Katering</option>
+                  <option value="Lainnya" {% if profile.business_type == 'Lainnya' %}selected{% endif %}>Lainnya</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Nama Penanggung Jawab</label>
+                <input type="text" name="pic_name" value="{{ profile.pic_name|default:'' }}" class="form-control rounded-3" placeholder="Nama PIC">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">No. WhatsApp</label>
+                <input type="text" name="phone_number" value="{{ profile.phone_number|default:'' }}" class="form-control rounded-3" placeholder="08xxxxxxxxxx">
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Email</label>
+                <input type="email" value="{{ request.user.email }}" class="form-control rounded-3 bg-light" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Jam Operasional</label>
+                <input type="text" name="operational_hours" value="{{ profile.operational_hours|default:'' }}" class="form-control rounded-3" placeholder="contoh: 07.00–22.00 WIB">
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+            <h6 class="fw-bold text-dark mb-3">Kontribusi Anda</h6>
+
+            <div class="d-flex align-items-center justify-content-between py-2 stat-item">
+              <div class="d-flex align-items-center gap-2 text-muted small"><i class="bi bi-recycle text-success fs-6"></i> Total limbah disetor</div>
+              <span class="fw-bold">{{ total_limbah|default:"0" }} kg</span>
+            </div>
+            <div class="d-flex align-items-center justify-content-between py-2 stat-item">
+              <div class="d-flex align-items-center gap-2 text-muted small"><i class="bi bi-truck text-success fs-6"></i> Penjemputan selesai</div>
+              <span class="fw-bold">{{ total_penjemputan|default:"0" }} kali</span>
+            </div>
+            <div class="d-flex align-items-center justify-content-between py-2 stat-item">
+              <div class="d-flex align-items-center gap-2 text-muted small"><i class="bi bi-gift text-success fs-6"></i> Poin terkumpul</div>
+              <span class="fw-bold">{{ total_poin|default:"0" }}</span>
+            </div>
+            <div class="d-flex align-items-center justify-content-between py-2 stat-item">
+              <div class="d-flex align-items-center gap-2 text-muted small"><i class="bi bi-cloud-minus text-success fs-6"></i> CO2e dicegah</div>
+              <span class="fw-bold">{{ co2e_dicegah|default:"0" }} kg</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TAB 2: ALAMAT PENJEMPUTAN ================= -->
+    <div class="tab-pane fade" id="tab-alamat" role="tabpanel">
+      <div class="row g-4">
+
+        <div class="col-lg-7">
+          <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+            <h6 class="fw-bold mb-3">
+              Wilayah Penjemputan
+              <span class="badge-auto ms-2">Otomatis dari titik peta</span>
+            </h6>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Provinsi</label>
+                <input type="text" id="f-provinsi" name="provinsi" value="{{ profile.provinsi|default:'' }}" class="form-control rounded-3 field-auto" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Kota / Kabupaten</label>
+                <input type="text" id="f-kota" name="kota" value="{{ profile.kota|default:'' }}" class="form-control rounded-3 field-auto" readonly>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Kecamatan</label>
+                <input type="text" id="f-kecamatan" name="kecamatan" value="{{ profile.kecamatan|default:'' }}" class="form-control rounded-3 field-auto" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Kelurahan</label>
+                <input type="text" id="f-kelurahan" name="kelurahan" value="{{ profile.kelurahan|default:'' }}" class="form-control rounded-3 field-auto" readonly>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Cari &amp; Detail Alamat</label>
+              <div class="input-group">
+                <input type="text" id="address-input" name="address_detail" value="{{ profile.address_detail|default:'' }}" class="form-control rounded-start-3" placeholder="Ketik alamat atau nama lokasi..." readonly>
+                <button class="btn btn-success px-3" type="button" id="btn-search-address" disabled>
+                  <i class="bi bi-search me-1"></i> Cari Peta
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label fw-semibold small">Catatan untuk Kurir</label>
+              <textarea name="courier_notes" rows="3" class="form-control rounded-3"
+                placeholder="contoh: Masuk lewat gang samping, tempat sampah di belakang dapur, parkir motor di depan.">{{ profile.courier_notes|default:'' }}</textarea>
+              <div class="form-text">Patokan, akses masuk, atau letak limbah, supaya kurir lebih mudah menemukan lokasi.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="card border-0 shadow-sm rounded-4 overflow-hidden position-relative">
+            <div id="map" class="map-container"></div>
+            <div class="p-3 bg-white">
+              <div class="fw-bold small text-dark d-flex align-items-center gap-1">
+                Titik Penjemputan
+                <i class="bi bi-lock-fill text-success" id="lock-icon"></i>
+              </div>
+              <div class="text-muted small mb-1" id="selected-address-text">
+                {{ profile.address_detail|default:"Belum ada titik lokasi." }}
+              </div>
+              <button type="button" id="btn-change-location" class="btn btn-link p-0 small fw-semibold text-success text-decoration-none">
+                Ubah titik di peta &rsaquo;
+              </button>
+              <small class="text-success fw-semibold d-none" id="edit-hint">
+                <i class="bi bi-geo-alt-fill me-1"></i>Klik peta atau geser pin, lalu tekan Simpan Perubahan.
+              </small>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Tombol simpan (berlaku untuk kedua tab) -->
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold" onclick="location.reload()">Batal</button>
+    <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold">Simpan Perubahan</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+{{ map_data|json_script:"map-data" }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const $ = id => document.getElementById(id);
+  const data = JSON.parse($('map-data').textContent);
+  const DEFAULT = [-6.3627, 106.82715];   // Depok
+  const hasSaved = data.lat !== null && data.lng !== null;
+
+  const map = L.map('map').setView(hasSaved ? [data.lat, data.lng] : DEFAULT, hasSaved ? 16 : 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  const latInput = $('lat-input'), lngInput = $('lng-input');
+  let marker = null;
+  let editing = false;
+
+  // Peta ada di tab tersembunyi -> hitung ulang ukuran saat tab dibuka
+  $('tab-alamat-btn').addEventListener('shown.bs.tab', function () {
+    map.invalidateSize();
+    if (marker) map.setView(marker.getLatLng(), map.getZoom());
+  });
+
+  if (hasSaved) {
+    marker = L.marker([data.lat, data.lng], { draggable: false }).addTo(map);
+    marker.on('dragend', () => onPinChanged(marker.getLatLng().lat, marker.getLatLng().lng));
+    latInput.value = data.lat;
+    lngInput.value = data.lng;
+  }
+
+  // ---------- Mode kunci / edit ----------
+  function setEditing(on) {
+    editing = on;
+    if (marker) { on ? marker.dragging.enable() : marker.dragging.disable(); }
+    $('address-input').readOnly = !on;
+    $('btn-search-address').disabled = !on;
+    $('btn-change-location').classList.toggle('d-none', on);
+    $('edit-hint').classList.toggle('d-none', !on);
+    $('lock-icon').classList.toggle('d-none', on);
+    $('map').classList.toggle('map-editing', on);
+  }
+
+  // Belum pernah menentukan lokasi -> langsung mode edit
+  setEditing(!(data.locked && hasSaved));
+
+  $('btn-change-location').addEventListener('click', () => {
+    if (confirm('Ubah titik lokasi penjemputan Anda?')) setEditing(true);
+  });
+
+  function placeMarker(lat, lng) {
+    if (!marker) {
+      marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+      marker.on('dragend', () => onPinChanged(marker.getLatLng().lat, marker.getLatLng().lng));
+    } else {
+      marker.setLatLng([lat, lng]);
+    }
+    onPinChanged(lat, lng);
+  }
+
+  map.on('click', e => { if (editing) placeMarker(e.latlng.lat, e.latlng.lng); });
+
+  // ---------- Reverse geocoding: pin -> wilayah ----------
+  function setField(id, value) { $(id).value = value || ''; }
+
+  function onPinChanged(lat, lng) {
+    latInput.value = lat;
+    lngInput.value = lng;
+
+    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&accept-language=id'
+          + '&lat=' + lat + '&lon=' + lng)
+      .then(r => r.json())
+      .then(d => {
+        const a = d.address || {};
+        setField('f-provinsi',  a.state);
+        setField('f-kota',      a.city || a.county || a.town || a.municipality);
+        setField('f-kecamatan', a.city_district || a.suburb || a.district || a.subdistrict);
+        setField('f-kelurahan', a.village || a.neighbourhood || a.quarter || a.hamlet);
+        if (d.display_name) {
+          $('address-input').value = d.display_name;
+          $('selected-address-text').innerText = d.display_name;
+        }
+      })
+      .catch(err => console.error(err));
+  }
+
+  // ---------- Cari alamat ----------
+  $('btn-search-address').addEventListener('click', function () {
+    const q = $('address-input').value.trim();
+    if (!q) return;
+    fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=id&q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(res => {
+        if (!res.length) {
+          alert('Lokasi tidak ditemukan, coba kata kunci yang lebih spesifik.');
+          return;
+        }
+        const lat = parseFloat(res[0].lat), lon = parseFloat(res[0].lon);
+        map.setView([lat, lon], 17);
+        placeMarker(lat, lon);
+      })
+      .catch(err => console.error(err));
+  });
+
+  $('address-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); $('btn-search-address').click(); }
+  });
+
+  // ---------- Cegah simpan tanpa pin (dan pindah ke tab alamat) ----------
+  $('profile-form').addEventListener('submit', function (e) {
+    if (!latInput.value || !lngInput.value) {
+      e.preventDefault();
+      bootstrap.Tab.getOrCreateInstance($('tab-alamat-btn')).show();
+      alert('Tentukan titik lokasi di peta terlebih dahulu.');
+    }
+  });
+});
+</script>
+{% endblock %}

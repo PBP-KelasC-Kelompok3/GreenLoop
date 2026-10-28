@@ -1,0 +1,65 @@
+/* Filter Status Pills */
+.filter-pill {
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #495057;
+  background-color: #e9ecef;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.filter-pill:hover {
+  background-color: #dee2e6;
+  color: #212529;
+}
+
+.filter-pill.active {
+  background-color: #198754;
+  color: #ffffff;
+}
+
+.filter-pill.active .badge {
+  background-color: #ffffff !important;
+  color: #198754 !important;
+}
+
+/* History Card & Table Styling */
+.history-card {
+  border-radius: 16px;
+  border: none;
+}
+
+.table-history th {
+  font-weight: 600;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table-history td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+/* Table Thumbnail Foto */
+.history-thumb-img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* Rejection Alert Card */
+.rejection-alert-card {
+  border-radius: 16px;
+  border: 1px solid #f5c2c7;
+  background-color: #f8d7da10;
+}
+
+.rejection-thumb-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+}
