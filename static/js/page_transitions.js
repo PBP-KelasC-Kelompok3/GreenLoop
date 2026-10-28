@@ -1,6 +1,7 @@
 (function () {
     const body = document.body;
     const currentPage = body.dataset.page;
+    const dashboardPages = ['mitra-dashboard', 'courier-dashboard', 'admin-dashboard'];
     const transitionKey = 'greenloop-transition-from';
 
     // Chrome can restore the previous page from its back/forward cache with
@@ -26,9 +27,9 @@
         const previousPage = sessionStorage.getItem(transitionKey);
         sessionStorage.removeItem(transitionKey);
 
-        if (['mitra-dashboard', 'courier-dashboard'].includes(currentPage) && previousPage === 'home') {
+        if (dashboardPages.includes(currentPage) && previousPage === 'home') {
             body.classList.add('page-transition-in-from-home');
-        } else if (currentPage === 'home' && ['mitra-dashboard', 'courier-dashboard'].includes(previousPage)) {
+        } else if (currentPage === 'home' && dashboardPages.includes(previousPage)) {
             body.classList.add('page-transition-in-from-dashboard');
         }
 
@@ -50,8 +51,8 @@
 
         const targetPage = link.dataset.transitionTarget;
         const isHomeDashboardTransition =
-            (currentPage === 'home' && ['mitra-dashboard', 'courier-dashboard'].includes(targetPage)) ||
-            (['mitra-dashboard', 'courier-dashboard'].includes(currentPage) && targetPage === 'home');
+            (currentPage === 'home' && dashboardPages.includes(targetPage)) ||
+            (dashboardPages.includes(currentPage) && targetPage === 'home');
         if (!isHomeDashboardTransition) return;
 
         event.preventDefault();
