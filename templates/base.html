@@ -114,6 +114,14 @@
                             </a>
                         </li>
 
+                    {% elif user.userprofile.role == 'admin' %}
+
+                        <li>
+                            <a data-transition-target="admin-dashboard" href="{% url 'admin_dashboard' %}">
+                                Dashboard Admin
+                            </a>
+                        </li>
+
                     {% endif %}
 
                 {% endif %}
