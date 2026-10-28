@@ -1,0 +1,18 @@
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="productModalTitle">Tambah Produk</h3>
+        </div>
+        
+        <form id="productFormElement">
+            <input type="hidden" id="formProductId">
+            <!-- Form otomatis dirender dari forms.py -->
+            {{ form.as_p }}
+        </form>
+        
+        <div style="text-align: right; margin-top: 15px;">
+            <button class="btn btn-danger" onclick="closeModal('productModal')" style="margin-right: 5px;">Batal</button>
+            <button class="btn" onclick="submitProduct()">Simpan Data</button>
+        </div>
+    </div>
+</div>

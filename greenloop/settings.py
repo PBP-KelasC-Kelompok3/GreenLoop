@@ -14,6 +14,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # =========================================================
 
+MIDTRANS_CLIENT_KEY = os.getenv('MIDTRANS_CLIENT_KEY')
+MIDTRANS_SERVER_KEY = os.getenv('MIDTRANS_SERVER_KEY')
+RAJAONGKIR_API_KEY = os.getenv('RAJAONGKIR_API_KEY')
+
 SECRET_KEY = 'django-insecure-$tf4n)9sygw6c&m!m=xt75rhe#qbf4m#d5^)ikb-d%ko^_p&=k'
 
 DEBUG = True
@@ -39,6 +43,7 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'courier',
     'waste_reward.apps.WasteRewardConfig',
+    'catalog',
 ]
 
 MIDDLEWARE = [
