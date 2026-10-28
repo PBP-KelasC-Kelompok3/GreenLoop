@@ -12,20 +12,28 @@
     </title>
 
     <link rel="icon" href="{% static 'img/Logo_Mark.png' %}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/page_transitions.css' %}">
     {% block extra_head %}{% endblock extra_head %}
 </head>
 
-<body>
+<body class="{% block body_class %}{% endblock body_class %}" data-page="{% if request.resolver_match.url_name == 'home' %}home{% else %}other{% endif %}">
 
+{% block header %}
 <header class="site-header">
 
     <nav class="navbar" aria-label="Navigasi utama">
 
-        <a class="brand" href="{% url 'home' %}">
+        <a class="brand" href="{% url 'home' %}" data-transition-target="home">
             <img
                 src="{% static 'img/Logo_Lockup.png' %}"
                 alt="GreenLoop"
+                width="192"
                 height="36"
             >
         </a>
@@ -48,36 +56,36 @@
 
             <ul class="nav-links">
 
-                <!-- Public navigation -->
-
                 <li>
-                    <a href="{% url 'home' %}">
+                    <a data-nav-section="home" href="{% url 'home' %}"{% if request.resolver_match.url_name == 'home' %} class="nav-current" aria-current="page"{% endif %}>
                         Beranda
                     </a>
                 </li>
 
+                {# Katalog: hanya tamu dan konsumen #}
+                {% if not user.is_authenticated or user.userprofile.role == 'consumer' %}
+                    <li>
+                        <a href="{% url 'coming_soon' 'katalog' %}">
+                            Katalog
+                        </a>
+                    </li>
+                {% endif %}
+
                 <li>
-                    <a href="{% url 'home' %}#impact">
+                    <a data-nav-section="impact" href="{% url 'home' %}#impact">
                         Dampak
                     </a>
                 </li>
 
                 <li>
-                    <a href="{% url 'home' %}#cara-kerja">
+                    <a data-nav-section="cara-kerja" href="{% url 'home' %}#cara-kerja">
                         Cara Kerja
                     </a>
                 </li>
 
-
                 {% if user.is_authenticated %}
 
                     {% if user.userprofile.role == 'consumer' %}
-
-                        <li>
-                            <a href="{% url 'coming_soon' 'katalog' %}">
-                                Katalog
-                            </a>
-                        </li>
 
                         <li>
                             <a href="{% url 'coming_soon' 'rewards' %}">
@@ -94,51 +102,24 @@
                     {% elif user.userprofile.role == 'mitra' %}
 
                         <li>
-                            <a href="{% url 'coming_soon' 'mitra-dashboard' %}">
+                            <a data-nav-section="mitra-dashboard" data-transition-target="mitra-dashboard" href="{% url 'mitra_dashboard' %}"{% if request.resolver_match.url_name == 'mitra_dashboard' %} class="nav-current" aria-current="page"{% endif %}>
                                 Dashboard Mitra
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="{% url 'coming_soon' 'pickup' %}">
-                                Pickup
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="{% url 'waste_reward:dashboard' %}"{% if request.resolver_match.app_name == 'waste_reward' %} class="nav-current" aria-current="page"{% endif %}>
-                                Waste &amp; Reward
                             </a>
                         </li>
 
                     {% elif user.userprofile.role == 'courier' %}
 
                         <li>
-                            <a href="{% url 'coming_soon' 'courier-dashboard' %}">
+                            <a data-transition-target="courier-dashboard" href="{% url 'courier:show_dashboard' %}">
                                 Dashboard Courier
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="{% url 'coming_soon' 'routes' %}">
-                                Rute
                             </a>
                         </li>
 
                     {% endif %}
 
-                {% else %}
-
-                    <!-- Guest -->
-
-                    <li>
-                        <a href="{% url 'coming_soon' 'katalog' %}">
-                            Katalog
-                        </a>
-                    </li>
-
                 {% endif %}
 
+                <li class="nav-indicator" aria-hidden="true"></li>
             </ul>
 
 
@@ -154,24 +135,22 @@
                         Hi, {{ user.username }}
                     </span>
 
-                    <a
-                        class="btn btn-outline"
-                        href="{% url 'logout' %}"
-                    >
-                        Logout
-                    </a>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button class="btn btn-outline" type="submit">Logout</button>
+                    </form>
 
                 {% else %}
 
-                    <a href="{% url 'login' %}">
+                    <a class="btn btn-outline" href="{% url 'login' %}">
                         Masuk
                     </a>
 
                     <a
                         class="btn btn-primary"
-                        href="{% url 'register' %}"
+                        href="{% url 'register' %}?role=mitra"
                     >
-                        Daftar
+                        Daftar Mitra
                     </a>
 
                 {% endif %}
@@ -183,6 +162,7 @@
     </nav>
 
 </header>
+{% endblock header %}
 
 
 <main>
@@ -193,71 +173,70 @@
 </main>
 
 
+{% block footer %}
 <footer class="site-footer">
 
     <div class="footer-inner">
 
         <div class="footer-brand">
 
-            <img
-                src="{% static 'img/Logo_Mark.png' %}"
-                alt=""
-                height="40"
-            >
+            {# Lockup berteks gelap tidak terbaca di latar hijau tua: pakai logo mark + wordmark teks #}
+            <a class="wordmark" href="{% url 'home' %}" aria-label="GreenLoop">
+                <img src="{% static 'img/Logo_Mark.png' %}" alt="" width="52" height="52">
+                <span>GREEN<b>LOOP</b></span>
+            </a>
 
             <p>
-                Platform Sustainable Living untuk pengelolaan
-                limbah organik dan eco-enzyme.
+                Platform ekonomi sirkular: penjemputan limbah organik
+                &amp; toko sabun eco-enzyme.
             </p>
 
         </div>
 
 
         <nav
-            class="footer-nav"
+            class="footer-cols"
             aria-label="Navigasi footer"
         >
 
-            <a href="{% url 'home' %}">
-                Beranda
-            </a>
+            <div class="footer-col">
+                <h3>Produk</h3>
+                <a href="{% url 'coming_soon' 'katalog' %}">Katalog</a>
+                <a href="{% url 'coming_soon' 'lacak-pesanan' %}">Lacak Pesanan</a>
+            </div>
 
-            <a href="{% url 'home' %}#impact">
-                Dampak
-            </a>
+            <div class="footer-col">
+                <h3>Mitra</h3>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}">Profile</a>
+                {% else %}
+                    <a href="{% url 'register' %}?role=mitra">Daftar Mitra</a>
+                {% endif %}
+                <a href="{% url 'coming_soon' 'pickup' %}">Smart Pick-Up</a>
+                <a href="{% url 'coming_soon' 'rewards' %}">Waste Points</a>
+            </div>
 
-            <a href="{% url 'home' %}#cara-kerja">
-                Cara Kerja
-            </a>
-
-            {% if user.is_authenticated %}
-
-                <a href="{% url 'profile' %}">
-                    Profile
-                </a>
-
-            {% else %}
-
-                <a href="{% url 'login' %}">
-                    Masuk
-                </a>
-
-                <a href="{% url 'register' %}">
-                    Daftar
-                </a>
-
-            {% endif %}
+            <div class="footer-col">
+                <h3>Tentang</h3>
+                <a href="{% url 'home' %}#impact">Live Impact</a>
+                <a href="{% url 'home' %}#cara-kerja">Cara Kerja</a>
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'login' %}">Masuk</a>
+                {% endif %}
+            </div>
 
         </nav>
 
     </div>
 
     <p class="footer-copy">
-        &copy; 2026 GreenLoop
+        &copy; 2026 GreenLoop &middot; PBP Kelompok 3 &middot; Fasilkom UI, Depok
     </p>
 
 </footer>
+{% endblock footer %}
 
+<script src="{% static 'js/page_transitions.js' %}"></script>
 
 </body>
 </html>

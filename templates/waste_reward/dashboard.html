@@ -1,35 +1,23 @@
-{% extends 'base.html' %}
+{% extends 'scheduling/mitra_base.html' %}
 {% load static %}
 
 {% block title %}Waste &amp; Reward | GreenLoop{% endblock title %}
-{% block extra_head %}
+{% block header_title %}Waste &amp; Reward{% endblock header_title %}
+{% block header_subtitle %}Pantau poin dari setoran terverifikasi dan tukarkan dengan voucher GreenLoop.{% endblock header_subtitle %}
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/waste_reward.css' %}">
-{% endblock extra_head %}
+{% endblock extra_css %}
+{% block topbar_action %}
+<form class="reward-search" method="get" role="search">
+    <label class="visually-hidden" for="reward-search-input">Cari riwayat atau voucher</label>
+    <img src="{% static 'img/waste_reward/icon_search.svg' %}" alt="">
+    <input id="reward-search-input" type="search" name="q" value="{{ request.GET.q }}" placeholder="Cari riwayat atau voucher...">
+</form>
+{% endblock topbar_action %}
 
 {% block content %}
 <div class="reward-app">
     <div class="reward-content">
-        <div class="reward-heading-row">
-            <div class="reward-heading">
-                <span class="reward-eyebrow">MITRA B2B</span>
-                <h1>Waste &amp; Reward</h1>
-                <p>Setoran limbah terverifikasi jadi poin yang bisa kamu tukarkan dengan voucher.</p>
-            </div>
-            <form class="reward-search" method="get" role="search">
-                <label class="visually-hidden" for="reward-search-input">Cari riwayat atau voucher</label>
-                <img src="{% static 'img/waste_reward/icon_search.svg' %}" alt="">
-                <input id="reward-search-input" type="search" name="q" value="{{ request.GET.q }}" placeholder="Cari riwayat, voucher…">
-            </form>
-        </div>
-
-        {% if messages %}
-            <div class="reward-messages" aria-live="polite">
-                {% for message in messages %}
-                    <p class="reward-message {{ message.tags }}">{{ message }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
-
         <section class="balance-rules-grid" aria-label="Saldo poin dan aturan konversi">
             <article class="balance-card">
                 <img class="balance-decoration" src="{% static 'img/waste_reward/dot_rewards.svg' %}" alt="">

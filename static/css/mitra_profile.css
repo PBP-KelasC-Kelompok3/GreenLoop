@@ -1,0 +1,102 @@
+:root {
+  --gl-primary: #008a5f;
+  --gl-olive:   #506649;
+  --gl-mid:     #789c6d;
+  --gl-sage:    #c0ccbb;
+  --gl-dark:    #34452f;
+}
+
+/* Banner */
+.profile-banner {
+  background: linear-gradient(135deg, var(--gl-dark) 0%, var(--gl-olive) 100%) !important;
+  min-height: 120px;
+  overflow: hidden;
+}
+.profile-banner::after {            /* lingkaran dekoratif kanan atas */
+  content: '';
+  position: absolute;
+  top: -70px; right: -50px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: var(--gl-primary);
+  opacity: .55;
+  pointer-events: none;
+}
+.profile-banner > * { position: relative; z-index: 1; }
+
+.profile-avatar {
+  width: 64px; height: 64px;
+  font-size: 1.5rem;
+  background-color: var(--gl-sage);
+  color: var(--gl-dark) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+}
+.badge-silver { background-color: var(--gl-sage); color: var(--gl-dark); }
+
+/* Tab */
+.profile-tab-link {
+  display: inline-block;
+  padding: .6rem .2rem;
+  color: var(--gl-mid);
+  font-weight: 500;
+  font-size: .9rem;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  transition: all .2s ease;
+}
+.profile-tab-link:hover { color: var(--gl-primary); }
+.profile-tab-link.active {
+  color: var(--gl-dark);
+  border-bottom-color: var(--gl-primary);
+  font-weight: 600;
+}
+
+/* Form */
+.form-label { color: var(--gl-dark); }
+.form-control, .form-select { border-color: var(--gl-sage); font-size: .9rem; }
+.form-control:focus, .form-select:focus {
+  border-color: var(--gl-primary);
+  box-shadow: 0 0 0 .25rem rgba(0, 138, 95, .15);
+}
+
+/* Field wilayah otomatis (readonly, gaya seperti desain) */
+.field-auto,
+.field-auto:focus {
+  background-color: #fff;
+  border: 1.5px solid var(--gl-primary);
+  color: var(--gl-dark);
+  box-shadow: none;
+  cursor: default;
+}
+.badge-auto {
+  font-size: .65rem;
+  font-weight: 500;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  background: rgba(0, 138, 95, .12);
+  color: var(--gl-primary);
+}
+
+/* Statistik kontribusi */
+.stat-item { border-bottom: 1px dashed var(--gl-sage); }
+.stat-item:last-child { border-bottom: none; }
+.stat-item .bi { background: rgba(192, 204, 187, .45); padding: .3rem .4rem; border-radius: .5rem; }
+
+/* Peta */
+.map-container {
+  height: 240px;
+  width: 100%;
+  border-bottom: 1px solid #edf0ea;
+  z-index: 1;
+}
+.map-container.map-editing { cursor: crosshair; outline: 2px solid var(--gl-primary); outline-offset: -2px; }
+
+button.profile-tab-link {
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+button.profile-tab-link.active {
+  border-bottom-color: var(--gl-primary);
+}

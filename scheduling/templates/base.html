@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenLoop - Dashboard</title>
+  
+  <!-- CDN Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  
+  
+</head>
+<body class="d-flex bg-light">
+
+  <!-- Sidebar Kiri -->
+  <aside class="sidebar p-3 d-flex flex-column justify-content-between bg-white border-end" style="min-width: 250px; min-height: 100vh;">
+    <div>
+      <!-- Logo GreenLoop -->
+      <div class="d-flex align-items-center gap-2 mb-2 px-2">
+        <i class="bi bi-infinity fs-2 text-success"></i>
+        <h4 class="fw-bold mb-0 text-success text-uppercase" style="letter-spacing: -0.5px;">GREENLOOP</h4>
+      </div>
+      
+      <!-- Badge Peran Pengguna Dinamis Berdasarkan Halaman/URL -->
+      <div class="mb-4 px-2">
+        {% if request.resolver_match.url_name == 'admin_dashboard' %}
+          <span class="badge bg-dark text-white px-2 py-1 rounded-pill small">
+            <i class="bi bi-shield-lock me-1"></i> Panel Admin
+          </span>
+        {% elif request.resolver_match.url_name == 'courier_dashboard' %}
+          <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 rounded-pill small">
+            <i class="bi bi-truck me-1"></i> Panel Kurir
+          </span>
+        {% else %}
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small">
+            <i class="bi bi-building me-1"></i> Mitra B2B
+          </span>
+        {% endif %}
+      </div>
+
+      <!-- Navigasi Menu Sidebar -->
+      <small class="text-uppercase text-muted fw-bold px-2 mb-2 d-block" style="font-size: 10px;">MENU</small>
+      <nav class="nav flex-column gap-1">
+        
+        {% if request.resolver_match.url_name == 'admin_dashboard' %}
+          <!-- Menu Khusus Halaman ADMIN -->
+          <a href="{% url 'admin_dashboard' %}" class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3 active">
+            <div>
+              <i class="bi bi-shield-check me-2"></i> Panel Admin
+            </div>
+            <span class="active-indicator"></span>
+          </a>
+
+        {% elif request.resolver_match.url_name == 'courier_dashboard' %}
+          <!-- Menu Khusus Halaman KURIR -->
+          <a href="{% url 'courier_dashboard' %}" class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3 active">
+            <div>
+              <i class="bi bi-truck me-2"></i> Tugas Penjemputan
+            </div>
+            <span class="active-indicator"></span>
+          </a>
+
+        {% else %}
+          <!-- Menu Murni Halaman MITRA B2B -->
+          <!-- 1. Dashboard Mitra -->
+          <a href="{% url 'mitra_dashboard' %}" 
+             class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3 {% if request.resolver_match.url_name == 'mitra_dashboard' %}active{% endif %}">
+            <div>
+              <i class="bi bi-grid-fill me-2"></i> Dashboard
+            </div>
+            {% if request.resolver_match.url_name == 'mitra_dashboard' %}
+              <span class="active-indicator"></span>
+            {% endif %}
+          </a>
+
+          <!-- 2. Ajukan Penjemputan -->
+          <a href="{% url 'create_pickup' %}" 
+             class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3 {% if request.resolver_match.url_name == 'create_pickup' %}active{% endif %}">
+            <div>
+              <i class="bi bi-calendar-plus me-2"></i> Ajukan Penjemputan
+            </div>
+            {% if request.resolver_match.url_name == 'create_pickup' %}
+              <span class="active-indicator"></span>
+            {% endif %}
+          </a>
+
+          <!-- 3. Riwayat Penjemputan -->
+          <a href="{% url 'pickup_history' %}" 
+             class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3 {% if request.resolver_match.url_name == 'pickup_history' %}active{% endif %}">
+            <div><i class="bi bi-list-task me-2"></i> Riwayat Penjemputan</div>
+            {% if request.resolver_match.url_name == 'pickup_history' %}
+              <span class="active-indicator"></span>
+            {% endif %}
+          </a>
+
+          <!-- 4. Waste & Reward -->
+          <a href="{% url 'waste_reward:dashboard' %}" class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3 {% if request.resolver_match.app_name == 'waste_reward' %}active{% endif %}">
+            <div><i class="bi bi-gift me-2"></i> Waste & Reward</div>
+          </a>
+
+          <!-- 5. Belanja Produk -->
+          <a href="#" class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3">
+            <div><i class="bi bi-cart3 me-2"></i> Belanja Produk</div>
+          </a>
+
+          <!-- 6. Profil Mitra -->
+          <a href="{% url 'mitra_profile' %}" 
+             class="sidebar-nav-item d-flex align-items-center justify-content-between px-3 py-2 rounded-3 {% if request.resolver_match.url_name == 'mitra_profile' %}active{% endif %}">
+            <div><i class="bi bi-person me-2"></i> Profil Mitra</div>
+            {% if request.resolver_match.url_name == 'mitra_profile' %}
+              <span class="active-indicator"></span>
+            {% endif %}
+          </a>
+
+      </nav>
+    </div>
+
+    <div>
+      <!-- Info Area Pilot -->
+      <div class="p-3 bg-light rounded-3 mb-3 border">
+        <div class="fw-bold text-dark mb-1 small"><i class="bi bi-geo-alt-fill text-success me-1"></i> Area Pilot: Kota Depok</div>
+        <div class="text-muted" style="font-size: 11px;">Layanan penjemputan saat ini khusus wilayah Kota Depok.</div>
+      </div>
+      
+      <!-- Logout Button -->
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-link text-danger text-decoration-none p-0">
+            <i class="bi bi-box-arrow-right me-2"></i>Keluar
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- Content Area Utama -->
+  <main class="flex-grow-1 d-flex flex-column min-vh-100">
+    <!-- Top Header Bar -->
+    <header class="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
+      <div class="input-group" style="max-width: 380px;">
+        <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control bg-light border-0 shadow-none" placeholder="Cari penjemputan...">
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-bell position-relative fs-5 text-muted cursor-pointer"></i>
+        <div class="d-flex align-items-center gap-2">
+          <!-- Avatar User (Sesuai Class CSS Mitra) -->
+          <div class="user-avatar-circle rounded-circle text-white d-flex align-items-center justify-content-center fw-bold {% if request.resolver_match.url_name == 'admin_dashboard' %}admin-avatar{% endif %}">
+            {{ request.user.username|slice:":2"|upper|default:"GL" }}
+          </div>
+          <div>
+            <div class="fw-bold small mb-0">{{ request.user.get_full_name|default:request.user.username }}</div>
+            <div class="text-muted" style="font-size: 11px;">
+              {% if request.resolver_match.url_name == 'admin_dashboard' %}
+                Admin System
+              {% elif request.resolver_match.url_name == 'courier_dashboard' %}
+                Kurir / Transporter
+              {% else %}
+                Mitra B2B
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tempat Isi Konten Dashboard -->
+    <div class="flex-grow-1">
+      {% block content %}
+      {% endblock %}
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

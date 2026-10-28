@@ -1,0 +1,52 @@
+{% extends 'scheduling/mitra_base.html' %}
+{% load static %}
+
+{% block title %}GreenLoop - Ubah Jadwal Penjemputan{% endblock %}
+
+{% block header_title %}Ubah Jadwal Penjemputan{% endblock %}
+{% block header_subtitle %}Perbarui tanggal, slot waktu, atau catatan penjemputan sampah Anda.{% endblock %}
+
+{% block extra_css %}
+<!-- CSS Khusus Terpisah untuk Edit Penjemputan -->
+<link rel="stylesheet" href="{% static 'css/edit_pickup.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-2 edit-pickup-container">
+  <div class="card edit-pickup-card shadow-sm p-4 bg-white">
+    <h5 class="fw-bold mb-1">Form Perubahan Jadwal</h5>
+    <p class="text-muted small mb-4">ID Penjemputan: #{{ pickup.id }}</p>
+
+    <form method="POST">
+      {% csrf_token %}
+      
+      <!-- Tanggal Penjemputan -->
+      <div class="mb-3">
+        <label for="pickup_date" class="form-label fw-semibold small">Tanggal Penjemputan Baru</label>
+        <input type="date" class="form-control rounded-3" id="pickup_date" name="pickup_date" value="{{ pickup.pickup_date|date:'Y-m-d' }}" required>
+      </div>
+
+      <!-- Slot Waktu -->
+      <div class="mb-3">
+        <label for="time_slot" class="form-label fw-semibold small">Slot Waktu</label>
+        <select class="form-select rounded-3" id="time_slot" name="time_slot" required>
+          <option value="09:00 - 11:00" {% if pickup.time_slot == '09:00 - 11:00' %}selected{% endif %}>09:00 - 11:00 WIB</option>
+          <option value="11:00 - 13:00" {% if pickup.time_slot == '11:00 - 13:00' %}selected{% endif %}>11:00 - 13:00 WIB</option>
+          <option value="14:00 - 16:00" {% if pickup.time_slot == '14:00 - 16:00' %}selected{% endif %}>14:00 - 16:00 WIB</option>
+        </select>
+      </div>
+
+      <!-- Catatan Tambahan -->
+      <div class="mb-4">
+        <label for="notes" class="form-label fw-semibold small">Catatan (Opsional)</label>
+        <textarea class="form-control rounded-3" id="notes" name="notes" rows="3">{{ pickup.notes }}</textarea>
+      </div>
+
+      <div class="d-flex gap-2">
+        <a href="{% url 'mitra_dashboard' %}" class="btn btn-light rounded-pill flex-fill text-secondary fw-semibold">Batal</a>
+        <button type="submit" class="btn btn-success btn-save-pickup rounded-pill flex-fill fw-semibold shadow-sm">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

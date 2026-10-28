@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'scheduling',
     'accounts.apps.AccountsConfig',
+    'courier',
     'waste_reward.apps.WasteRewardConfig',
     'catalog',
 ]
@@ -127,7 +129,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Jakarta'
 
 USE_I18N = True
 
@@ -146,9 +148,27 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# =========================================================
+# AUTHENTICATION & REDIRECTS
+# =========================================================
+
+# Mengarahkan user jika mencoba mengakses halaman login biasa
+LOGIN_URL = 'login'  # Sesuaikan dengan name url login kamu di app accounts
+
+# Setelah login sukses, otomatis masuk ke Dashboard Mitra
+LOGIN_REDIRECT_URL = '/scheduling/dashboard/'
+
+# Setelah logout, kembali ke halaman utama (home)
+LOGOUT_REDIRECT_URL = '/'

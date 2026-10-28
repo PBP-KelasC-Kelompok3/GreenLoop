@@ -1,0 +1,415 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenLoop - Verifikasi Foto Limbah</title>
+
+  <!-- Bootstrap 5 & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+  <!-- CSS Admin -->
+  <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+</head>
+
+<body>
+
+<div class="d-flex min-vh-100">
+
+  <!-- SIDEBAR DESKTOP (Sembunyi di Mobile) -->
+  <aside class="sidebar-b2b p-3 d-none d-lg-flex flex-column justify-content-between">
+    <div>
+      <div class="mb-3 px-2">
+        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo" onerror="this.style.display='none';">
+      </div>
+
+      <div class="mb-4 px-2">
+        <span class="badge-admin-role">Admin</span>
+      </div>
+
+      <div class="text-uppercase text-muted fw-bold px-2 mb-2" style="font-size: 10px; letter-spacing: 0.5px;">
+        MENU
+      </div>
+
+      <nav class="nav flex-column gap-1">
+        <a href="{% url 'admin_dashboard' %}" class="nav-link-custom active d-flex align-items-center gap-2">
+          <i class="bi bi-shield-check"></i>
+          Verifikasi Foto
+        </a>
+        <a href="{% url 'pickup_history' %}" class="nav-link-custom d-flex align-items-center gap-2">
+          <i class="bi bi-truck"></i>
+          Semua Penjemputan
+        </a>
+      </nav>
+    </div>
+
+    <div>
+      <div class="pilot-area-card mb-3">
+        <div class="fw-bold text-dark d-flex align-items-center gap-1 mb-1">
+          <i class="bi bi-geo-alt-fill text-success"></i> Area Pilot: Kota Depok
+        </div>
+        <div class="text-muted" style="font-size: 11px;">
+          Layanan penjemputan khusus wilayah Kota Depok.
+        </div>
+      </div>
+
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'logout' %}" class="px-2">
+          {% csrf_token %}
+          <button type="submit" class="logout-btn d-flex align-items-center gap-2">
+            <i class="bi bi-box-arrow-right"></i> Keluar
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- OFFCANVAS SIDEBAR (Muncul saat Klik Hamburger Menu di HP/Mobile) -->
+  <div class="offcanvas offcanvas-start offcanvas-admin" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+    <div class="offcanvas-header border-bottom">
+      <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo" onerror="this.style.display='none';">
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column justify-content-between p-3">
+      <div>
+        <div class="mb-3">
+          <span class="badge-admin-role">Admin</span>
+        </div>
+
+        <div class="text-uppercase text-muted fw-bold mb-2" style="font-size: 10px; letter-spacing: 0.5px;">
+          MENU
+        </div>
+
+        <nav class="nav flex-column gap-1">
+          <a href="{% url 'admin_dashboard' %}" class="nav-link-custom active d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check"></i>
+            Verifikasi Foto
+          </a>
+          <a href="{% url 'pickup_history' %}" class="nav-link-custom d-flex align-items-center gap-2">
+            <i class="bi bi-truck"></i>
+            Semua Penjemputan
+          </a>
+        </nav>
+      </div>
+
+      <div>
+        <div class="pilot-area-card mb-3">
+          <div class="fw-bold text-dark d-flex align-items-center gap-1 mb-1">
+            <i class="bi bi-geo-alt-fill text-success"></i> Area Pilot: Kota Depok
+          </div>
+          <div class="text-muted" style="font-size: 11px;">
+            Layanan penjemputan khusus wilayah Kota Depok.
+          </div>
+        </div>
+
+        {% if user.is_authenticated %}
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn d-flex align-items-center gap-2">
+              <i class="bi bi-box-arrow-right"></i> Keluar
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- AREA UTAMA HALAMAN -->
+  <main class="flex-grow-1 p-3 p-lg-4 overflow-auto">
+
+    <!-- TOMBOL HAMBURGER MOBILE (Hanya Muncul di Tampilan Layar HP/Tablet) -->
+    <div class="d-lg-none mb-3">
+      <button class="btn btn-white bg-white border shadow-sm rounded-3 d-flex align-items-center gap-2 px-3 py-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar">
+        <i class="bi bi-list fs-5"></i>
+        <span class="fw-semibold small">Menu</span>
+      </button>
+    </div>
+
+    <!-- NOTIFIKASI -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm mb-3" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- HEADER: JUDUL VERIFIKASI DAN PROFIL FILZA SEJAJAR HORIZONTAL -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <h3 class="fw-bold text-dark mb-1">Verifikasi Foto Limbah</h3>
+        <p class="text-muted small mb-0">Setujui foto yang layak agar kurir dapat ditugaskan. Tolak bila limbah tidak sesuai.</p>
+      </div>
+
+      <!-- Profil Admin Filza (Sejajar Sebelah Kanan Judul) -->
+      <div class="d-flex align-items-center gap-3 ms-3">
+        <i class="bi bi-bell text-muted fs-5"></i>
+        <div class="d-flex align-items-center gap-2">
+          <div class="admin-avatar-circle">
+            {{ request.user.username|slice:":2"|upper|default:"AD" }}
+          </div>
+          <div class="d-none d-sm-block">
+            <div class="fw-bold small lh-1">{{ request.user.username }}</div>
+            <small class="text-muted" style="font-size: 11px;">Administrator</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KOTAK PENCARIAN ESTETIK DI BAWAH JUDUL -->
+    <div class="mb-4">
+      <form method="GET" action="" class="position-relative" style="max-width: 580px;">
+        <i class="bi bi-search top-search-icon"></i>
+        <input type="text" name="q" value="{{ search_query }}" class="form-control shadow-sm" style="border-radius: 14px; padding-left: 45px; height: 48px; font-size: 0.9rem; border: 1px solid #d5e3d7;" placeholder="Cari berdasarkan nama mitra, email, atau ID penjemputan...">
+      </form>
+    </div>
+
+    <!-- CARDS STATISTIK (4 Mini Cards) -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-mini-card">
+          <div class="stat-icon-wrapper stat-icon-yellow">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <div>
+            <h4 class="fw-bold text-dark mb-0">{{ pending_count }}</h4>
+            <div class="text-muted small">Menunggu</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <div class="stat-mini-card">
+          <div class="stat-icon-wrapper stat-icon-blue">
+            <i class="bi bi-truck"></i>
+          </div>
+          <div>
+            <h4 class="fw-bold text-dark mb-0">{{ in_progress_count }}</h4>
+            <div class="text-muted small">Dalam Proses</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <div class="stat-mini-card">
+          <div class="stat-icon-wrapper stat-icon-green">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <div>
+            <h4 class="fw-bold text-dark mb-0">{{ completed_count }}</h4>
+            <div class="text-muted small">Selesai</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <div class="stat-mini-card">
+          <div class="stat-icon-wrapper stat-icon-red">
+            <i class="bi bi-x-circle"></i>
+          </div>
+          <div>
+            <h4 class="fw-bold text-dark mb-0">{{ rejected_count|default:2 }}</h4>
+            <div class="text-muted small">Ditolak</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD LAYOUT UTAMA (3 Kolom digabung dengan Sinkronisasi Tab) -->
+    <div class="row g-3">
+
+      <!-- KOLOM 1: Antrean Verifikasi -->
+      <div class="col-lg-3">
+        <div class="admin-content-card">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold mb-0">Antrean Verifikasi</h6>
+            <span class="badge bg-warning text-dark rounded-pill">{{ all_pickups|length }}</span>
+          </div>
+
+          <div class="queue-list nav flex-column" role="tablist">
+            {% for pickup in all_pickups %}
+              <button class="queue-item text-start w-100 border-0 {% if forloop.first %}active{% endif %}" id="tab-pickup-{{ pickup.id }}" data-bs-toggle="pill" data-bs-target="#content-pickup-{{ pickup.id }}" type="button" role="tab">
+                <div class="d-flex align-items-center gap-2">
+                  {% if pickup.waste_photo %}
+                    <img src="{{ pickup.waste_photo.url }}" class="queue-thumb" alt="Foto">
+                  {% else %}
+                    <div class="queue-thumb bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border-radius: 8px;">
+                      <i class="bi bi-image"></i>
+                    </div>
+                  {% endif %}
+                  <div class="overflow-hidden">
+                    <div class="fw-bold text-dark text-truncate small">PK-{{ pickup.id|stringformat:"04d" }}</div>
+                    <div class="text-muted text-truncate" style="font-size: 11px;">
+                      {{ pickup.mitra.get_full_name|default:pickup.mitra.username }}
+                    </div>
+                    <div class="badge bg-light text-dark border rounded-pill mt-1" style="font-size: 10px;">
+                      {{ pickup.get_status_display }}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            {% empty %}
+              <div class="text-center py-4 text-muted small">Belum ada antrean.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- KOLOM 2 & KOLOM 3 DIGABUNG DALAM SATU TAB-PANE YANG SINKRON -->
+      <div class="col-lg-9">
+        <div class="tab-content">
+          {% for pickup in all_pickups %}
+            <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="content-pickup-{{ pickup.id }}" role="tabpanel">
+              <div class="row g-3">
+                
+                <!-- DETAIL PENJEMPUTAN (Area Tengah) -->
+                <div class="col-lg-8">
+                  <div class="admin-content-card h-100">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <div>
+                        <h5 class="fw-bold text-dark mb-0">PK-{{ pickup.id|stringformat:"04d" }} - {{ pickup.mitra.get_full_name|default:pickup.mitra.username }}</h5>
+                        <small class="text-muted">{{ pickup.mitra.email|default:"Email tidak tersedia" }}</small>
+                      </div>
+                      <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">{{ pickup.get_status_display }}</span>
+                    </div>
+
+                    <!-- Foto Utama Limbah (Bisa Klik Pop-up Besar) -->
+                    <div class="position-relative mb-3">
+                      {% if pickup.waste_photo %}
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ pickup.id }}">
+                          <img src="{{ pickup.waste_photo.url }}" class="main-preview-img shadow-sm" alt="Bukti Limbah" style="cursor: zoom-in;">
+                        </a>
+                        <div class="position-absolute bottom-0 end-0 m-2 bg-dark bg-opacity-75 text-white px-2 py-1 rounded small" style="font-size: 11px;">
+                          <i class="bi bi-zoom-in me-1"></i> Klik untuk memperbesar
+                        </div>
+                      {% else %}
+                        <div class="main-preview-img bg-light border d-flex align-items-center justify-content-center text-muted">
+                          Belum ada foto yang diunggah
+                        </div>
+                      {% endif %}
+                    </div>
+
+                    <!-- Informasi Ringkas Grid -->
+                    <div class="info-grid">
+                      <div>
+                        <div class="info-label">JADWAL PENJEMPUTAN</div>
+                        <div class="info-value">{{ pickup.pickup_date|date:"D, d M Y" }} (Slot {{ pickup.pickup_time_slot }})</div>
+                      </div>
+                      <div>
+                        <div class="info-label">ESTIMASI BOBOT</div>
+                        <div class="info-value">{{ pickup.estimated_weight }} kg</div>
+                      </div>
+                      <div>
+                        <div class="info-label">JENIS LIMBAH</div>
+                        <div class="info-value">{{ pickup.get_waste_type_display }}</div>
+                      </div>
+                      <div>
+                        <div class="info-label">CATATAN MITRA</div>
+                        <div class="info-value">{{ pickup.notes|default:"-" }}</div>
+                      </div>
+                    </div>
+
+                    <!-- Checklist Kelayakan Admin (Dinamis & Permanen jika sudah diproses) -->
+                    <div class="mt-4 pt-3 border-top">
+                      <div class="fw-bold small text-dark mb-2">Checklist Kelayakan (Verifikasi Admin)</div>
+                      
+                      <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="check1_{{ pickup.id }}" {% if pickup.status != 'PENDING' and pickup.status != 'pending' %}checked disabled{% endif %}>
+                        <label class="form-check-label small text-secondary" for="check1_{{ pickup.id }}">
+                          Limbah organik segar / terpilah sesuai standar
+                        </label>
+                      </div>
+
+                      <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="check2_{{ pickup.id }}" {% if pickup.status != 'PENDING' and pickup.status != 'pending' %}checked disabled{% endif %}>
+                        <label class="form-check-label small text-secondary" for="check2_{{ pickup.id }}">
+                          Tidak tercampur plastik / limbah anorganik berbahaya
+                        </label>
+                      </div>
+
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="check3_{{ pickup.id }}" {% if pickup.status != 'PENDING' and pickup.status != 'pending' %}checked disabled{% endif %}>
+                        <label class="form-check-label small text-secondary" for="check3_{{ pickup.id }}">
+                          Volume dan estimasi berat sesuai dengan kenyataan foto
+                        </label>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- AKSI ADMIN (Area Kanan - Otomatis Menyesuaikan Status per ID) -->
+                <div class="col-lg-4">
+                  <div class="action-box-card">
+                    <h6 class="fw-bold mb-2">Aksi Verifikasi</h6>
+
+                    {% if pickup.status == 'PENDING' or pickup.status == 'pending' or pickup.status == 'Pending Verification' %}
+                      <p class="text-muted small mb-4">Setujui untuk melanjutkan ke proses penjemputan atau tolak jika tidak sesuai.</p>
+                      <div class="d-flex flex-column gap-2">
+                        <a href="{% url 'update_pickup_status' pickup.id 'IN_PROGRESS' %}" class="btn btn-approve d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Proses dan setujui penjemputan ini?');">
+                          <i class="bi bi-check-lg"></i> Setujui Penjemputan
+                        </a>
+                        <a href="{% url 'update_pickup_status' pickup.id 'REJECTED' %}" class="btn btn-reject-outline d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Tolak permintaan ini?');">
+                          <i class="bi bi-x-lg"></i> Tolak
+                        </a>
+                      </div>
+                    {% elif pickup.status == 'COMPLETED' or pickup.status == 'completed' or pickup.status == 'Selesai' %}
+                      <p class="text-muted small mb-3">Penjemputan ini telah selesai diproses.</p>
+                      <div class="alert alert-success border text-center small mb-0 py-2">
+                        <i class="bi bi-check-circle-fill me-1"></i> Status: <strong>Selesai</strong>
+                      </div>
+                    {% else %}
+                      <p class="text-muted small mb-3">Penjemputan ini sedang dalam proses penanganan.</p>
+                      <div class="alert alert-light border text-center text-muted small mb-0 py-2">
+                        Status: <strong>{{ pickup.get_status_display }}</strong>
+                      </div>
+                    {% endif %}
+
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          {% empty %}
+            <div class="admin-content-card text-center py-5 text-muted">
+              Belum ada data penjemputan untuk diverifikasi.
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL POPUP FOTO BESAR -->
+{% for pickup in all_pickups %}
+  {% if pickup.waste_photo %}
+    <div class="modal fade" id="imageModal{{ pickup.id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+          <div class="modal-header bg-light border-0">
+            <h5 class="modal-title fw-bold">Foto Bukti Limbah - PK-{{ pickup.id|stringformat:"04d" }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+          </div>
+          <div class="modal-body text-center bg-white p-4">
+            <img src="{{ pickup.waste_photo.url }}" class="img-fluid rounded-3 shadow-sm" alt="Foto Besar" style="max-height: 75vh; object-fit: contain;">
+          </div>
+          <div class="modal-footer border-0 bg-light">
+            <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">Tutup</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endfor %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
