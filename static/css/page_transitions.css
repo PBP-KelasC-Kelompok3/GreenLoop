@@ -1,0 +1,56 @@
+@keyframes greenloop-enter-from-right {
+    from { opacity: 0; transform: translate3d(22px, 0, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes greenloop-enter-from-left {
+    from { opacity: 0; transform: translate3d(-22px, 0, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes greenloop-leave-left {
+    to { opacity: 0; transform: translate3d(-14px, 0, 0); }
+}
+
+@keyframes greenloop-leave-right {
+    to { opacity: 0; transform: translate3d(14px, 0, 0); }
+}
+
+body.page-transition-in-from-home > .app-shell,
+body.page-transition-in-from-home > .layout {
+    animation: greenloop-enter-from-right .42s cubic-bezier(.2,.75,.25,1) both;
+}
+
+body.page-transition-in-from-dashboard > main,
+body.page-transition-in-from-dashboard > .app-shell,
+body.page-transition-in-from-dashboard > .layout > .main {
+    animation: greenloop-enter-from-left .42s cubic-bezier(.2,.75,.25,1) both;
+}
+
+body.page-transition-out-to-dashboard > main,
+body.page-transition-out-to-dashboard > .app-shell,
+body.page-transition-out-to-dashboard > .layout > .main {
+    animation: greenloop-leave-left .18s ease-in both;
+}
+
+body.page-transition-out-to-home > .app-shell,
+body.page-transition-out-to-home > .layout {
+    animation: greenloop-leave-right .18s ease-in both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+
+    body.page-transition-in-from-home > .app-shell,
+    body.page-transition-in-from-home > .layout,
+    body.page-transition-in-from-dashboard > main,
+    body.page-transition-in-from-dashboard > .app-shell,
+    body.page-transition-in-from-dashboard > .layout > .main,
+    body.page-transition-out-to-dashboard > main,
+    body.page-transition-out-to-dashboard > .app-shell,
+    body.page-transition-out-to-dashboard > .layout > .main,
+    body.page-transition-out-to-home > .layout,
+    body.page-transition-out-to-home > .app-shell {
+        animation-duration: .01ms;
+    }
+}

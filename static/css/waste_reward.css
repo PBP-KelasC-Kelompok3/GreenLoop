@@ -1,27 +1,27 @@
 :root {
-    --reward-forest: #123a20;
-    --reward-green: #1e5b2e;
-    --reward-lime: #b5e07a;
-    --reward-mint: #eaf5da;
-    --reward-page: #f6f8f3;
-    --reward-border: #e2e8dd;
-    --reward-muted: #66756b;
+    --reward-forest: #0f3d2a;
+    --reward-green: #008a5f;
+    --reward-lime: #3dbe7e;
+    --reward-mint: #eaf5ec;
+    --reward-page: #eaf5ec;
+    --reward-border: #dbe7dd;
+    --reward-muted: #506649;
 }
 
 .reward-app,
 .reward-app * { box-sizing: border-box; }
 
 .reward-app {
-    min-height: 70vh;
-    color: #17261b;
-    background: var(--reward-page);
+    min-height: 100%;
+    color: var(--reward-forest);
+    background: transparent;
     font-size: 14px;
 }
 
 .reward-content {
-    width: min(1200px, 100%);
+    width: 100%;
     margin: 0 auto;
-    padding: 32px 24px 48px;
+    padding: 0 0 24px;
 }
 
 .reward-heading-row {
@@ -49,7 +49,7 @@
 .reward-heading p { margin: 0; color: var(--reward-muted); }
 
 .reward-search {
-    width: min(340px, 42%);
+    width: min(340px, 100%);
     min-height: 44px;
     display: flex;
     align-items: center;

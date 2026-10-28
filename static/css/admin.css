@@ -1,0 +1,236 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+  --gl-primary: #1b4d2e;
+  --gl-primary-dark: #123620;
+  --gl-olive:   #506649;
+  --gl-mid:     #789c6d;
+  --gl-sage:    #e8f1da;
+  --gl-bg:      #EAF5EC;
+  --gl-text:    #1f2a1c;
+  --gl-muted:   #6c757d;
+  --gl-card-bg: #ffffff;
+}
+
+body {
+  font-family: 'Poppins', sans-serif !important;
+  background-color: var(--gl-bg) !important;
+  color: var(--gl-text) !important;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== SIDEBAR DESKTOP ===== */
+aside.sidebar-b2b {
+  width: 250px !important;
+  min-width: 250px;
+  background-color: var(--gl-card-bg) !important;
+  border-right: 1px solid #e0e0e0 !important;
+  min-height: 100vh;
+}
+
+.sidebar-logo {
+  height: 38px;
+  width: auto;
+}
+
+.badge-admin-role {
+  background-color: #8bbd3b;
+  color: #1f2a1c;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.nav-link-custom {
+  color: #555;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.nav-link-custom:hover {
+  background-color: #f4f6f4;
+  color: var(--gl-primary);
+}
+
+.nav-link-custom.active {
+  background-color: var(--gl-primary) !important;
+  color: #ffffff !important;
+}
+
+.pilot-area-card {
+  background-color: var(--gl-sage);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.8rem;
+}
+
+.logout-btn {
+  background: transparent;
+  border: none;
+  color: #dc3545;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ===== TOPBAR & PROFILE ===== */
+.top-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+}
+
+.admin-avatar-circle {
+  width: 40px;
+  height: 40px;
+  background-color: var(--gl-primary);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+/* ===== CARDS STATISTIK ===== */
+.stat-mini-card {
+  background: var(--gl-card-bg);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icon-wrapper {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.stat-icon-yellow { background-color: #fff8e6; color: #f59e0b; }
+.stat-icon-green  { background-color: #e6f4ea; color: #10b981; }
+.stat-icon-red    { background-color: #fde8e8; color: #ef4444; }
+.stat-icon-blue   { background-color: #e0f2fe; color: #0284c7; }
+
+/* ===== KARTU UTAMA LAYOUT ===== */
+.admin-content-card {
+  background: var(--gl-card-bg);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  height: 100%;
+}
+
+/* ===== ANTREAN VERIFIKASI ===== */
+.queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.queue-item {
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #ffffff;
+}
+
+.queue-item:hover, .queue-item.active {
+  background-color: #f2f8f3;
+  border-color: var(--gl-mid);
+}
+
+.queue-thumb {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* ===== DETAIL & PREVIEW ===== */
+.main-preview-img {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.info-label {
+  font-size: 0.75rem;
+  color: var(--gl-muted);
+}
+
+.info-value {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--gl-text);
+}
+
+/* ===== AKSI & TOMBOL ===== */
+.action-box-card {
+  background: var(--gl-card-bg);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+
+.btn-approve {
+  background-color: var(--gl-primary) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  padding: 10px 16px !important;
+}
+
+.btn-approve:hover {
+  background-color: var(--gl-primary-dark) !important;
+}
+
+.btn-reject-outline {
+  border: 1px solid #ef4444 !important;
+  color: #ef4444 !important;
+  background: transparent !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  padding: 10px 16px !important;
+}
+
+.btn-reject-outline:hover {
+  background-color: #ef4444 !important;
+  color: #fff !important;
+}
+
+/* ===== OFFCANVAS / MOBILE SIDEBAR ===== */
+.offcanvas-admin {
+  width: 270px !important;
+}

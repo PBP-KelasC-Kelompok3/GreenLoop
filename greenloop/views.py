@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from accounts.decorator import role_required
+from accounts.models import UserProfile
 
 
 def home(request):
@@ -24,6 +25,8 @@ def home(request):
         "total_waste_kg": "12.480",
         "carbon_reduction_kg": "8.740",
         "monthly": monthly,
+        # Jumlah akun Mitra terdaftar (data nyata)
+        "partner_count": UserProfile.objects.filter(role='mitra').count(),
     }
 
     return render(

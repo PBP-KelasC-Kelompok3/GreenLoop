@@ -1,4 +1,5 @@
 django~=5.2
+Pillow
 gunicorn
 psycopg2-binary
 python-dotenv
