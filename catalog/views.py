@@ -6,9 +6,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from .models import Product, Order
 from .forms import ProductForm
+from accounts.models import UserProfile
 
-def is_mitra(user):
-    return user.groups.filter(name='mitra').exists()
+def is_mitra(role):
+    return role == "mitra"
 
 @login_required
 def katalog_page(request):
@@ -16,7 +17,7 @@ def katalog_page(request):
     return render(request, 'catalog/katalog.html', {
         'midtrans_client_key': settings.MIDTRANS_CLIENT_KEY,
         'is_admin': request.user.is_superuser,
-        'is_mitra': is_mitra(request.user),
+        'is_mitra': is_mitra(request.user.userprofile.role),
         'form': form
     })
 

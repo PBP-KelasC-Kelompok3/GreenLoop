@@ -13,13 +13,6 @@ urlpatterns = [
     path('scheduling/', include('scheduling.urls')),
     path('mitra/waste-reward/', include('waste_reward.urls')),
     path('katalog/', include('catalog.urls')),
-
-    # Placeholder sementara untuk modul teman.
-    path(
-        'coming-soon/<slug:module>/',
-        coming_soon,
-        name='coming_soon'
-    ),
     path('admin-dashboard/', admin_dashboard, name='admin_dashboard'),
     path('coming-soon/<slug:module>/', coming_soon, name='coming_soon'),
 ]
