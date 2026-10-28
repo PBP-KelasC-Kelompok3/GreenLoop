@@ -12,7 +12,8 @@ urlpatterns = [
     path('courier/', include('courier.urls')),
     path('scheduling/', include('scheduling.urls')),
     path('mitra/waste-reward/', include('waste_reward.urls')),
-    path('admin-dashboard/', admin_dashboard, name='admin_dashboard'),
+    # Keep the public overview route distinct from scheduling's admin panel.
+    path('admin-dashboard/', admin_dashboard, name='site_admin_dashboard'),
     path('coming-soon/<slug:module>/', coming_soon, name='coming_soon'),
 ]
 
