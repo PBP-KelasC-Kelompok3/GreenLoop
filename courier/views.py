@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
+from django.contrib import messages
 
 from accounts.decorator import role_required
 
@@ -42,6 +43,12 @@ def show_dashboard(request):
     from .route_views import today_stops
 
     profile, _ = CourierProfile.objects.get_or_create(user=request.user)
+
+    if not profile.is_approved:
+        messages.warning(request, "Akun kurir Anda masih menunggu verifikasi dari admin.")
+        # Buat halaman khusus pending atau arahkan ke halaman utama/logout/login
+        return render(request, "courier/pending_verification.html", {"profile": profile})
+
     stops = today_stops(request)
     pending = [s for s in stops if s.status != STATUS_DONE]
     # Titik berikutnya: yang sedang dituju, kalau tidak ada maka yang pertama belum selesai

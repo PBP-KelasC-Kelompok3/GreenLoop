@@ -12,7 +12,6 @@ def points_for(weight_kg):
     """Menghitung Waste Points dari berat, dibulatkan ke bilangan bulat."""
     return int((Decimal(weight_kg) * POINTS_PER_KG).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
-
 class CourierProfile(models.Model):
     """Data tambahan khusus kurir (satu kurir = satu profil)."""
 
@@ -34,9 +33,13 @@ class CourierProfile(models.Model):
         default=VehicleType.PICKUP_BAK,
     )
     is_on_duty = models.BooleanField(default=False)  # Status "Sedang Bertugas"
+    
+    # Tambahan status verifikasi admin (False = Menunggu persetujuan, True = Disetujui/Aktif)
+    is_approved = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.user.username} ({self.plate_number or '-'})"
+        status = "Aktif" if self.is_approved else "Pending"
+        return f"{self.user.username} ({self.plate_number or '-'}) - {status}"
 
 
 class WeightLog(models.Model):
