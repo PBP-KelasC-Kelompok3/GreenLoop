@@ -4,3 +4,5 @@ gunicorn
 psycopg2-binary
 python-dotenv
 whitenoise
+requests
+midtransclient
