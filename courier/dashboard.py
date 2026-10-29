@@ -7,8 +7,9 @@ import math
 from datetime import date, datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
 
-from .models import CollectionPoint, PickupRecord, points_for
+from .models import PickupRecord, points_for
 from .utils import MONTHS_ID
+from scheduling.models import MitraProfile
 
 WIB = dt_timezone(timedelta(hours=7))
 
@@ -127,8 +128,14 @@ def build_composition(records):
     Limbah yang diterima GreenLoop selalu kulit buah dan sayur kering yang belum tercampur,
     jadi yang dibandingkan adalah dari mana limbah itu berasal, bukan jenis limbahnya.
     """
-    codes = {r.code for r in records}
-    category = dict(CollectionPoint.objects.filter(code__in=codes).values_list("code", "category"))
+    category = {}
+    for record in records:
+        schedule = record.pickup_schedule
+        mitra_profile = MitraProfile.objects.filter(
+            user_id=schedule.mitra_id,
+        ).only("business_type").first() if schedule else None
+        if mitra_profile and mitra_profile.business_type:
+            category[record.code] = mitra_profile.business_type
     by_source = {}
     for rec in records:
         source = category.get(rec.code) or "Lainnya"

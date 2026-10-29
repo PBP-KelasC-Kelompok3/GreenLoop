@@ -9,7 +9,7 @@ from django.utils import timezone
 from courier.models import WeightLog, points_for
 from courier.views import RECAP_PAGE_SIZE
 
-from .helpers import PLAIN_STATIC, make_user
+from .helpers import PLAIN_STATIC, make_approved_courier, make_user
 
 
 def valid_data(**override):
@@ -32,8 +32,8 @@ def make_log(user, partner="Kafe Senja", kg="10.0", day=None, notes=""):
 @override_settings(STORAGES=PLAIN_STATIC)
 class RecapTestBase(TestCase):
     def setUp(self):
-        self.user = make_user("sari")
-        self.other = make_user("andi")
+        self.user = make_approved_courier("sari")
+        self.other = make_approved_courier("andi")
         self.client.force_login(self.user)
 
     def create(self, **override):

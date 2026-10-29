@@ -10,8 +10,9 @@ from courier.dashboard import (
     WIB, build_chart, build_composition, build_dashboard, build_map, delta_badge,
     fmt_number, period_bounds, _nice_step,
 )
-from courier.models import CollectionPoint, PickupRecord
+from courier.models import PickupRecord
 from courier.route_state import Stop
+from scheduling.models import MitraProfile, PickupSchedule
 
 from .helpers import PLAIN_STATIC, make_user
 from .test_route import RouteTestBase
@@ -121,19 +122,28 @@ class ChartTests(TestCase):
 class CompositionTests(TestCase):
     def setUp(self):
         self.user = make_user("sari")
+        self.schedules = {}
         for code, cat in (("T1", "Kafe"), ("T2", "Restoran"), ("T3", "Hotel"), ("T4", "Toko roti"), ("T5", "Pujasera")):
-            CollectionPoint.objects.create(code=code, name=code, category=cat, address="x", latitude=-6.4, longitude=106.8)
+            mitra = make_user(f"mitra_{code}", role="mitra")
+            MitraProfile.objects.create(user=mitra, business_name=code, business_type=cat)
+            self.schedules[code] = PickupSchedule.objects.create(
+                mitra=mitra, estimated_weight=5, pickup_date=TODAY,
+                pickup_time_slot="08:00-10:00", status="COMPLETED",
+            )
+
+    def pickup_record(self, code, day, kg):
+        return rec(self.user, code, day, kg, pickup_schedule=self.schedules[code])
 
     def test_groups_by_partner_type_not_waste_type(self):
-        rec(self.user, "T1", date(2026, 10, 1), 6)
-        rec(self.user, "T2", date(2026, 10, 2), 3)
-        rec(self.user, "T2", date(2026, 10, 3), 1)
+        self.pickup_record("T1", date(2026, 10, 1), 6)
+        self.pickup_record("T2", date(2026, 10, 2), 3)
+        self.pickup_record("T2", date(2026, 10, 3), 1)
         comp = build_composition(list(PickupRecord.objects.all()))
         self.assertEqual(comp, [{"label": "Kafe", "percent": 60}, {"label": "Restoran", "percent": 40}])
 
     def test_extra_types_folded_into_lainnya(self):
         for i, code in enumerate(("T1", "T2", "T3", "T4", "T5")):
-            rec(self.user, code, date(2026, 10, 1 + i), 10 - i)
+            self.pickup_record(code, date(2026, 10, 1 + i), 10 - i)
         comp = build_composition(list(PickupRecord.objects.all()))
         self.assertEqual(len(comp), 4)
         self.assertEqual(comp[-1]["label"], "Lainnya")
@@ -292,7 +302,6 @@ class DashboardPageTests(RouteTestBase):
 
     def test_finishing_a_stop_updates_dashboard(self):
         pk = self.ids()[0]
-        point = CollectionPoint.objects.get(pk=pk)
         self.finish(pk, "4,5")
         res = self.client.get(self.url)
         self.assertContains(res, "4,5 kg")

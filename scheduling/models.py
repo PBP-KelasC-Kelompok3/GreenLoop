@@ -119,6 +119,7 @@ class MitraProfile(models.Model):
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    profile_photo = models.ImageField(upload_to='profile_photos/mitra/', blank=True)
     business_name = models.CharField(max_length=150, verbose_name="Nama Usaha", blank=True, null=True)
     business_type = models.CharField(max_length=50, choices=JENIS_USAHA_CHOICES, blank=True, null=True)
     pic_name = models.CharField(max_length=100, verbose_name="Nama Penanggung Jawab", blank=True, null=True)

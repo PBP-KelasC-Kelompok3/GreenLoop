@@ -19,26 +19,24 @@ body {
 
 /* ===== Sidebar Layout & Dimensions ===== */
 aside.sidebar {
-  width: 260px !important;
   min-height: 100vh !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
   flex-shrink: 0;
   background-color: #ffffff;
 }
 
 .sidebar-logo {
-  max-height: 40px;
+  max-height: 32px;
   width: auto;
 }
 
 .sidebar-menu-title {
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .pilot-area-subtext {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* Nav Link Custom */

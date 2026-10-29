@@ -20,6 +20,7 @@ urlpatterns = [
     path('courier/dashboard/', views.courier_dashboard, name='courier_dashboard'),
 
     path('profile/', views.mitra_profile, name='mitra_profile'),
+    path('profile/photo/', views.update_mitra_profile_photo, name='mitra_profile_photo'),
 
     path('admin-panel/verify-couriers/', views.admin_verify_couriers, name='admin_verify_couriers'),
     path('admin-panel/verify-couriers/approve/<int:courier_id>/', views.approve_courier, name='approve_courier'),

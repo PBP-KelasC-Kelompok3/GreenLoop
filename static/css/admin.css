@@ -20,65 +20,28 @@ body {
   padding: 0;
 }
 
-/* ===== SIDEBAR DESKTOP ===== */
-aside.sidebar-b2b {
-  width: 250px !important;
-  min-width: 250px;
-  background-color: var(--gl-card-bg) !important;
-  border-right: 1px solid #e0e0e0 !important;
-  min-height: 100vh;
+.admin-page-shell {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Admin page shell; the sidebar itself uses sidebar_shared.css. */
+aside.sidebar-b2b { background: #fff !important; }
+
+.admin-page-shell > main {
+  min-width: 0;
+  min-height: 0;
 }
 
 .sidebar-logo {
-  height: 38px;
+  height: 32px;
   width: auto;
 }
 
-.badge-admin-role {
-  background-color: #8bbd3b;
-  color: #1f2a1c;
-  font-weight: 600;
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 20px;
-}
-
-.nav-link-custom {
-  color: #555;
-  font-weight: 500;
-  font-size: 0.9rem;
-  padding: 10px 14px;
-  border-radius: 10px;
-  transition: all 0.2s ease;
-  text-decoration: none;
-}
-
-.nav-link-custom:hover {
-  background-color: #f4f6f4;
-  color: var(--gl-primary);
-}
-
-.nav-link-custom.active {
-  background-color: var(--gl-primary) !important;
-  color: #ffffff !important;
-}
-
-.pilot-area-card {
-  background-color: var(--gl-sage);
-  border-radius: 12px;
-  padding: 12px;
-  font-size: 0.8rem;
-}
-
-.logout-btn {
-  background: transparent;
-  border: none;
-  color: #dc3545;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  padding: 0;
-}
+.offcanvas-admin { width: min(82vw, 280px) !important; }
+.offcanvas-admin .offcanvas-header { padding: 14px 14px 12px; }
+.offcanvas-admin .sidebar-logo { height: 28px; }
 
 /* ===== TOPBAR & PROFILE ===== */
 .top-search-icon {

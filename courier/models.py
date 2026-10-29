@@ -26,6 +26,7 @@ class CourierProfile(models.Model):
         on_delete=models.CASCADE,
         related_name="courierprofile",
     )
+    profile_photo = models.ImageField(upload_to="profile_photos/courier/", blank=True)
     plate_number = models.CharField(max_length=15, blank=True)
     vehicle_type = models.CharField(
         max_length=20,
@@ -50,6 +51,10 @@ class WeightLog(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="weight_logs",
+    )
+    pickup_schedule = models.OneToOneField(
+        "scheduling.PickupSchedule", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="weight_log",
     )
     partner_name = models.CharField("Mitra / lokasi", max_length=120)
     collected_at = models.DateField("Tanggal")
@@ -76,33 +81,6 @@ class WeightLog(models.Model):
         return points_for(self.weight_kg)
 
 
-class CollectionPoint(models.Model):
-    """Titik jemput (mitra seperti kafe, restoran, hotel) yang menjadi data awal halaman Rute Hari Ini.
-
-    Sementara dipakai sebelum model Pickup ada. Datanya diisi lewat
-    `python manage.py seed_points` (diambil dari OpenStreetMap lewat Overpass API).
-    """
-
-    code = models.CharField("Kode", max_length=20, unique=True)
-    name = models.CharField("Nama", max_length=120)
-    category = models.CharField("Jenis", max_length=40)
-    address = models.CharField("Alamat", max_length=200)
-    # Koordinat asli dari OpenStreetMap, sama dengan yang tergambar di peta
-    latitude = models.FloatField()
-    longitude = models.FloatField()
-    est_kg = models.PositiveSmallIntegerField("Estimasi berat (kg)", default=20)
-    vehicle = models.CharField("Armada", max_length=30, default="Motor Box")
-    photo_note = models.CharField("Catatan foto", max_length=120, blank=True)
-    # Penanda asal data (mis. "node/123456") supaya seed bisa dijalankan berulang tanpa duplikat
-    source_id = models.CharField(max_length=40, unique=True, null=True, blank=True)
-
-    class Meta:
-        ordering = ["code"]
-
-    def __str__(self):
-        return f"{self.code} {self.name}"
-
-
 class PickupRecord(models.Model):
     """Catatan satu penjemputan milik kurir; dibaca halaman Riwayat Pikap.
 
@@ -120,6 +98,10 @@ class PickupRecord(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="pickup_records",
+    )
+    pickup_schedule = models.OneToOneField(
+        "scheduling.PickupSchedule", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="courier_record",
     )
     code = models.CharField("Kode titik", max_length=20)
     date = models.DateField("Tanggal")
