@@ -563,7 +563,7 @@ def mitra_profile(request):
 @login_required
 def admin_verify_couriers(request):
     """Halaman admin untuk melihat daftar kurir yang mendaftar dan menunggu verifikasi."""
-    if not request.user.is_staff:
+    if not _can_manage_pickups(request.user):
         return redirect('home')
     
     pending_couriers = CourierProfile.objects.filter(is_approved=False)
@@ -579,7 +579,7 @@ def admin_verify_couriers(request):
 @login_required
 def approve_courier(request, courier_id):
     """Fungsi saat admin menekan tombol 'Setujui' untuk akun kurir."""
-    if not request.user.is_staff:
+    if not _can_manage_pickups(request.user):
         return redirect('home')
     
     courier_profile = get_object_or_404(CourierProfile, id=courier_id)

@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+import re
 
 from .models import UserProfile
 
@@ -163,6 +164,13 @@ class RegisterForm(UserCreationForm):
             cleaned['plate_number'] = ' '.join(
                 (cleaned.get('plate_number') or '').upper().split()
             )
+            if not cleaned['plate_number']:
+                self.add_error('plate_number', 'Plat nomor wajib diisi untuk akun kurir.')
+            elif not re.fullmatch(r'[A-Z]{1,2}\s?\d{1,4}\s?[A-Z]{0,3}', cleaned['plate_number']):
+                self.add_error('plate_number', 'Format plat nomor tidak valid. Contoh: B 1234 KZT.')
+
+            if not cleaned.get('vehicle_type'):
+                self.add_error('vehicle_type', 'Jenis armada wajib dipilih untuk akun kurir.')
 
         return cleaned
 
@@ -185,15 +193,24 @@ class RegisterForm(UserCreationForm):
         return user
 
     def save_role_profile(self, user):
-        """
-        Compatibility method untuk code/test lama.
-
-        Data profile Mitra/Courier belum disimpan ke model khusus
-        karena source model courier/scheduling tidak tersedia
-        pada branch ini.
-        """
         profile = getattr(user, 'userprofile', None)
 
         if profile:
             profile.role = self.cleaned_data.get('role')
             profile.save(update_fields=['role'])
+
+        if self.cleaned_data.get('role') == 'courier':
+            from courier.models import CourierProfile
+
+            vehicle_type = {
+                'motor': CourierProfile.VehicleType.MOTOR_BOX,
+                'mobil': CourierProfile.VehicleType.PICKUP_BAK,
+            }.get(self.cleaned_data.get('vehicle_type'), CourierProfile.VehicleType.PICKUP_BAK)
+
+            CourierProfile.objects.update_or_create(
+                user=user,
+                defaults={
+                    'plate_number': self.cleaned_data['plate_number'],
+                    'vehicle_type': vehicle_type,
+                },
+            )
