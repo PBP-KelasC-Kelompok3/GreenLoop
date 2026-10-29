@@ -24,9 +24,12 @@ jobs:
           PWS_URL: ${{ secrets.PWS_URL }}
         run: |
           current_branch=$(git branch --show-current)
-          push_output=$(git push $PWS_URL $current_branch:master 2>&1)
-          if [[ $? -ne 0 ]]; then
-            echo "Push failed with output: $push_output"
+
+          if push_output=$(git push "$PWS_URL" "$current_branch:master" 2>&1); then
+            echo "Push successful with output:"
+            echo "$push_output"
+          else
+            echo "Push failed with output:"
+            echo "$push_output"
             exit 1
           fi
-          echo "Push successful with output: $push_output"
