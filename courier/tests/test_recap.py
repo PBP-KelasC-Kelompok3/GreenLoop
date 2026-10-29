@@ -9,7 +9,7 @@ from django.utils import timezone
 from courier.models import WeightLog, points_for
 from courier.views import RECAP_PAGE_SIZE
 
-from .helpers import PLAIN_STATIC, make_user
+from .helpers import PLAIN_STATIC, make_approved_courier, make_user
 
 
 def valid_data(**override):
@@ -32,8 +32,8 @@ def make_log(user, partner="Kafe Senja", kg="10.0", day=None, notes=""):
 @override_settings(STORAGES=PLAIN_STATIC)
 class RecapTestBase(TestCase):
     def setUp(self):
-        self.user = make_user("sari")
-        self.other = make_user("andi")
+        self.user = make_approved_courier("sari")
+        self.other = make_approved_courier("andi")
         self.client.force_login(self.user)
 
     def create(self, **override):
@@ -235,12 +235,12 @@ class RecapPageTests(RecapTestBase):
         summary = self.page().context["summary"]
         self.assertEqual(summary["count"], 2)
         self.assertEqual(summary["total"], Decimal("15.5"))
-        self.assertEqual(summary["points"], points_for(Decimal("10.0")) + points_for(Decimal("5.5")))   # 50 + 28 (27,5 dibulatkan ke atas)
+        self.assertEqual(summary["points"], points_for(Decimal("10.0")) + points_for(Decimal("5.5")))   # 50 + 27, sesuai ledger
         self.assertEqual(summary["average"], Decimal("7.75"))
 
-    def test_points_round_half_up_in_page(self):
-        make_log(self.user, "A", "0.5")      # 2,5 poin -> 3
-        self.assertContains(self.page(), "+3")
+    def test_points_follow_ledger_rounding_in_page(self):
+        make_log(self.user, "A", "0.5")      # 2,5 poin -> 2, sesuai ledger
+        self.assertContains(self.page(), "+2")
 
     def test_empty_state(self):
         res = self.page()

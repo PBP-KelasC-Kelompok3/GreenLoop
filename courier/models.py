@@ -1,16 +1,17 @@
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from waste_reward.points import POINTS_PER_KILOGRAM, points_for_weight
 
 # Tarif Waste Points per kilogram (contoh: 58,6 kg x 5 = 293 poin)
-POINTS_PER_KG = 5
+POINTS_PER_KG = POINTS_PER_KILOGRAM
 
 
 def points_for(weight_kg):
-    """Menghitung Waste Points dari berat, dibulatkan ke bilangan bulat."""
-    return int((Decimal(weight_kg) * POINTS_PER_KG).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    """Gunakan konversi Waste Points yang sama dengan saldo ledger mitra."""
+    return points_for_weight(weight_kg)
 
 class CourierProfile(models.Model):
     """Data tambahan khusus kurir (satu kurir = satu profil)."""
@@ -26,6 +27,7 @@ class CourierProfile(models.Model):
         on_delete=models.CASCADE,
         related_name="courierprofile",
     )
+    profile_photo = models.ImageField(upload_to="profile_photos/courier/", blank=True)
     plate_number = models.CharField(max_length=15, blank=True)
     vehicle_type = models.CharField(
         max_length=20,
@@ -42,6 +44,28 @@ class CourierProfile(models.Model):
         return f"{self.user.username} ({self.plate_number or '-'}) - {status}"
 
 
+class CourierAssignment(models.Model):
+    """Kurir yang ditugaskan ke satu pengajuan penjemputan."""
+
+    pickup_schedule = models.OneToOneField(
+        "scheduling.PickupSchedule",
+        on_delete=models.CASCADE,
+        related_name="courier_assignment",
+    )
+    courier = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="courier_assignments",
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["assigned_at", "pk"]
+
+    def __str__(self):
+        return f"{self.pickup_schedule_id} -> {self.courier.username}"
+
+
 class WeightLog(models.Model):
     """Satu catatan timbangan hasil penjemputan. Dikelola kurir (CRUD)."""
 
@@ -50,6 +74,10 @@ class WeightLog(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="weight_logs",
+    )
+    pickup_schedule = models.OneToOneField(
+        "scheduling.PickupSchedule", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="weight_log",
     )
     partner_name = models.CharField("Mitra / lokasi", max_length=120)
     collected_at = models.DateField("Tanggal")
@@ -76,33 +104,6 @@ class WeightLog(models.Model):
         return points_for(self.weight_kg)
 
 
-class CollectionPoint(models.Model):
-    """Titik jemput (mitra seperti kafe, restoran, hotel) yang menjadi data awal halaman Rute Hari Ini.
-
-    Sementara dipakai sebelum model Pickup ada. Datanya diisi lewat
-    `python manage.py seed_points` (diambil dari OpenStreetMap lewat Overpass API).
-    """
-
-    code = models.CharField("Kode", max_length=20, unique=True)
-    name = models.CharField("Nama", max_length=120)
-    category = models.CharField("Jenis", max_length=40)
-    address = models.CharField("Alamat", max_length=200)
-    # Koordinat asli dari OpenStreetMap, sama dengan yang tergambar di peta
-    latitude = models.FloatField()
-    longitude = models.FloatField()
-    est_kg = models.PositiveSmallIntegerField("Estimasi berat (kg)", default=20)
-    vehicle = models.CharField("Armada", max_length=30, default="Motor Box")
-    photo_note = models.CharField("Catatan foto", max_length=120, blank=True)
-    # Penanda asal data (mis. "node/123456") supaya seed bisa dijalankan berulang tanpa duplikat
-    source_id = models.CharField(max_length=40, unique=True, null=True, blank=True)
-
-    class Meta:
-        ordering = ["code"]
-
-    def __str__(self):
-        return f"{self.code} {self.name}"
-
-
 class PickupRecord(models.Model):
     """Catatan satu penjemputan milik kurir; dibaca halaman Riwayat Pikap.
 
@@ -120,6 +121,10 @@ class PickupRecord(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="pickup_records",
+    )
+    pickup_schedule = models.OneToOneField(
+        "scheduling.PickupSchedule", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="courier_record",
     )
     code = models.CharField("Kode titik", max_length=20)
     date = models.DateField("Tanggal")

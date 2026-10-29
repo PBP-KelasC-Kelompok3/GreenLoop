@@ -1,10 +1,11 @@
 from datetime import timedelta
 from decimal import Decimal
+from uuid import uuid4
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -32,13 +33,14 @@ class WasteRewardTestCase(TestCase):
     def make_voucher(
         self,
         *,
-        code='diskon-10000',
+        code=None,
         kind=RewardVoucher.Kind.DISCOUNT,
         value_label='Rp 10.000',
         points_cost=200,
         valid_days=30,
         is_active=True,
     ):
+        code = code or f'diskon-test-{uuid4().hex[:10]}'
         return RewardVoucher.objects.create(
             code=code,
             title='Voucher tes',
@@ -303,6 +305,10 @@ class CheckoutVoucherTests(WasteRewardTestCase):
         self.assertIsNone(owned.used_order_reference)
 
 
+@override_settings(STORAGES={
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+})
 class WasteRewardViewAccessTests(WasteRewardTestCase):
     def test_mitra_can_open_dashboard_and_consumer_cannot(self):
         mitra = self.make_user('mitra-dashboard-access')

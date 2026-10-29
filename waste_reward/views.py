@@ -5,6 +5,7 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
 from accounts.decorator import role_required
+from .points import POINTS_PER_KILOGRAM, membership_tier
 
 from .models import RewardTransaction, RewardVoucher, UserVoucher
 from .services import (
@@ -24,14 +25,15 @@ def dashboard(request):
     balance = get_balance(request.user)
     query = request.GET.get('q', '').strip()
 
-    if balance >= 5000:
-        level, next_level, next_threshold = 'Platinum', 'Platinum', 5000
-    elif balance >= 3000:
-        level, next_level, next_threshold = 'Gold', 'Platinum', 5000
-    elif balance >= 1000:
-        level, next_level, next_threshold = 'Silver', 'Gold', 3000
+    level = membership_tier(balance)
+    if level == 'Platinum':
+        next_level, next_threshold = 'Platinum', 5000
+    elif level == 'Gold':
+        next_level, next_threshold = 'Platinum', 5000
+    elif level == 'Silver':
+        next_level, next_threshold = 'Gold', 3000
     else:
-        level, next_level, next_threshold = 'Bronze', 'Silver', 1000
+        next_level, next_threshold = 'Silver', 1000
 
     progress_start = {'Bronze': 0, 'Silver': 1000, 'Gold': 3000, 'Platinum': 5000}[level]
     progress = min(
@@ -73,6 +75,7 @@ def dashboard(request):
 
     context = {
         'balance': _format_points(balance),
+        'points_per_kg': POINTS_PER_KILOGRAM,
         'level': level,
         'next_level': next_level,
         'next_threshold': _format_points(next_threshold),

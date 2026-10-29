@@ -3,6 +3,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import UserProfile
+from courier.models import CourierProfile
 
 
 PLAIN_STATIC = {
@@ -24,6 +25,7 @@ def make_user(username, role, password="pw12345!"):
     return user
 
 
+@override_settings(STORAGES=PLAIN_STATIC)
 class LoginRedirectTests(TestCase):
 
     def login(self, username, password="pw12345!"):
@@ -46,7 +48,7 @@ class LoginRedirectTests(TestCase):
             fetch_redirect_response=False,
         )
 
-    def test_courier_goes_straight_to_courier_dashboard(self):
+    def test_pending_courier_goes_to_approval_page(self):
         make_user("courieruser", "courier")
 
         response = self.login("courieruser")
@@ -56,9 +58,16 @@ class LoginRedirectTests(TestCase):
             reverse("courier:show_dashboard"),
             fetch_redirect_response=False,
         )
+        pending = self.client.get(response.url)
+        self.assertRedirects(
+            pending,
+            reverse("courier:pending_verification"),
+            fetch_redirect_response=False,
+        )
 
     def test_courier_dashboard_opens_after_login(self):
-        make_user("courierdashboard", "courier")
+        courier = make_user("courierdashboard", "courier")
+        CourierProfile.objects.create(user=courier, is_approved=True)
 
         response = self.client.post(
             reverse("login"),
@@ -84,7 +93,7 @@ class LoginRedirectTests(TestCase):
 
                 self.assertRedirects(
                     response,
-                    reverse("home"),
+                    reverse("mitra_dashboard") if role == "mitra" else reverse("home"),
                     fetch_redirect_response=False,
                 )
 
@@ -127,6 +136,12 @@ class LoginRedirectTests(TestCase):
             user.userprofile.role,
             "courier",
         )
+        pending = self.client.get(response.url)
+        self.assertRedirects(
+            pending,
+            reverse("courier:pending_verification"),
+            fetch_redirect_response=False,
+        )
 
     def test_register_consumer(self):
         response = self.client.post(
@@ -155,13 +170,14 @@ class LoginRedirectTests(TestCase):
 
 MITRA_DATA = {
     "business_name": "Green Business",
-    "business_type": "Restaurant",
-    "responsible_person": "Afiqah",
-    "whatsapp": "08123456789",
-    "province": "Jawa Barat",
-    "city": "Depok",
-    "district": "Beji",
-    "address": "Jl. Margonda Raya",
+    "business_type": "restaurant",
+    "pic_name": "Afiqah",
+    "phone_number": "08123456789",
+    "provinsi": "Jawa Barat",
+    "kota": "Depok",
+    "kecamatan": "Beji",
+    "kelurahan": "Pondok Cina",
+    "address_detail": "Jl. Margonda Raya",
 }
 
 
@@ -217,7 +233,7 @@ class RegisterProfileTests(TestCase):
             "password2": "testpass123",
             "role": "mitra",
             **MITRA_DATA,
-            "city": "Jakarta Selatan",
+            "kota": "Jakarta Selatan",
         }
 
         response = self.client.post(
@@ -254,8 +270,8 @@ class RegisterProfileTests(TestCase):
             "password1": "testpass123",
             "password2": "testpass123",
             "role": "courier",
-            "vehicle_type": "Motor",
-            "plate_number": "B1234XYZ",
+            "vehicle_type": "motor",
+            "plate_number": "B1234XY",
         }
 
         response = self.client.post(
@@ -277,7 +293,7 @@ class RegisterProfileTests(TestCase):
             "password1": "testpass123",
             "password2": "testpass123",
             "role": "courier",
-            "vehicle_type": "Motor",
+            "vehicle_type": "motor",
             "plate_number": "INVALID",
         }
 
@@ -308,7 +324,7 @@ class PublicPagesTests(TestCase):
 
         self.assertContains(
             response,
-            "8.740",
+            "6.240",
         )
 
     def test_guest_navigation_only_shows_catalog(self):
@@ -341,6 +357,7 @@ class PublicPagesTests(TestCase):
             "navcourier",
             "courier",
         )
+        CourierProfile.objects.create(user=courier, is_approved=True)
 
         self.client.force_login(courier)
 
@@ -351,11 +368,6 @@ class PublicPagesTests(TestCase):
         self.assertContains(
             response,
             reverse("courier:show_dashboard"),
-        )
-
-        self.assertContains(
-            response,
-            reverse("courier:show_route_today"),
         )
 
         self.client.logout()
@@ -373,7 +385,7 @@ class PublicPagesTests(TestCase):
 
         self.assertContains(
             response,
-            reverse("waste_reward:dashboard"),
+            reverse("mitra_dashboard"),
         )
 
     def test_login_page(self):

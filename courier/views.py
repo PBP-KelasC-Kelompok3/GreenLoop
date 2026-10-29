@@ -1,15 +1,15 @@
 from django.contrib.auth import update_session_auth_hash
 from django.core.paginator import Paginator
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
-from django.contrib import messages
 
 from accounts.decorator import role_required
 
 from .forms import (
+    CourierPhotoForm,
     CourierPasswordForm,
     CourierProfileForm,
     WeightLogForm,
@@ -44,11 +44,6 @@ def show_dashboard(request):
 
     profile, _ = CourierProfile.objects.get_or_create(user=request.user)
 
-    if not profile.is_approved:
-        messages.warning(request, "Akun kurir Anda masih menunggu verifikasi dari admin.")
-        # Buat halaman khusus pending atau arahkan ke halaman utama/logout/login
-        return render(request, "courier/pending_verification.html", {"profile": profile})
-
     stops = today_stops(request)
     pending = [s for s in stops if s.status != STATUS_DONE]
     # Titik berikutnya: yang sedang dituju, kalau tidak ada maka yang pertama belum selesai
@@ -66,6 +61,14 @@ def show_dashboard(request):
         "weather": current_weather(),
     })
     return render(request, "courier/dashboard.html", context)
+
+
+@role_required(['courier'])
+def pending_verification(request):
+    profile, _ = CourierProfile.objects.get_or_create(user=request.user)
+    if profile.is_approved:
+        return redirect("courier:show_dashboard")
+    return render(request, "courier/pending_verification.html", {"profile": profile})
 
 
 @role_required(['courier'])
@@ -208,6 +211,23 @@ def update_profile(request):
         "message": "Profil berhasil diperbarui.",
         "data": profile_payload(request.user, profile),
     })
+
+
+@role_required(['courier'])
+@require_POST
+def update_profile_photo(request):
+    form = CourierPhotoForm(request.POST, request.FILES)
+    if not form.is_valid():
+        return JsonResponse({"ok": False, "errors": errors_to_dict(form)}, status=400)
+
+    profile, _ = CourierProfile.objects.get_or_create(user=request.user)
+    previous_photo = profile.profile_photo
+    profile.profile_photo = form.cleaned_data["profile_photo"]
+    profile.save(update_fields=["profile_photo"])
+    if previous_photo and previous_photo.name != profile.profile_photo.name:
+        previous_photo.delete(save=False)
+
+    return JsonResponse({"ok": True, "photo_url": profile.profile_photo.url})
 
 
 @role_required(['courier'])

@@ -1,20 +1,13 @@
-"""Titik jemput hari ini dan status pengerjaannya.
-
-Sementara (sebelum model Pickup ada): titik diambil dari model CollectionPoint, dan
-statusnya disimpan di sesi login kurir. Objek Stop sengaja memakai nama atribut yang sama
-dengan yang dibaca maps.build_plan (pk, status, slot_start, finished_at,
-latitude, longitude), jadi nanti cukup diganti dengan query ke model Pickup.
-"""
-import random
+"""Titik rute dibentuk dari pengajuan PickupSchedule yang ditugaskan ke kurir."""
 from dataclasses import dataclass
 from datetime import datetime, time
 from decimal import Decimal
+from django.db.models import Q
 
 
-from .maps import STATUS_APPROVED, STATUS_DONE, STATUS_ON_THE_WAY, haversine_m
+from .maps import STATUS_APPROVED, STATUS_DONE, STATUS_ON_THE_WAY, in_depok
 from .utils import MONTHS_ID
 
-SESSION_KEY = "route_state"
 DAYS_ID = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
 
 
@@ -45,97 +38,92 @@ def format_day_date(value):
     return f"{DAYS_ID[value.weekday()]}, {value.day} {MONTHS_ID[value.month - 1]} {value.year}"
 
 
-# Muatan maksimal armada kurir per penjemputan (kg), sesuai CourierProfile.vehicle_type.
-# Estimasi berat di setiap titik disesuaikan dengan armada kurir yang sedang bertugas.
-VEHICLE_CAPACITY_KG = {"Motor Box": 5, "Pickup Bak": 10}
-LARGEST_CAPACITY_KG = max(VEHICLE_CAPACITY_KG.values())
-
-STOPS_PER_DAY = 5          # jumlah titik jemput yang dijadwalkan tiap hari
-FIRST_SLOT_MINUTES = 8 * 60  # titik pertama mulai pukul 08.00
-SLOT_STEP = 75             # jarak mulai antar titik (menit)
-SLOT_LENGTH = 120          # lebar jendela jemput (menit)
-
-
-def _slot(index):
-    start = FIRST_SLOT_MINUTES + index * SLOT_STEP
-    end = start + SLOT_LENGTH
-    return time(start // 60, start % 60), time(end // 60 % 24, end % 60)
-
+# Helper lama untuk membuat estimasi sintetis pada data rute contoh.
+# Ini bukan kapasitas operasional dan tidak dipakai dispatcher; penugasan nyata
+# memakai berat PickupSchedule serta batas aman terpusat di dispatch.py.
+SYNTHETIC_ESTIMATE_CAP_KG = {"Motor Box": 5, "Pickup Bak": 10}
+LARGEST_SYNTHETIC_ESTIMATE_KG = max(SYNTHETIC_ESTIMATE_CAP_KG.values())
 
 def estimate_for(base_kg, vehicle):
-    """Estimasi berat untuk armada kurir.
-
-    Data titik menyimpan estimasi untuk armada terbesar (1-10 kg). Untuk armada yang lebih kecil
-    angkanya diskalakan, jadi motor mendapat 1-5 kg dan pickup 1-10 kg, dan tidak pernah melebihi muatannya.
-    """
-    cap = VEHICLE_CAPACITY_KG.get(vehicle, LARGEST_CAPACITY_KG)
+    """Skalakan berat sintetis untuk helper data rute lama, bukan tugas nyata."""
+    cap = SYNTHETIC_ESTIMATE_CAP_KG.get(vehicle, LARGEST_SYNTHETIC_ESTIMATE_KG)
     # Dibulatkan setengah ke atas (round() Python membulatkan 2,5 ke 2, itu tidak diinginkan)
-    scaled = (base_kg * cap * 2 + LARGEST_CAPACITY_KG) // (LARGEST_CAPACITY_KG * 2)
+    scaled = (base_kg * cap * 2 + LARGEST_SYNTHETIC_ESTIMATE_KG) // (LARGEST_SYNTHETIC_ESTIMATE_KG * 2)
     return max(1, min(cap, scaled))
 
 
-def _today_stops(today, vehicle=None):
-    """Memilih titik jemput hari ini dari data CollectionPoint, dikumpulkan di satu daerah.
+def _today_stops(user, today, vehicle=None):
+    """Pickup hari ini yang memang ditugaskan kepada kurir ini."""
+    from .models import CourierAssignment, PickupRecord
 
-    Satu titik pusat dipilih acak dari tanggal (jadi tetap sama sepanjang hari dan untuk semua
-    kurir), lalu diambil titik-titik terdekat darinya. Hasilnya rute yang rapat, tidak
-    membentang ke ujung-ujung Depok. Kosong bila data belum di-seed.
-    """
-    from .models import CollectionPoint
-
-    points = list(CollectionPoint.objects.order_by("pk"))
-    if not points:
-        return []
-    center = random.Random(today.toordinal()).choice(points)
-    here = (center.latitude, center.longitude)
-    nearest = sorted(points, key=lambda p: (haversine_m(here, (p.latitude, p.longitude)), p.pk))
+    assignments = list(CourierAssignment.objects.filter(
+        courier=user,
+        pickup_schedule__status__in=("SCHEDULED", "IN_PROGRESS", "COMPLETED"),
+    ).filter(
+        Q(pickup_schedule__pickup_date=today)
+        | Q(
+            pickup_schedule__pickup_date__lt=today,
+            pickup_schedule__status__in=("SCHEDULED", "IN_PROGRESS"),
+        )
+    ).select_related("pickup_schedule__mitra")
+      .order_by("pickup_schedule__pickup_date", "pickup_schedule__pickup_time_slot", "pickup_schedule_id"))
+    pickups = [assignment.pickup_schedule for assignment in assignments]
+    from scheduling.models import MitraProfile
+    profiles = {
+        profile.user_id: profile
+        for profile in MitraProfile.objects.filter(user_id__in=[p.mitra_id for p in pickups])
+    }
+    records = {
+        record.pickup_schedule_id: record
+        for record in PickupRecord.objects.filter(
+            pickup_schedule__in=pickups, courier=user,
+        )
+    }
     stops = []
-    for index, point in enumerate(nearest[:STOPS_PER_DAY]):
-        start, end = _slot(index)
+    for pickup in pickups:
+        profile = profiles.get(pickup.mitra_id)
+        if (
+            not profile
+            or profile.latitude is None
+            or profile.longitude is None
+            or not in_depok(profile.latitude, profile.longitude)
+        ):
+            continue
+        record = records.get(pickup.pk)
+        slot = pickup.pickup_time_slot.replace("–", "-").replace(" WIB", "").split("-")
+        try:
+            start_hour, start_minute = map(int, slot[0].strip().split(":")[:2])
+            end_hour, end_minute = map(int, slot[1].strip().split(":")[:2])
+            start = time(start_hour, start_minute)
+            end = time(end_hour, end_minute)
+        except (IndexError, ValueError):
+            start, end = time(8, 0), time(10, 0)
+        address = ", ".join(filter(None, (
+            profile.address_detail, profile.kelurahan, profile.kecamatan,
+            profile.kota, profile.provinsi,
+        )))
+        if not address:
+            address = pickup.mitra.username
+        has_started = bool(
+            pickup.status == "IN_PROGRESS"
+            and record
+            and record.status == PickupRecord.Status.ONGOING
+        )
+        status = STATUS_DONE if pickup.status == "COMPLETED" else (
+            STATUS_ON_THE_WAY if has_started else STATUS_APPROVED
+        )
         stops.append(Stop(
-            point.pk, point.code, point.name, point.address, start, end,
-            estimate_for(point.est_kg, vehicle), vehicle or "",
-            point.latitude, point.longitude, point.photo_note,
+            pickup.pk, f"PK-{pickup.pk:04d}",
+            profile.business_name or pickup.mitra.username, address,
+            start, end, max(1, int(round(pickup.estimated_weight))),
+            vehicle or pickup.armada, profile.latitude, profile.longitude,
+            pickup.notes or "", status=status,
+            finished_at=record.finished_at if record else None,
+            actual_kg=pickup.actual_weight,
         ))
     return stops
 
 
-def _load_state(session, today):
-    state = session.get(SESSION_KEY)
-    # Status hanya berlaku untuk hari yang sama; hari baru mulai dari data awal
-    if not state or state.get("date") != today.isoformat():
-        return {"date": today.isoformat(), "stops": {}}
-    return state
-
-
-def get_today_stops(session, today, vehicle=None):
-    """Titik jemput hari ini, dengan status terbaru dari sesi."""
-    overlay = _load_state(session, today)["stops"]
-    stops = _today_stops(today, vehicle)
-    for stop in stops:
-        saved = overlay.get(str(stop.pk))
-        if not saved:
-            continue
-        stop.status = saved["status"]
-        stop.finished_at = (
-            datetime.fromisoformat(saved["finished_at"]) if saved.get("finished_at") else None
-        )
-        stop.actual_kg = Decimal(saved["actual_kg"]) if saved.get("actual_kg") else None
-    return stops
-
-
-def set_stop_state(session, today, pk, status, finished_at=None, actual_kg=None):
-    """Menyimpan status satu titik ke sesi."""
-    state = _load_state(session, today)
-    state["stops"][str(pk)] = {
-        "status": status,
-        "finished_at": finished_at.isoformat() if finished_at else None,
-        "actual_kg": str(actual_kg) if actual_kg is not None else None,
-    }
-    session[SESSION_KEY] = state
-    session.modified = True
-
-
-def reset_state(session):
-    """Mengembalikan semua titik ke data awal (untuk mencoba ulang demo)."""
-    session.pop(SESSION_KEY, None)
+def get_today_stops(user, today, vehicle=None):
+    """Rute dan status aktual dari pengajuan pickup yang ditugaskan."""
+    return _today_stops(user, today, vehicle)

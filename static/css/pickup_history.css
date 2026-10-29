@@ -16,13 +16,13 @@
 }
 
 .filter-pill.active {
-  background-color: #198754;
+  background-color: #0F3D2A;
   color: #ffffff;
 }
 
 .filter-pill.active .badge {
   background-color: #ffffff !important;
-  color: #198754 !important;
+  color: #0F3D2A !important;
 }
 
 /* History Card & Table Styling */

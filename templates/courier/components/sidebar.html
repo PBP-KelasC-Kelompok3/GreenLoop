@@ -1,6 +1,6 @@
 {% load static %}
 {% with current=request.resolver_match.url_name %}
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar gl-sidebar" id="sidebar">
 
     <a class="brand" href="{% url 'home' %}" data-transition-target="home" aria-label="Kembali ke Beranda">
         <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop">
@@ -34,9 +34,12 @@
             <p class="pilot-title"><i data-lucide="map-pin"></i> Area Pilot: Kota Depok</p>
             <p>Layanan penjemputan saat ini khusus wilayah Kota Depok.</p>
         </div>
-        <a href="{% url 'logout' %}" class="logout">
-            <i data-lucide="log-out"></i><span>Keluar</span>
-        </a>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="logout">
+                <i data-lucide="log-out"></i><span>Keluar</span>
+            </button>
+        </form>
     </div>
 
 </aside>

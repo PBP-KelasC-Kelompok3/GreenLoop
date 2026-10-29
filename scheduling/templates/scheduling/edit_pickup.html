@@ -23,17 +23,18 @@
       <!-- Tanggal Penjemputan -->
       <div class="mb-3">
         <label for="pickup_date" class="form-label fw-semibold small">Tanggal Penjemputan Baru</label>
-        <input type="date" class="form-control rounded-3" id="pickup_date" name="pickup_date" value="{{ pickup.pickup_date|date:'Y-m-d' }}" required>
+        <input type="date" class="form-control rounded-3" id="pickup_date" name="pickup_date" value="{{ submitted_date }}" required>
       </div>
 
       <!-- Slot Waktu -->
       <div class="mb-3">
         <label for="time_slot" class="form-label fw-semibold small">Slot Waktu</label>
         <select class="form-select rounded-3" id="time_slot" name="time_slot" required>
-          <option value="09:00 - 11:00" {% if pickup.time_slot == '09:00 - 11:00' %}selected{% endif %}>09:00 - 11:00 WIB</option>
-          <option value="11:00 - 13:00" {% if pickup.time_slot == '11:00 - 13:00' %}selected{% endif %}>11:00 - 13:00 WIB</option>
-          <option value="14:00 - 16:00" {% if pickup.time_slot == '14:00 - 16:00' %}selected{% endif %}>14:00 - 16:00 WIB</option>
+          {% for value, label in pickup_slots %}
+            <option value="{{ value }}" {% if submitted_slot == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
         </select>
+        <div class="form-text">Pemesanan harus dilakukan minimal 1 jam sebelum slot dimulai.</div>
       </div>
 
       <!-- Catatan Tambahan -->

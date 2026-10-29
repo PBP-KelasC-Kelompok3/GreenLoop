@@ -9,9 +9,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from .models import RewardTransaction, RewardVoucher, UserVoucher
-
-
-POINTS_PER_KILOGRAM = 5
+from .points import POINTS_PER_KILOGRAM, points_for_weight
 
 
 class InsufficientPoints(Exception):
@@ -65,7 +63,7 @@ def award_verified_pickup(user, kilograms, pickup_reference):
             raise ValueError('Referensi penjemputan sudah digunakan mitra lain.')
         return existing
 
-    points = int((weight * POINTS_PER_KILOGRAM).to_integral_value(rounding=ROUND_DOWN))
+    points = points_for_weight(weight)
     balance = get_balance(user) + points
     return RewardTransaction.objects.create(
         user=user,

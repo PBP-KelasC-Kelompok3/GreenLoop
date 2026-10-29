@@ -71,7 +71,7 @@
         </div>
         <span class="badge bg-info-subtle text-info rounded-pill">Estimasi</span>
       </div>
-      <small class="text-muted d-block fw-semibold">CO2e dicegah</small>
+      <small class="text-muted d-block fw-semibold">Estimasi CO2e dicegah</small>
       <h3 class="fw-bold text-dark mb-0 mt-1">{{ co2_saved }} <span class="fs-6 fw-normal text-muted">kg</span></h3>
     </div>
   </div>
@@ -114,8 +114,8 @@
             <div class="d-flex align-items-center gap-2 small">
               <i class="bi bi-person text-success"></i>
               <span>
-                {% if next_pickup.courier_name %}
-                  {{ next_pickup.courier_name }}
+                {% if next_pickup.courier_assignment %}
+                  {{ next_pickup.courier_assignment.courier.get_full_name|default:next_pickup.courier_assignment.courier.username }}
                 {% else %}
                   <span class="text-muted fst-italic">Menunggu Penugasan Kurir</span>
                 {% endif %}
@@ -128,7 +128,7 @@
         <div class="position-relative mt-2 pt-1">
           <div class="position-absolute w-100 bg-secondary bg-opacity-25 stepper-line-bg"></div>
           
-          <div class="position-absolute bg-success stepper-line-fill {% if next_pickup.status == 'PENDING' %}w-25{% elif next_pickup.status == 'IN_PROGRESS' %}w-75{% elif next_pickup.status == 'COMPLETED' %}w-100{% else %}w-0{% endif %}"></div>
+          <div class="position-absolute bg-success stepper-line-fill {% if next_pickup.status == 'COMPLETED' %}w-100{% elif next_pickup.courier_assignment %}w-75{% elif next_pickup.status == 'PENDING' %}w-25{% else %}w-50{% endif %}"></div>
 
           <div class="d-flex justify-content-between align-items-center position-relative z-1 px-1">
             <!-- Step 1: Diajukan -->
@@ -149,7 +149,7 @@
 
             <!-- Step 3: Kurir -->
             <div class="text-center">
-              <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 stepper-circle {% if next_pickup.status == 'IN_PROGRESS' or next_pickup.status == 'COMPLETED' %}bg-success text-white{% else %}bg-white border border-2 text-muted{% endif %}">
+              <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 stepper-circle {% if next_pickup.courier_assignment %}bg-success text-white{% else %}bg-white border border-2 text-muted{% endif %}">
                 <i class="bi bi-check"></i>
               </div>
               <span class="text-dark fw-medium d-block stepper-label">Kurir</span>

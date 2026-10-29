@@ -5,6 +5,8 @@ from django.db import transaction
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
+from waste_reward.points import POINTS_PER_KILOGRAM
+
 from .forms import RegisterForm
 
 
@@ -41,7 +43,10 @@ def register(request):
         initial = {'role': initial_role} if initial_role in ('consumer', 'mitra', 'courier') else {}
         form = RegisterForm(initial=initial)
 
-    return render(request, 'accounts/register.html', {'form': form})
+    return render(request, 'accounts/register.html', {
+        'form': form,
+        'points_per_kg': POINTS_PER_KILOGRAM,
+    })
 
 
 def login_view(request):

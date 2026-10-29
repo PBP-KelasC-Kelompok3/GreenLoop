@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from courier.models import PickupRecord
 
-from .helpers import PLAIN_STATIC, make_user
+from .helpers import PLAIN_STATIC, make_approved_courier
 
 
 def make_record(courier, code, date, status, actual=None, note="", **extra):
@@ -19,7 +19,7 @@ def make_record(courier, code, date, status, actual=None, note="", **extra):
 @override_settings(STORAGES=PLAIN_STATIC)
 class PickupHistoryTests(TestCase):
     def setUp(self):
-        self.user = make_user("sari")
+        self.user = make_approved_courier("sari")
         self.client.force_login(self.user)
         make_record(self.user, "TJ-0001", "2026-10-06", "scheduled")
         make_record(self.user, "TJ-0002", "2026-09-26", "done", actual="35.2")

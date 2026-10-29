@@ -10,8 +10,9 @@ from courier.dashboard import (
     WIB, build_chart, build_composition, build_dashboard, build_map, delta_badge,
     fmt_number, period_bounds, _nice_step,
 )
-from courier.models import CollectionPoint, PickupRecord
+from courier.models import PickupRecord
 from courier.route_state import Stop
+from scheduling.models import MitraProfile, PickupSchedule
 
 from .helpers import PLAIN_STATIC, make_user
 from .test_route import RouteTestBase
@@ -121,19 +122,28 @@ class ChartTests(TestCase):
 class CompositionTests(TestCase):
     def setUp(self):
         self.user = make_user("sari")
+        self.schedules = {}
         for code, cat in (("T1", "Kafe"), ("T2", "Restoran"), ("T3", "Hotel"), ("T4", "Toko roti"), ("T5", "Pujasera")):
-            CollectionPoint.objects.create(code=code, name=code, category=cat, address="x", latitude=-6.4, longitude=106.8)
+            mitra = make_user(f"mitra_{code}", role="mitra")
+            MitraProfile.objects.create(user=mitra, business_name=code, business_type=cat)
+            self.schedules[code] = PickupSchedule.objects.create(
+                mitra=mitra, estimated_weight=5, pickup_date=TODAY,
+                pickup_time_slot="08:00-10:00", status="COMPLETED",
+            )
+
+    def pickup_record(self, code, day, kg):
+        return rec(self.user, code, day, kg, pickup_schedule=self.schedules[code])
 
     def test_groups_by_partner_type_not_waste_type(self):
-        rec(self.user, "T1", date(2026, 10, 1), 6)
-        rec(self.user, "T2", date(2026, 10, 2), 3)
-        rec(self.user, "T2", date(2026, 10, 3), 1)
+        self.pickup_record("T1", date(2026, 10, 1), 6)
+        self.pickup_record("T2", date(2026, 10, 2), 3)
+        self.pickup_record("T2", date(2026, 10, 3), 1)
         comp = build_composition(list(PickupRecord.objects.all()))
         self.assertEqual(comp, [{"label": "Kafe", "percent": 60}, {"label": "Restoran", "percent": 40}])
 
     def test_extra_types_folded_into_lainnya(self):
         for i, code in enumerate(("T1", "T2", "T3", "T4", "T5")):
-            rec(self.user, code, date(2026, 10, 1 + i), 10 - i)
+            self.pickup_record(code, date(2026, 10, 1 + i), 10 - i)
         comp = build_composition(list(PickupRecord.objects.all()))
         self.assertEqual(len(comp), 4)
         self.assertEqual(comp[-1]["label"], "Lainnya")
@@ -167,7 +177,7 @@ class MapTests(TestCase):
         self.assertEqual(build_map([]), {"pins": [], "path": ""})
 
     def test_pins_stay_inside_free_area(self):
-        stops = [stop(1, -6.30, 106.80), stop(2, -6.45, 106.90), stop(3, -6.38, 106.83), stop(4, -6.31, 106.89)]
+        stops = [stop(1, -6.37, 106.80), stop(2, -6.42, 106.86), stop(3, -6.39, 106.83), stop(4, -6.41, 106.88)]
         pins = build_map(stops)["pins"]
         self.assertEqual([p["num"] for p in pins], [1, 2, 3, 4])
         for p in pins:
@@ -175,14 +185,14 @@ class MapTests(TestCase):
             self.assertTrue(24 <= p["y"] <= 60, p)   # tidak menabrak label atas dan kartu bawah
 
     def test_north_is_up_and_east_is_right(self):
-        pins = build_map([stop(1, -6.30, 106.80), stop(2, -6.40, 106.90)])["pins"]
+        pins = build_map([stop(1, -6.37, 106.80), stop(2, -6.40, 106.85)])["pins"]
         self.assertLess(pins[0]["y"], pins[1]["y"])     # lebih utara = lebih atas
         self.assertLess(pins[0]["x"], pins[1]["x"])     # lebih timur = lebih kanan
 
     def test_single_stop_is_centered_and_path_has_all_points(self):
         data = build_map([stop(1, -6.37, 106.82)])
         self.assertEqual(len(data["pins"]), 1)
-        self.assertEqual(len(build_map([stop(1, -6.3, 106.8), stop(2, -6.4, 106.9)])["path"].split()), 2)
+        self.assertEqual(len(build_map([stop(1, -6.37, 106.82), stop(2, -6.4, 106.85)])["path"].split()), 2)
 
 
 class BuildDashboardTests(TestCase):
@@ -292,7 +302,6 @@ class DashboardPageTests(RouteTestBase):
 
     def test_finishing_a_stop_updates_dashboard(self):
         pk = self.ids()[0]
-        point = CollectionPoint.objects.get(pk=pk)
         self.finish(pk, "4,5")
         res = self.client.get(self.url)
         self.assertContains(res, "4,5 kg")

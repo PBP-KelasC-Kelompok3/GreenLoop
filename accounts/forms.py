@@ -7,6 +7,7 @@ from .models import UserProfile
 
 
 PHONE_RE = r"^(?:\+62|62|0)8\d{7,12}$"
+PLATE_RE = re.compile(r"^[A-Z]{1,2}\s?\d{1,4}\s?[A-Z]{0,3}$")
 
 BUSINESS_TYPE_CHOICES = [
     ('', 'Pilih jenis usaha'),
@@ -145,10 +146,13 @@ class RegisterForm(UserCreationForm):
                         'Wajib diisi untuk akun Mitra.'
                     )
 
+            if cleaned.get('kota', '').strip().casefold() not in ('depok', 'kota depok'):
+                self.add_error('kota', 'Layanan mitra saat ini hanya tersedia di Kota Depok.')
+
             phone = cleaned.get('phone_number', '')
             phone = phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
 
-            if phone and not __import__('re').match(PHONE_RE, phone):
+            if phone and not re.match(PHONE_RE, phone):
                 self.add_error(
                     'phone_number',
                     'Format nomor WhatsApp tidak valid.'
@@ -166,7 +170,7 @@ class RegisterForm(UserCreationForm):
             )
             if not cleaned['plate_number']:
                 self.add_error('plate_number', 'Plat nomor wajib diisi untuk akun kurir.')
-            elif not re.fullmatch(r'[A-Z]{1,2}\s?\d{1,4}\s?[A-Z]{0,3}', cleaned['plate_number']):
+            elif not PLATE_RE.fullmatch(cleaned['plate_number']):
                 self.add_error('plate_number', 'Format plat nomor tidak valid. Contoh: B 1234 KZT.')
 
             if not cleaned.get('vehicle_type'):
@@ -193,13 +197,41 @@ class RegisterForm(UserCreationForm):
         return user
 
     def save_role_profile(self, user):
+        """
+        Simpan data awal pendaftaran ke model profil sesuai peran.
+        """
         profile = getattr(user, 'userprofile', None)
 
         if profile:
             profile.role = self.cleaned_data.get('role')
             profile.save(update_fields=['role'])
 
-        if self.cleaned_data.get('role') == 'courier':
+        role = self.cleaned_data.get('role')
+
+        if role == 'mitra':
+            from scheduling.models import MitraProfile
+
+            business_type = {
+                'cafe': 'Kafe / Coffee Shop',
+                'restaurant': 'Restoran',
+                'hotel': 'Hotel',
+            }.get(self.cleaned_data.get('business_type', ''), self.cleaned_data.get('business_type', ''))
+
+            MitraProfile.objects.update_or_create(
+                user=user,
+                defaults={
+                    'business_name': self.cleaned_data.get('business_name', '').strip(),
+                    'business_type': business_type,
+                    'pic_name': self.cleaned_data.get('pic_name', '').strip(),
+                    'phone_number': self.cleaned_data.get('phone_number', '').strip(),
+                    'provinsi': self.cleaned_data.get('provinsi', '').strip(),
+                    'kota': self.cleaned_data.get('kota', '').strip(),
+                    'kecamatan': self.cleaned_data.get('kecamatan', '').strip(),
+                    'kelurahan': self.cleaned_data.get('kelurahan', '').strip(),
+                    'address_detail': self.cleaned_data.get('address_detail', '').strip(),
+                },
+            )
+        elif role == 'courier':
             from courier.models import CourierProfile
 
             vehicle_type = {
@@ -214,3 +246,8 @@ class RegisterForm(UserCreationForm):
                     'vehicle_type': vehicle_type,
                 },
             )
+            full_name = ' '.join((self.cleaned_data.get('full_name') or '').split())
+            if full_name:
+                user.first_name = full_name
+                user.last_name = ''
+                user.save(update_fields=['first_name', 'last_name'])

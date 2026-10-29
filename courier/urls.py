@@ -1,9 +1,13 @@
 from django.urls import path
-from . import route_views, views
+from . import admin_views, route_views, views
 
 app_name = "courier"
 
 urlpatterns = [
+    path("admin/verify/", admin_views.admin_verify_couriers, name="admin_verify_couriers"),
+    path("admin/verify/approve/<int:courier_id>/", admin_views.approve_courier, name="approve_courier"),
+    path("admin/dispatch/<int:pickup_id>/", admin_views.redispatch_pickup, name="redispatch_pickup"),
+    path("pending-verification/", views.pending_verification, name="pending_verification"),
     path("", views.show_dashboard, name="show_dashboard"),
     path("route/", route_views.show_route_today, name="show_route_today"),
     path("route/data/", route_views.route_data, name="route_data"),
@@ -18,5 +22,6 @@ urlpatterns = [
     path("recap/<int:pk>/delete/", views.delete_weight_log, name="delete_weight_log"),
     path("profile/", views.show_profile, name="show_profile"),
     path("profile/edit/", views.update_profile, name="update_profile"),
+    path("profile/photo/", views.update_profile_photo, name="update_profile_photo"),
     path("profile/password/", views.change_password, name="change_password"),
 ]

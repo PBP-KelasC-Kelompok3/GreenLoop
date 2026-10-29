@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 class PickupSchedule(models.Model):
@@ -25,23 +25,12 @@ class PickupSchedule(models.Model):
     ARMADA_CHOICES = [
         ('Motor Box', 'Motor Box'),
         ('Pickup Bak', 'Pickup Bak'),
-        ('Truk Kecil', 'Truk Kecil'),
     ]
 
     mitra = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='pickup_schedules'
-    )
-
-    courier = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        related_name='assigned_pickups',
-        null=True,
-        blank=True,
-        limit_choices_to={'userprofile__role': 'courier'},
-        verbose_name="Kurir yang Ditugaskan"
     )
 
     waste_type = models.CharField(
@@ -51,8 +40,14 @@ class PickupSchedule(models.Model):
     )
 
     estimated_weight = models.FloatField(
-        validators=[MinValueValidator(0.01)],
-        help_text="Berat limbah dalam kg"
+        validators=[
+            MinValueValidator(0.01),
+            MaxValueValidator(
+                120,
+                message='Maksimal berat satu pengajuan adalah 120 kg. Pisahkan menjadi beberapa penjemputan.',
+            ),
+        ],
+        help_text="Berat limbah dalam kg (maksimal 120 kg per pengajuan)"
     )
 
     pickup_date = models.DateField()
@@ -119,6 +114,7 @@ class MitraProfile(models.Model):
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    profile_photo = models.ImageField(upload_to='profile_photos/mitra/', blank=True)
     business_name = models.CharField(max_length=150, verbose_name="Nama Usaha", blank=True, null=True)
     business_type = models.CharField(max_length=50, choices=JENIS_USAHA_CHOICES, blank=True, null=True)
     pic_name = models.CharField(max_length=100, verbose_name="Nama Penanggung Jawab", blank=True, null=True)
