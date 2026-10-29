@@ -74,6 +74,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (!payload || requestId !== latestRequest) return;
                 results.innerHTML = payload.html;
                 refreshIcons();
+                bindRowActions();
                 // Memperbarui alamat di browser agar filter tetap ada saat halaman di-refresh
                 history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
             })
@@ -134,16 +135,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Tombol ubah (ikon pensil)
-        var editBtn = event.target.closest('[data-action="edit"]');
-        if (editBtn) {
-            openWeightForm(editBtn);
-            return;
-        }
-
-        // Tombol hapus (ikon tempat sampah)
-        var deleteBtn = event.target.closest('[data-action="delete"]');
-        if (deleteBtn) openDeleteDialog(deleteBtn);
     });
 
     // Tombol "Tambah Timbangan" membuka form kosong
@@ -281,6 +272,20 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("delete-summary").textContent = button.dataset.summary;
         deleteDialog.showModal();
     }
+
+    // Pasang handler langsung ke setiap tombol agar tetap berfungsi setelah daftar diganti via AJAX.
+    function bindRowActions() {
+        results.querySelectorAll('[data-action="edit"]:not([data-action-bound])').forEach(function (button) {
+            button.dataset.actionBound = "true";
+            button.addEventListener("click", function () { openWeightForm(button); });
+        });
+        results.querySelectorAll('[data-action="delete"]:not([data-action-bound])').forEach(function (button) {
+            button.dataset.actionBound = "true";
+            button.addEventListener("click", function () { openDeleteDialog(button); });
+        });
+    }
+
+    bindRowActions();
 
     // Mengirim permintaan hapus lewat AJAX
     deleteForm.addEventListener("submit", function (event) {
