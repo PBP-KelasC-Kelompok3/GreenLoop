@@ -17,24 +17,28 @@
 }
 
 body.page-transition-in-from-home > .app-shell,
-body.page-transition-in-from-home > .layout {
+body.page-transition-in-from-home > .layout,
+body.page-transition-in-from-home > .admin-page-shell {
     animation: greenloop-enter-from-right .42s cubic-bezier(.2,.75,.25,1) both;
 }
 
 body.page-transition-in-from-dashboard > main,
 body.page-transition-in-from-dashboard > .app-shell,
-body.page-transition-in-from-dashboard > .layout > .main {
+body.page-transition-in-from-dashboard > .layout > .main,
+body.page-transition-in-from-dashboard > .admin-page-shell > main {
     animation: greenloop-enter-from-left .42s cubic-bezier(.2,.75,.25,1) both;
 }
 
 body.page-transition-out-to-dashboard > main,
 body.page-transition-out-to-dashboard > .app-shell,
-body.page-transition-out-to-dashboard > .layout > .main {
+body.page-transition-out-to-dashboard > .layout > .main,
+body.page-transition-out-to-dashboard > .admin-page-shell > main {
     animation: greenloop-leave-left .18s ease-in both;
 }
 
 body.page-transition-out-to-home > .app-shell,
-body.page-transition-out-to-home > .layout {
+body.page-transition-out-to-home > .layout,
+body.page-transition-out-to-home > .admin-page-shell {
     animation: greenloop-leave-right .18s ease-in both;
 }
 
@@ -43,14 +47,18 @@ body.page-transition-out-to-home > .layout {
 
     body.page-transition-in-from-home > .app-shell,
     body.page-transition-in-from-home > .layout,
+    body.page-transition-in-from-home > .admin-page-shell,
     body.page-transition-in-from-dashboard > main,
     body.page-transition-in-from-dashboard > .app-shell,
     body.page-transition-in-from-dashboard > .layout > .main,
+    body.page-transition-in-from-dashboard > .admin-page-shell > main,
     body.page-transition-out-to-dashboard > main,
     body.page-transition-out-to-dashboard > .app-shell,
     body.page-transition-out-to-dashboard > .layout > .main,
+    body.page-transition-out-to-dashboard > .admin-page-shell > main,
     body.page-transition-out-to-home > .layout,
-    body.page-transition-out-to-home > .app-shell {
+    body.page-transition-out-to-home > .app-shell,
+    body.page-transition-out-to-home > .admin-page-shell {
         animation-duration: .01ms;
     }
 }

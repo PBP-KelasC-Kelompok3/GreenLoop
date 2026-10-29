@@ -13,7 +13,7 @@ urlpatterns = [
     path('scheduling/', include('scheduling.urls')),
     path('mitra/waste-reward/', include('waste_reward.urls')),
     path('katalog/', include('catalog.urls')),
-    path('admin-dashboard/', admin_dashboard, name='admin_dashboard'),
+    path('admin-dashboard/', admin_dashboard, name='site_admin_dashboard'),
     path('coming-soon/<slug:module>/', coming_soon, name='coming_soon'),
 ]
 

@@ -11,6 +11,7 @@ import json
 from django.db.models import Q
 from django.contrib.auth.models import User
 from waste_reward.services import award_verified_pickup, get_balance
+from courier.models import CourierProfile
 
 
 def _can_manage_pickups(user):
@@ -558,3 +559,31 @@ def mitra_profile(request):
         },
     }
     return render(request, 'scheduling/mitra_profile.html', context)
+
+@login_required
+def admin_verify_couriers(request):
+    """Halaman admin untuk melihat daftar kurir yang mendaftar dan menunggu verifikasi."""
+    if not request.user.is_staff:
+        return redirect('home')
+    
+    pending_couriers = CourierProfile.objects.filter(is_approved=False)
+    approved_couriers = CourierProfile.objects.filter(is_approved=True)
+    
+    context = {
+        'pending_couriers': pending_couriers,
+        'approved_couriers': approved_couriers,
+    }
+    return render(request, 'scheduling/admin_verify_couriers.html', context)
+
+
+@login_required
+def approve_courier(request, courier_id):
+    """Fungsi saat admin menekan tombol 'Setujui' untuk akun kurir."""
+    if not request.user.is_staff:
+        return redirect('home')
+    
+    courier_profile = get_object_or_404(CourierProfile, id=courier_id)
+    courier_profile.is_approved = True
+    courier_profile.save()
+    
+    return redirect('admin_verify_couriers')
