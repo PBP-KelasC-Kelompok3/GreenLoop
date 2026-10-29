@@ -11,16 +11,37 @@
 
     <div class="profile-header">
 
-        {# ---- Identitas ---- #}
-        <div class="profile-identity">
-            <div class="profile-avatar" data-bind="initials">{{ user|initials }}</div>
-            <h2 class="profile-name" data-bind="display_name">{{ display_name }}</h2>
-            <p class="profile-username">@{{ user.username }}</p>
-            <span class="pill">Kurir Lapangan</span>
+        {# ---- Header profil ---- #}
+        <div class="profile-hero">
+          <div class="profile-identity">
+            <div class="profile-avatar{% if not profile.profile_photo %} profile-avatar--empty{% endif %}" data-profile-avatar
+                 data-photo-url="{% url 'courier:update_profile_photo' %}" role="button" tabindex="0" aria-label="Edit foto profil">
+              {% if profile.profile_photo %}<img src="{{ profile.profile_photo.url }}" alt="Foto profil kurir">{% else %}<span data-bind="initials">{{ user|initials }}</span>{% endif %}
+              <span class="profile-photo-trigger" aria-hidden="true"><i data-lucide="camera"></i></span>
+            </div>
+            <div class="profile-hero-copy">
+              <div class="profile-title-row">
+                <h2 class="profile-name" data-bind="display_name">{{ display_name }}</h2>
+                <span class="pill">Kurir Lapangan</span>
+              </div>
+              <div class="profile-hero-meta">
+                <span class="profile-username">@<span data-bind="username">{{ user.username }}</span></span>
+                <span class="profile-meta-separator" aria-hidden="true">·</span>
+                <span class="profile-joined">Bergabung {{ joined_display }}</span>
+              </div>
+              <input type="file" id="profile-photo-input" accept="image/*" hidden>
+              <p class="profile-photo-message" id="profile-photo-message" role="status" hidden></p>
+            </div>
+          </div>
         </div>
 
-        {# ---- Data diri ---- #}
-        <dl class="profile-info">
+        <div class="profile-details">
+          {# ---- Data diri ---- #}
+          <dl class="profile-info">
+            <div class="info-item">
+                <dt class="info-label">Nama</dt>
+                <dd class="info-value" data-bind="full_name">{{ user.get_full_name|default:"-" }}</dd>
+            </div>
             <div class="info-item">
                 <dt class="info-label">Email</dt>
                 <dd class="info-value" data-bind="email">{{ user.email|default:"-" }}</dd>
@@ -39,25 +60,19 @@
             <div class="info-item">
                 <dt class="info-label">Status</dt>
                 <dd class="info-value">
-                    {% if profile.is_on_duty %}
-                        <span class="pill pill--ok">Sedang Bertugas</span>
-                    {% else %}
-                        <span class="pill pill--off">Tidak Bertugas</span>
-                    {% endif %}
+                    <span class="pill {% if profile.is_on_duty %}pill--ok{% else %}pill--off{% endif %}"
+                          data-bind="duty_label" data-duty-status>{{ profile.is_on_duty|yesno:"Sedang Bertugas,Tidak Bertugas" }}</span>
                 </dd>
             </div>
 
-            <div class="info-item">
-                <dt class="info-label">Bergabung</dt>
-                <dd class="info-value">{{ joined_display }}</dd>
-            </div>
-        </dl>
+          </dl>
 
-        {# ---- Statistik ---- #}
-        <div class="profile-stats">
+          {# ---- Statistik ---- #}
+          <div class="profile-stats">
             {% include 'courier/components/stat_card.html' with value=stats.pickups_done label="Pikap selesai" %}
             {% include 'courier/components/stat_card.html' with value=stats.total_kg|floatformat:"-1" label="Total kg" %}
             {% include 'courier/components/stat_card.html' with value=stats.points label="Waste Points" %}
+          </div>
         </div>
 
     </div>
@@ -75,8 +90,7 @@
         </button>
 
         <div id="panel-security" class="accordion-group" hidden>
-
-            {# -- Edit Profil -- #}
+            {# -- Edit Profil (susunan akun & keamanan tetap) -- #}
             <div class="accordion-item">
                 <button type="button" class="accordion-toggle"
                         data-accordion-toggle aria-controls="panel-edit" aria-expanded="false">
@@ -94,14 +108,12 @@
                     <form method="post" action="{% url 'courier:update_profile' %}"
                           class="profile-form" data-ajax-form novalidate>
                         {% csrf_token %}
-
                         <p class="form-message" data-form-message role="status" hidden></p>
-
                         <div class="form-grid">
-                            {% include 'courier/components/form_field.html' with label="Nama lengkap" name="full_name" value=display_name autocomplete="name" %}
+                            {% include 'courier/components/form_field.html' with label="Nama lengkap" name="full_name" value=user.first_name autocomplete="name" %}
+                            {% include 'courier/components/form_field.html' with label="Username" name="username" value=user.username autocomplete="username" %}
                             {% include 'courier/components/form_field.html' with label="Email" name="email" type="email" value=user.email autocomplete="email" %}
                             {% include 'courier/components/form_field.html' with label="Plat nomor" name="plate_number" value=profile.plate_number %}
-
                             <div>
                                 <label for="id_vehicle_type" class="field-label">Jenis armada</label>
                                 <select id="id_vehicle_type" name="vehicle_type" class="field-input">
@@ -112,11 +124,9 @@
                                 <p class="field-error" data-error-for="vehicle_type" hidden></p>
                             </div>
                         </div>
-
                         <div class="form-actions">
                             <button type="submit" class="btn-submit">
-                                <i data-lucide="check"></i>
-                                Simpan Perubahan
+                                <i data-lucide="check"></i> Simpan Perubahan
                             </button>
                         </div>
                     </form>

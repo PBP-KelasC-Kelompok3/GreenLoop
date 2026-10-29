@@ -10,8 +10,11 @@ from datetime import timedelta
 import json
 from django.db.models import Q
 from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from waste_reward.services import award_verified_pickup, get_balance
 from courier.models import CourierProfile
+from accounts.decorator import role_required
 
 
 def _can_manage_pickups(user):
@@ -241,7 +244,9 @@ def admin_dashboard(request):
 
 
 def assign_next_courier(pickup):
-    """Memilih kurir aktif berikutnya secara bergiliran."""
+    """Memilih kurir yang sudah melayani alamat sama/terdekat bila memungkinkan."""
+    from courier.maps import haversine_m
+
 
     couriers = list(
         User.objects.filter(
@@ -252,6 +257,63 @@ def assign_next_courier(pickup):
 
     if not couriers:
         return None
+
+    profiles = {
+        p.user_id: p for p in MitraProfile.objects.filter(
+            user_id__in=[pickup.mitra_id] + list(
+                PickupSchedule.objects.filter(
+                    courier__in=couriers, status__in=['SCHEDULED', 'IN_PROGRESS'],
+                ).exclude(pk=pickup.pk).values_list('mitra_id', flat=True)
+            )
+        )
+    }
+    profile = profiles.get(pickup.mitra_id)
+    def address_key_for(item):
+        p = profiles.get(item.mitra_id)
+        parts = (p.address_detail, p.kelurahan, p.kecamatan, p.kota, p.provinsi) if p else ()
+        return ' '.join(' '.join(filter(None, parts)).casefold().split())
+
+    address_key = address_key_for(pickup)
+    assigned = list(
+        PickupSchedule.objects.filter(
+            courier__in=couriers,
+            status__in=['SCHEDULED', 'IN_PROGRESS'],
+        ).exclude(pk=pickup.pk).select_related('mitra', 'courier')
+    )
+    # Semua pengajuan dari alamat yang sama memakai kurir yang sama.
+    for other in assigned:
+        other_profile = profiles.get(other.mitra_id)
+        other_key = address_key_for(other)
+        same_coordinates = bool(
+            profile and other_profile
+            and profile.latitude is not None and profile.longitude is not None
+            and other_profile.latitude is not None and other_profile.longitude is not None
+            and haversine_m(
+                (profile.latitude, profile.longitude),
+                (other_profile.latitude, other_profile.longitude),
+            ) <= 25
+        )
+        if (other_key and address_key and other_key == address_key) or same_coordinates:
+            return other.courier
+
+    # Jarak dekat dan slot waktu tumpang tindih: gabungkan ke kurir yang sama.
+    if profile and profile.latitude is not None and profile.longitude is not None:
+        candidates = []
+        for other in assigned:
+            other_profile = profiles.get(other.mitra_id)
+            if (other.pickup_date != pickup.pickup_date or not other_profile
+                    or other_profile.latitude is None or other_profile.longitude is None):
+                continue
+            if other.pickup_time_slot != pickup.pickup_time_slot:
+                continue
+            distance = haversine_m(
+                (profile.latitude, profile.longitude),
+                (other_profile.latitude, other_profile.longitude),
+            )
+            if distance <= 1000:
+                candidates.append((distance, other.pk, other.courier))
+        if candidates:
+            return min(candidates, key=lambda row: (row[0], row[1]))[2]
 
     last_courier_id = (
         PickupSchedule.objects
@@ -347,6 +409,11 @@ def update_pickup_status(request, pickup_id, new_status=None):
             )
 
         with transaction.atomic():
+            from courier.models import PickupRecord, WeightLog
+            mitra_profile = MitraProfile.objects.filter(user=pickup.mitra).first()
+            partner_name = (mitra_profile.business_name if mitra_profile else '') or pickup.mitra.username
+            address = mitra_profile.address_detail if mitra_profile else ''
+
             reward_transaction = award_verified_pickup(
                 pickup.mitra,
                 weight,
@@ -365,6 +432,31 @@ def update_pickup_status(request, pickup_id, new_status=None):
                 pickup.certificate = 'certificates/Certificate.png'
 
             pickup.save()
+            if is_courier:
+                code = f'PK-{pickup.pk:04d}'
+                PickupRecord.objects.update_or_create(
+                    pickup_schedule=pickup,
+                    defaults={
+                        'courier': request.user, 'code': code,
+                        'date': pickup.pickup_date,
+                        'slot': pickup.pickup_time_slot,
+                        'partner_name': partner_name[:120],
+                        'area': address[:200],
+                        'est_kg': max(0, int(round(pickup.estimated_weight))),
+                        'actual_kg': weight, 'vehicle': pickup.armada,
+                        'status': PickupRecord.Status.DONE,
+                        'finished_at': timezone.now(),
+                    },
+                )
+                WeightLog.objects.update_or_create(
+                    pickup_schedule=pickup,
+                    defaults={
+                        'courier': request.user,
+                        'partner_name': partner_name[:120],
+                        'collected_at': pickup.pickup_date, 'weight_kg': weight,
+                        'notes': f'Pikap {code}',
+                    },
+                )
 
         messages.success(
             request,
@@ -560,10 +652,35 @@ def mitra_profile(request):
     }
     return render(request, 'scheduling/mitra_profile.html', context)
 
+
+@role_required(['mitra'])
+@require_POST
+def update_mitra_profile_photo(request):
+    photo = request.FILES.get('profile_photo')
+    if not photo:
+        return JsonResponse({'ok': False, 'message': 'Pilih foto profil terlebih dahulu.'}, status=400)
+
+    from django import forms
+
+    photo_field = forms.ImageField()
+    try:
+        cleaned_photo = photo_field.clean(photo)
+    except forms.ValidationError as error:
+        return JsonResponse({'ok': False, 'message': error.messages[0]}, status=400)
+
+    profile, _ = MitraProfile.objects.get_or_create(user=request.user)
+    previous_photo = profile.profile_photo
+    profile.profile_photo = cleaned_photo
+    profile.save(update_fields=['profile_photo'])
+    if previous_photo and previous_photo.name != profile.profile_photo.name:
+        previous_photo.delete(save=False)
+
+    return JsonResponse({'ok': True, 'photo_url': profile.profile_photo.url})
+
 @login_required
 def admin_verify_couriers(request):
     """Halaman admin untuk melihat daftar kurir yang mendaftar dan menunggu verifikasi."""
-    if not request.user.is_staff:
+    if not _can_manage_pickups(request.user):
         return redirect('home')
     
     pending_couriers = CourierProfile.objects.filter(is_approved=False)
@@ -579,7 +696,7 @@ def admin_verify_couriers(request):
 @login_required
 def approve_courier(request, courier_id):
     """Fungsi saat admin menekan tombol 'Setujui' untuk akun kurir."""
-    if not request.user.is_staff:
+    if not _can_manage_pickups(request.user):
         return redirect('home')
     
     courier_profile = get_object_or_404(CourierProfile, id=courier_id)

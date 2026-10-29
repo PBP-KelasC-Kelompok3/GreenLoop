@@ -22,6 +22,12 @@ class CourierProfileForm(forms.Form):
         max_length=150,
         error_messages={"required": "Nama lengkap wajib diisi."},
     )
+    username = forms.CharField(
+        required=False,
+        max_length=150,
+        validators=User._meta.get_field("username").validators,
+        error_messages={"max_length": "Username maksimal 150 karakter."},
+    )
     email = forms.EmailField(
         error_messages={
             "required": "Email wajib diisi.",
@@ -39,7 +45,6 @@ class CourierProfileForm(forms.Form):
             "invalid_choice": "Pilih jenis armada yang tersedia.",
         },
     )
-
     def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user  # Dipakai untuk memeriksa email milik orang lain
@@ -47,6 +52,13 @@ class CourierProfileForm(forms.Form):
     def clean_full_name(self):
         # Merapikan spasi berlebih, contoh: "  Budi   Santoso " -> "Budi Santoso"
         return " ".join(self.cleaned_data["full_name"].split())
+
+    def clean_username(self):
+        username = (self.cleaned_data.get("username") or self.user.username).strip()
+        taken = User.objects.filter(username__iexact=username).exclude(pk=self.user.pk)
+        if taken.exists():
+            raise forms.ValidationError("Username sudah dipakai akun lain.")
+        return username
 
     def clean_email(self):
         # Email disimpan huruf kecil dan tidak boleh sama dengan akun lain
@@ -71,8 +83,9 @@ class CourierProfileForm(forms.Form):
         # Menyimpan nama dan email ke tabel User
         self.user.first_name = data["full_name"]
         self.user.last_name = ""
+        self.user.username = data["username"]
         self.user.email = data["email"]
-        self.user.save(update_fields=["first_name", "last_name", "email"])
+        self.user.save(update_fields=["first_name", "last_name", "username", "email"])
 
         # Menyimpan plat nomor dan armada ke CourierProfile (dibuat bila belum ada)
         profile, _ = CourierProfile.objects.get_or_create(user=self.user)
@@ -80,6 +93,10 @@ class CourierProfileForm(forms.Form):
         profile.vehicle_type = data["vehicle_type"]
         profile.save(update_fields=["plate_number", "vehicle_type"])
         return profile
+
+
+class CourierPhotoForm(forms.Form):
+    profile_photo = forms.ImageField(required=True)
 
 
 class CourierPasswordForm(PasswordChangeForm):

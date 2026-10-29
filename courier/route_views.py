@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.http import Http404, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -20,15 +20,15 @@ from .maps import (
     describe_step,
     format_distance,
     format_duration,
+    haversine_m,
     in_depok,
 )
 from .models import POINTS_PER_KG, CourierProfile, PickupRecord, WeightLog, points_for
+from scheduling.models import PickupSchedule
 from .route_plan import build_live_plan
 from .route_state import (
     format_day_date,
     get_today_stops,
-    reset_state,
-    set_stop_state,
 )
 from .weather import current_weather
 
@@ -42,6 +42,7 @@ UI_LABELS = {
 
 WEIGHT_PATTERN = re.compile(r"^\d{1,4}([.,]\d)?$")  # maksimal satu angka desimal
 WEIGHT_HELP = "Masukkan berat dalam kg dengan maksimal satu angka desimal, contoh 58,6."
+ARRIVAL_RADIUS_M = 100
 
 
 def kg_text(value):
@@ -197,7 +198,7 @@ def _error(message, field="__all__", status=400):
 def today_stops(request):
     """Titik hari ini untuk kurir yang login; estimasi beratnya mengikuti armada di profilnya."""
     profile, _ = CourierProfile.objects.get_or_create(user=request.user)
-    return get_today_stops(request.session, timezone.localdate(), vehicle=profile.get_vehicle_type_display())
+    return get_today_stops(request.user, timezone.localdate(), vehicle=profile.get_vehicle_type_display())
 
 
 def _find_stop(request, pk):
@@ -209,11 +210,6 @@ def _find_stop(request, pk):
 
 @role_required(['courier'])
 def show_route_today(request):
-    # ?reset=1 mengembalikan data contoh ke kondisi awal (untuk mencoba ulang)
-    if request.GET.get("reset"):
-        reset_state(request.session)
-        return redirect("courier:show_route_today")
-
     profile, _ = CourierProfile.objects.get_or_create(user=request.user)
     payload = build_route_payload(request)
     return render(request, "courier/route_today.html", {
@@ -234,8 +230,9 @@ def _record_pickup(request, stop, today, status, **extra):
     PickupRecord.objects.update_or_create(
         courier=request.user,
         date=today,
-        code=stop.code,
+        pickup_schedule_id=stop.pk,
         defaults=dict(
+            code=stop.code,
             slot=stop.slot_text,
             partner_name=stop.name,
             area=stop.address[:200],
@@ -256,16 +253,22 @@ def start_pickup(request, pk):
         return _error("Titik ini sudah selesai.")
 
     today = timezone.localdate()
+    pickup = PickupSchedule.objects.filter(
+        pk=pk, courier=request.user, pickup_date=today,
+        status__in=("SCHEDULED", "IN_PROGRESS"),
+    ).first()
+    if pickup is None:
+        return _error("Pickup ini bukan tugas aktif Anda.", status=404)
     with transaction.atomic():
         for other in today_stops(request):
             if other.pk != stop.pk and other.status == STATUS_ON_THE_WAY:
-                set_stop_state(request.session, today, other.pk, "approved")
-                # Titik yang batal dituju kembali ke "Dijadwalkan"
+                PickupSchedule.objects.filter(pk=other.pk, courier=request.user).update(status="SCHEDULED")
                 PickupRecord.objects.filter(
-                    courier=request.user, date=today, code=other.code,
+                    courier=request.user, pickup_schedule_id=other.pk,
                     status=PickupRecord.Status.ONGOING,
                 ).update(status=PickupRecord.Status.SCHEDULED)
-        set_stop_state(request.session, today, stop.pk, STATUS_ON_THE_WAY)
+        pickup.status = "IN_PROGRESS"
+        pickup.save(update_fields=["status"])
         _record_pickup(request, stop, today, PickupRecord.Status.ONGOING)
 
     return JsonResponse({
@@ -282,6 +285,17 @@ def finish_pickup(request, pk):
     stop = _find_stop(request, pk)
     if stop.status == STATUS_DONE:
         return _error("Titik ini sudah selesai.")
+    if stop.status != STATUS_ON_THE_WAY:
+        return _error("Mulai perjalanan terlebih dahulu sebelum menyelesaikan pikap.")
+
+    origin, _ = read_origin(request)
+    if origin is None:
+        return _error("Aktifkan izin lokasi dan coba lagi saat berada di lokasi mitra.")
+    distance = haversine_m(origin, (stop.latitude, stop.longitude))
+    if distance > ARRIVAL_RADIUS_M:
+        return _error(
+            f"Kamu masih sekitar {int(round(distance))} m dari mitra. Pikap hanya bisa diselesaikan dalam radius {ARRIVAL_RADIUS_M} m."
+        )
 
     raw = (request.POST.get("weight_kg") or "").strip()
     if not WEIGHT_PATTERN.match(raw):
@@ -291,19 +305,41 @@ def finish_pickup(request, pk):
         return _error("Berat harus antara 0,1 dan 5.000 kg.", "weight_kg")
 
     today = timezone.localdate()
+    pickup = PickupSchedule.objects.filter(
+        pk=pk, courier=request.user, pickup_date=today,
+        status__in=("SCHEDULED", "IN_PROGRESS"),
+    ).first()
+    if pickup is None:
+        return _error("Pickup ini bukan tugas aktif Anda.", status=404)
     with transaction.atomic():
-        WeightLog.objects.create(
-            courier=request.user,
-            partner_name=stop.name,
-            collected_at=today,
-            weight_kg=weight,
-            notes=f"Pikap {stop.code}",
+        from waste_reward.services import award_verified_pickup
+        reward_transaction = award_verified_pickup(
+            pickup.mitra, weight, f"pickup-{pickup.pk}",
+        )
+        pickup.actual_weight = weight
+        pickup.points = reward_transaction.points_delta
+        pickup.status = "COMPLETED"
+        update_fields = ["actual_weight", "points", "status"]
+        completed_count = PickupSchedule.objects.filter(
+            mitra=pickup.mitra, status="COMPLETED",
+        ).exclude(pk=pickup.pk).count() + 1
+        if completed_count >= 10:
+            pickup.certificate = "certificates/Certificate.png"
+            update_fields.append("certificate")
+        pickup.save(update_fields=update_fields)
+        WeightLog.objects.update_or_create(
+            pickup_schedule=pickup,
+            defaults=dict(
+                courier=request.user,
+                partner_name=stop.name,
+                collected_at=today,
+                weight_kg=weight,
+                notes=f"Pikap {stop.code}",
+            ),
         )
         # Masuk juga ke Riwayat Pikap dengan status Selesai
         _record_pickup(request, stop, today, PickupRecord.Status.DONE,
                        actual_kg=weight, finished_at=timezone.now())
-    set_stop_state(request.session, today, stop.pk, STATUS_DONE,
-                   finished_at=timezone.now(), actual_kg=weight)
 
     return JsonResponse({
         "ok": True,

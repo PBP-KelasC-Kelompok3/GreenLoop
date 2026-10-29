@@ -17,7 +17,7 @@ from ..utils import (
     get_initials,
     profile_payload,
 )
-from .helpers import PLAIN_STATIC, make_user
+from .helpers import PLAIN_STATIC, make_approved_courier, make_user
 
 VALID_PROFILE = {
     "full_name": "Budi Santoso",
@@ -44,9 +44,9 @@ class CourierProfileModelTests(TestCase):
 
     def test_str_with_and_without_plate(self):
         profile = CourierProfile.objects.create(user=self.user, plate_number="B 1234 KZT")
-        self.assertEqual(str(profile), "budi (B 1234 KZT)")
+        self.assertEqual(str(profile), "budi (B 1234 KZT) - Pending")
         profile.plate_number = ""
-        self.assertEqual(str(profile), "budi (-)")
+        self.assertEqual(str(profile), "budi (-) - Pending")
 
     def test_one_profile_per_user(self):
         CourierProfile.objects.create(user=self.user)
@@ -280,7 +280,7 @@ class ProfileAccessTests(TestCase):
         self.assertFalse(CourierProfile.objects.filter(user=user).exists())
 
     def test_courier_can_open_page(self):
-        self.client.force_login(make_user())
+        self.client.force_login(make_approved_courier())
         self.assertEqual(self.client.get(reverse("courier:show_profile")).status_code, 200)
 
 
@@ -293,7 +293,7 @@ class ShowProfileTests(TestCase):
         self.user = make_user(first_name="Budi Santoso")
         self.profile = CourierProfile.objects.create(
             user=self.user, plate_number="B 1234 KZT",
-            vehicle_type="motor_box", is_on_duty=True)
+            vehicle_type="motor_box", is_on_duty=True, is_approved=True)
         User.objects.filter(pk=self.user.pk).update(
             date_joined=datetime(2026, 10, 20, 8, 0, tzinfo=timezone.utc))
         self.client.force_login(self.user)
@@ -357,17 +357,17 @@ class ShowProfileTests(TestCase):
         self.assertContains(self.res, '<option value="motor_box" selected>Motor Box</option>')
         self.assertNotContains(self.res, '<option value="pickup_bak" selected>')
 
-    def test_page_works_without_existing_profile(self):
-        """CourierProfile dibuat otomatis saat halaman pertama dibuka."""
+    def test_unapproved_courier_without_profile_sees_pending_page(self):
         user = make_user("baru")
         self.client.force_login(user)
         res = self.client.get(reverse("courier:show_profile"))
-        self.assertEqual(res.status_code, 200)
-        self.assertTrue(CourierProfile.objects.filter(user=user).exists())
-        self.assertContains(res, "Tidak Bertugas")
+        self.assertEqual(res.status_code, 302)
+        self.assertIn("pending", res.url)
+        self.assertFalse(CourierProfile.objects.filter(user=user).exists())
 
     def test_empty_email_and_plate_show_dash(self):
         user = make_user("kosong")
+        CourierProfile.objects.create(user=user, is_approved=True)
         User.objects.filter(pk=user.pk).update(email="")
         self.client.force_login(user)
         res = self.client.get(reverse("courier:show_profile"))
@@ -392,7 +392,7 @@ class ShowProfileTests(TestCase):
 @override_settings(STORAGES=PLAIN_STATIC)
 class UpdateProfileEndpointTests(TestCase):
     def setUp(self):
-        self.user = make_user(first_name="Budi Santoso")
+        self.user = make_approved_courier(first_name="Budi Santoso")
         self.client.force_login(self.user)
         self.url = reverse("courier:update_profile")
 
@@ -432,7 +432,7 @@ class UpdateProfileEndpointTests(TestCase):
         self.client.post(self.url, {**VALID_PROFILE, "plate_number": "????"})
         self.user.refresh_from_db()
         self.assertEqual(self.user.first_name, "Budi Santoso")
-        self.assertFalse(CourierProfile.objects.filter(user=self.user).exists())
+        self.assertEqual(CourierProfile.objects.get(user=self.user).plate_number, "")
 
     def test_email_taken_by_other_user(self):
         make_user("lain", first_name="Lain")
@@ -456,7 +456,7 @@ class UpdateProfileEndpointTests(TestCase):
 @override_settings(STORAGES=PLAIN_STATIC)
 class ChangePasswordEndpointTests(TestCase):
     def setUp(self):
-        self.user = make_user()
+        self.user = make_approved_courier()
         self.client.force_login(self.user)
         self.url = reverse("courier:change_password")
 

@@ -2112,6 +2112,12 @@ button {
     font-weight: 600;
     color: var(--primary);
 }
+
+.route-arrival-note {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+}
  
 /* Dua tombol aksi berdampingan */
 .route-actions {
@@ -2152,7 +2158,7 @@ button {
  
 .route-actions .btn-submit:disabled {
     opacity: .55;
-    cursor: wait;
+    cursor: not-allowed;
 }
  
 .route-done-note {
@@ -3496,4 +3502,148 @@ button {
     .sidebar {
         transition: none;
     }
+}
+
+/* Header profil kurir */
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+}
+
+.profile-hero {
+    position: relative;
+    overflow: hidden;
+    align-self: stretch;
+    width: 100%;
+    min-height: 0;
+    padding: 20px 28px;
+    border-radius: 14px;
+    background: linear-gradient(120deg, #34452F 0%, #506649 72%, #0F3D2A 100%);
+    color: var(--white);
+}
+
+.profile-hero::after {
+    position: absolute;
+    top: -90px;
+    right: -50px;
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    background: rgba(61, 190, 126, .24);
+    content: "";
+}
+
+.profile-hero .profile-identity {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: center;
+    gap: 24px;
+    text-align: left;
+}
+
+.profile-hero .profile-avatar {
+    position: relative;
+    grid-row: 1;
+    width: 76px;
+    height: 76px;
+    margin: 0;
+    background: #C0CCBB;
+    color: var(--forest);
+}
+
+.profile-hero-copy { min-width: 0; }
+.profile-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+.profile-title-row .profile-name { margin: 0; }
+.profile-title-row .pill { margin-top: 0; }
+.profile-hero .profile-name {
+    margin: 0;
+    color: var(--white);
+    font-size: 28px;
+}
+.profile-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.profile-hero .profile-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.profile-photo-trigger {
+    position: absolute !important;
+    inset: 50% auto auto 50% !important;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .78) !important;
+    color: #0F3D2A;
+    box-shadow: 0 2px 8px rgba(15, 61, 42, .2);
+    transform: translate(-50%, -50%) !important;
+}
+.profile-photo-trigger svg { width: 18px; height: 18px; }
+.profile-hero .profile-avatar { cursor: pointer; }
+.profile-hero .profile-photo-trigger { opacity: 0; transition: opacity .15s ease; }
+.profile-hero .profile-avatar:hover .profile-photo-trigger,
+.profile-hero .profile-avatar:focus-visible .profile-photo-trigger { opacity: 1; }
+.profile-hero .profile-avatar[aria-disabled="true"] { cursor: wait; }
+.profile-hero .profile-avatar[aria-disabled="true"] .profile-photo-trigger { opacity: 1; }
+.profile-avatar:not(.profile-avatar--empty) .profile-photo-trigger {
+    color: var(--forest);
+}
+.profile-photo-trigger:disabled { opacity: .65; cursor: wait; }
+.profile-photo-message { margin: 8px 0 0; color: var(--white); font-size: 12px; }
+.profile-hero .profile-username,
+.profile-joined {
+    margin: 0;
+    font-size: 14px;
+}
+.profile-hero .profile-username,
+.profile-hero .profile-joined,
+.profile-meta-separator { color: rgba(255, 255, 255, .8); }
+.profile-hero .pill {
+    background: var(--mint);
+    color: var(--forest);
+}
+
+.profile-details {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    align-items: start;
+    gap: 28px;
+    width: 100%;
+}
+.profile-details .profile-info { margin: 0; }
+
+@media (max-width: 1199px) {
+    .profile-header { display: flex; }
+    .profile-details { grid-template-columns: minmax(0, 1fr) 300px; }
+}
+
+@media (max-width: 767px) {
+    .profile-hero { padding: 18px 16px; }
+    .profile-hero .profile-identity { grid-template-columns: 64px minmax(0, 1fr); gap: 14px; }
+    .profile-hero .profile-avatar { width: 64px; height: 64px; font-size: 19px; }
+    .profile-hero .profile-name { font-size: 20px; }
+    .profile-details { grid-template-columns: 1fr; gap: 20px; }
+}
+
+@media (hover: none) {
+    .profile-hero .profile-photo-trigger { opacity: 1; }
 }

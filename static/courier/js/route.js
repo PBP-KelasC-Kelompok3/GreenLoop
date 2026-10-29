@@ -13,6 +13,10 @@
     var userPos = null;                           // posisi kurir dari GPS peramban
     var geoNote = "";                             // pesan bila lokasi belum bisa dipakai
     var busy = false;                             // mencegah klik ganda saat menunggu server
+    var finishButton = null;
+    var arrivalNote = null;
+    var finishStop = null;
+    var ARRIVAL_RADIUS_M = 100;
 
     var els = {
         list: document.getElementById("route-list"),
@@ -100,7 +104,9 @@
     function renderList() {
         els.list.innerHTML = "";
         if (!plan.stops.length) {
-            els.list.appendChild(el("li", "route-empty", ["Belum ada titik jemput. Jalankan: python manage.py seed_points"]));
+            els.list.appendChild(el("li", "route-empty", [
+                "Belum ada penjemputan yang ditugaskan kepada akun kurir ini untuk hari ini."
+            ]));
         }
         plan.stops.forEach(function (s) {
             var badge = el("span", "route-badge");
@@ -140,6 +146,9 @@
     function renderDetail() {
         var s = stopById(selectedId) || plan.stops[plan.stops.length - 1];
         els.detail.innerHTML = "";
+        finishButton = null;
+        arrivalNote = null;
+        finishStop = null;
         if (!s) return;
 
         var fact = function (label, value) {
@@ -178,14 +187,20 @@
         var error = el("p", { id: "route-weight-error", class: "field-error", hidden: "" });
         var startBtn = el("button", { type: "button", class: "route-btn-outline", id: "route-start" }, [icon("navigation"), "Mulai Perjalanan"]);
         var finishBtn = el("button", { type: "button", class: "btn-submit", id: "route-finish" }, [icon("check"), "Selesai Pikap"]);
+        var arrival = el("p", { class: "route-arrival-note", "aria-live": "polite" });
 
-        if (s.status === "active") startBtn.disabled = true;
+        startBtn.disabled = s.status === "active";
+        finishButton = finishBtn;
+        arrivalNote = arrival;
+        finishStop = s;
 
         els.detail.appendChild(el("label", { class: "field-label", for: "route-weight", text: "Berat bersih aktual (kg)" }));
         els.detail.appendChild(el("div", "route-weight", [input, el("span", { class: "route-unit", text: "kg" })]));
         els.detail.appendChild(points);
         els.detail.appendChild(error);
+        els.detail.appendChild(arrival);
         els.detail.appendChild(el("div", "route-actions", [startBtn, finishBtn]));
+        updateFinishAvailability();
 
         input.addEventListener("input", function () {
             input.classList.remove("is-invalid");
@@ -211,7 +226,17 @@
             headers: { "X-CSRFToken": csrfToken(), "X-Requested-With": "XMLHttpRequest" }
         }).then(function (response) {
             if (response.redirected) { window.location.href = response.url; return null; }   // sesi habis
-            return response.json().then(function (payload) { return { status: response.status, payload: payload }; });
+            return response.text().then(function (text) {
+                var payload;
+                try {
+                    payload = JSON.parse(text);
+                } catch (error) {
+                    var responseError = new Error("Server mengirim respons yang tidak dikenali (HTTP " + response.status + ").");
+                    responseError.isServerResponse = true;
+                    throw responseError;
+                }
+                return { status: response.status, payload: payload };
+            });
         });
     }
 
@@ -233,7 +258,14 @@
                 if (result.payload.ok) onOk(result.payload);
                 else onFail(result.payload.errors || {});
             })
-            .catch(function () { showToast("Terjadi gangguan. Periksa koneksi lalu coba lagi.", true); })
+            .catch(function (error) {
+                showToast(
+                    error && error.isServerResponse
+                        ? error.message
+                        : "Tidak bisa terhubung ke server. Periksa koneksi ke aplikasi lalu coba lagi.",
+                    true
+                );
+            })
             .finally(function () { busy = false; renderDetail(); refreshIcons(); });
     }
 
@@ -262,6 +294,23 @@
             var text = (errors.weight_kg || errors.__all__ || ["Gagal menyimpan."]).join(" ");
             showFieldError(document.getElementById("route-weight") || input, document.getElementById("route-weight-error") || errorEl, text);
         });
+    }
+
+    function updateFinishAvailability() {
+        if (!finishButton || !finishStop) return;
+        var distance = userPos ? meters(userPos, { lat: finishStop.lat, lng: finishStop.lng }) : null;
+        var arrived = finishStop.status === "active" && distance !== null && distance <= ARRIVAL_RADIUS_M;
+        finishButton.disabled = !arrived;
+
+        if (finishStop.status !== "active") {
+            arrivalNote.textContent = "Mulai perjalanan terlebih dahulu; pikap baru bisa diselesaikan setelah tiba di lokasi.";
+        } else if (distance === null) {
+            arrivalNote.textContent = "Aktifkan izin lokasi agar kedatangan di lokasi mitra bisa diverifikasi.";
+        } else if (arrived) {
+            arrivalNote.textContent = "Lokasi terdeteksi dekat dengan mitra. Pikap siap diselesaikan.";
+        } else {
+            arrivalNote.textContent = "Selesaikan pikap setelah tiba dalam radius " + ARRIVAL_RADIUS_M + " m. Jarak saat ini sekitar " + Math.round(distance) + " m.";
+        }
     }
 
     function showFieldError(input, errorEl, text) {
@@ -531,8 +580,13 @@
     }
 
     function onPosition(position) {
-        userPos = { lat: position.coords.latitude, lng: position.coords.longitude };
+        userPos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy
+        };
         geoNote = "";
+        updateFinishAvailability();
         // Hitung ulang rute saat pertama kali, atau setelah bergeser >150 m dan lewat 20 detik
         var moved = lastFetch.pos ? meters(lastFetch.pos, userPos) : Infinity;
         if (!lastFetch.pos || (moved > 150 && Date.now() - lastFetch.time > 20000)) refreshFromPosition();

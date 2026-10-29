@@ -13,6 +13,7 @@
   <!-- CSS Admin -->
   <link rel="stylesheet" href="{% static 'css/admin.css' %}">
   <link rel="stylesheet" href="{% static 'css/page_transitions.css' %}">
+  <link rel="stylesheet" href="{% static 'css/sidebar_shared.css' %}">
 </head>
 
 <body data-page="admin-dashboard">
@@ -20,53 +21,31 @@
 <div class="d-flex min-vh-100 admin-page-shell">
 
   <!-- SIDEBAR DESKTOP (Sembunyi di Mobile) -->
-  <aside class="sidebar-b2b p-3 d-none d-lg-flex flex-column justify-content-between">
-    <div>
-      <div class="mb-3 px-2">
-        <a href="{% url 'home' %}" data-transition-target="home" aria-label="Kembali ke beranda">
-          <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo" onerror="this.style.display='none';">
-        </a>
+  <aside class="sidebar-b2b gl-sidebar d-none d-lg-flex">
+    <a class="brand" href="{% url 'home' %}" data-transition-target="home" aria-label="Kembali ke beranda">
+      <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" onerror="this.style.display='none';">
+    </a>
+    <span class="role-pill">Admin</span>
+    <p class="menu-label">Menu</p>
+    <nav class="menu">
+      <a href="{% url 'admin_dashboard' %}" class="menu-item active">
+        <i class="bi bi-shield-check"></i><span>Verifikasi Foto</span>
+      </a>
+      <a href="{% url 'admin_verify_couriers' %}" class="menu-item">
+        <i class="bi bi-truck"></i><span>Verifikasi Kurir</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="pilot-card">
+        <p class="pilot-title"><i class="bi bi-geo-alt-fill"></i> Area Pilot: Kota Depok</p>
+        <p>Layanan penjemputan khusus wilayah Kota Depok.</p>
       </div>
-
-      <div class="mb-4 px-2">
-        <span class="badge-admin-role">Admin</span>
-      </div>
-
-      <div class="text-uppercase text-muted fw-bold px-2 mb-2" style="font-size: 10px; letter-spacing: 0.5px;">
-        MENU
-      </div>
-
-      <nav class="nav flex-column gap-1">
-        <a href="{% url 'admin_dashboard' %}" class="nav-link-custom active d-flex align-items-center gap-2">
-          <i class="bi bi-shield-check"></i>
-          Verifikasi Foto
-        </a>
-        <a href="{% url 'admin_verify_couriers' %}" class="nav-link-custom d-flex align-items-center gap-2">
-          <i class="bi bi-truck"></i>
-          Verifikasi Kurir
-        </a>
-        <a href="{% url 'pickup_history' %}" class="nav-link-custom d-flex align-items-center gap-2">
-          <i class="bi bi-box-seam"></i>
-          Semua Penjemputan
-        </a>
-      </nav>
-    </div>
-
-    <div>
-      <div class="pilot-area-card mb-3">
-        <div class="fw-bold text-dark d-flex align-items-center gap-1 mb-1">
-          <i class="bi bi-geo-alt-fill text-success"></i> Area Pilot: Kota Depok
-        </div>
-        <div class="text-muted" style="font-size: 11px;">
-          Layanan penjemputan khusus wilayah Kota Depok.
-        </div>
-      </div>
-
       {% if user.is_authenticated %}
-        <form method="post" action="{% url 'logout' %}" class="px-2">
+        <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button type="submit" class="logout-btn d-flex align-items-center gap-2">
-            <i class="bi bi-box-arrow-right"></i> Keluar
+          <button type="submit" class="logout">
+            <i class="bi bi-box-arrow-right"></i><span>Keluar</span>
           </button>
         </form>
       {% endif %}
@@ -81,47 +60,27 @@
       </a>
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body d-flex flex-column justify-content-between p-3">
-      <div>
-        <div class="mb-3">
-          <span class="badge-admin-role">Admin</span>
+    <div class="offcanvas-body admin-mobile-sidebar gl-sidebar">
+      <span class="role-pill">Admin</span>
+      <p class="menu-label">Menu</p>
+      <nav class="menu">
+        <a href="{% url 'admin_dashboard' %}" class="menu-item active">
+          <i class="bi bi-shield-check"></i><span>Verifikasi Foto</span>
+        </a>
+        <a href="{% url 'admin_verify_couriers' %}" class="menu-item">
+          <i class="bi bi-truck"></i><span>Verifikasi Kurir</span>
+        </a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="pilot-card">
+          <p class="pilot-title"><i class="bi bi-geo-alt-fill"></i> Area Pilot: Kota Depok</p>
+          <p>Layanan penjemputan khusus wilayah Kota Depok.</p>
         </div>
-
-        <div class="text-uppercase text-muted fw-bold mb-2" style="font-size: 10px; letter-spacing: 0.5px;">
-          MENU
-        </div>
-
-        <nav class="nav flex-column gap-1">
-          <a href="{% url 'admin_dashboard' %}" class="nav-link-custom active d-flex align-items-center gap-2">
-            <i class="bi bi-shield-check"></i>
-            Verifikasi Foto
-          </a>
-          <a href="{% url 'admin_verify_couriers' %}" class="nav-link-custom d-flex align-items-center gap-2">
-            <i class="bi bi-truck"></i>
-            Verifikasi Kurir
-          </a>
-          <a href="{% url 'pickup_history' %}" class="nav-link-custom d-flex align-items-center gap-2">
-            <i class="bi bi-box-seam"></i>
-            Semua Penjemputan
-          </a>
-        </nav>
-      </div>
-
-      <div>
-        <div class="pilot-area-card mb-3">
-          <div class="fw-bold text-dark d-flex align-items-center gap-1 mb-1">
-            <i class="bi bi-geo-alt-fill text-success"></i> Area Pilot: Kota Depok
-          </div>
-          <div class="text-muted" style="font-size: 11px;">
-            Layanan penjemputan khusus wilayah Kota Depok.
-          </div>
-        </div>
-
         {% if user.is_authenticated %}
           <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
-            <button type="submit" class="logout-btn d-flex align-items-center gap-2">
-              <i class="bi bi-box-arrow-right"></i> Keluar
+            <button type="submit" class="logout">
+              <i class="bi bi-box-arrow-right"></i><span>Keluar</span>
             </button>
           </form>
         {% endif %}
@@ -159,7 +118,6 @@
 
       <!-- Profil Admin Filza (Sejajar Sebelah Kanan Judul) -->
       <div class="d-flex align-items-center gap-3 ms-3">
-        <i class="bi bi-bell text-muted fs-5"></i>
         <div class="d-flex align-items-center gap-2">
           <div class="admin-avatar-circle">
             {{ request.user.username|slice:":2"|upper|default:"AD" }}
@@ -363,7 +321,7 @@
                     {% if pickup.status == 'PENDING' or pickup.status == 'pending' or pickup.status == 'Pending Verification' %}
                       <p class="text-muted small mb-4">Setujui untuk melanjutkan ke proses penjemputan atau tolak jika tidak sesuai.</p>
                       <div class="d-flex flex-column gap-2">
-                        <a href="{% url 'update_pickup_status' pickup.id 'IN_PROGRESS' %}" class="btn btn-approve d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Proses dan setujui penjemputan ini?');">
+                        <a href="{% url 'update_pickup_status' pickup.id 'SCHEDULED' %}" class="btn btn-approve d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Proses dan setujui penjemputan ini?');">
                           <i class="bi bi-check-lg"></i> Setujui Penjemputan
                         </a>
                         <a href="{% url 'update_pickup_status' pickup.id 'REJECTED' %}" class="btn btn-reject-outline d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Tolak permintaan ini?');">

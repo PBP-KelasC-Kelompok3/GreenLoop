@@ -34,10 +34,15 @@ def profile_payload(user, profile):
     """Data yang dikirim ke browser setelah profil diubah (dipakai AJAX)."""
     return {
         "display_name": get_display_name(user),
+        "full_name": user.get_full_name() or "-",
+        "username": user.username,
         "initials": get_initials(user),
+        "photo_url": profile.profile_photo.url if profile.profile_photo else "",
         "email": user.email,
         "plate_number": profile.plate_number,
         "vehicle_label": profile.get_vehicle_type_display(),
+        "duty_label": "Sedang Bertugas" if profile.is_on_duty else "Tidak Bertugas",
+        "is_on_duty": profile.is_on_duty,
         "topbar_sub": build_topbar_sub(profile),
     }
 

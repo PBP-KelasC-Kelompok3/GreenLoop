@@ -11,11 +11,12 @@ from django.urls import reverse
 from django.utils import timezone
 
 from courier.maps import RoutingError, estimate_route
-from courier.models import CollectionPoint, CourierProfile, WeightLog
+from courier.models import CourierProfile, PickupRecord, WeightLog
 from courier.route_state import get_today_stops
 from courier.utils import get_courier_stats
+from scheduling.models import MitraProfile, PickupSchedule
 
-from .helpers import PLAIN_STATIC, make_user
+from .helpers import PLAIN_STATIC, make_approved_courier, make_user
 
 WEATHER = {"temperature": 29, "text": "Berawan", "icon": "cloud", "rain": False}
 
@@ -33,14 +34,24 @@ def offline(url):
     raise RoutingError("tidak ada koneksi")
 
 
-def make_points(rows=POINTS):
-    return [
-        CollectionPoint.objects.create(
-            code=code, name=name, category="Kafe", address="Jl. Contoh, Depok",
-            latitude=lat, longitude=lng, est_kg=kg, vehicle="Motor Box", photo_note="Disetujui admin",
+def make_points(rows=POINTS, courier=None, prefix="mitra"):
+    points = []
+    for index, (code, name, lat, lng, kg) in enumerate(rows):
+        mitra = make_user(f"{prefix}_{index}", role="mitra")
+        MitraProfile.objects.create(
+            user=mitra, business_name=name, business_type="Kafe / Coffee Shop",
+            address_detail="Jl. Contoh, Depok",
+            latitude=lat, longitude=lng,
         )
-        for code, name, lat, lng, kg in rows
-    ]
+        pickup = PickupSchedule.objects.create(
+            mitra=mitra, courier=courier, estimated_weight=kg,
+            pickup_date=timezone.localdate(), pickup_time_slot="08:00-10:00",
+            status="SCHEDULED",
+        )
+        pickup.code, pickup.name = code, name
+        pickup.latitude, pickup.longitude = lat, lng
+        points.append(pickup)
+    return points
 
 
 @override_settings(STORAGES=PLAIN_STATIC)
@@ -55,8 +66,8 @@ class RouteTestBase(TestCase):
         ):
             p.start()
             self.addCleanup(p.stop)
-        self.points = make_points()
-        self.user = make_user("sari")
+        self.user = make_approved_courier("sari")
+        self.points = make_points(courier=self.user)
         self.client.force_login(self.user)
 
     def payload(self, **params):
@@ -70,7 +81,17 @@ class RouteTestBase(TestCase):
         return self.client.post(reverse("courier:start_pickup", args=[pk]), extra)
 
     def finish(self, pk, weight, **extra):
-        return self.client.post(reverse("courier:finish_pickup", args=[pk]), {"weight_kg": weight, **extra})
+        if not PickupSchedule.objects.filter(pk=pk).exists():
+            return self.client.post(reverse("courier:finish_pickup", args=[pk]), {
+                "weight_kg": weight, **extra,
+            })
+        if not PickupRecord.objects.filter(courier=self.user, pickup_schedule_id=pk,
+                                           status=PickupRecord.Status.ONGOING).exists():
+            self.start(pk)
+        profile = MitraProfile.objects.get(user=PickupSchedule.objects.get(pk=pk).mitra)
+        return self.client.post(reverse("courier:finish_pickup", args=[pk]), {
+            "weight_kg": weight, "lat": profile.latitude, "lng": profile.longitude, **extra,
+        })
 
     def ids(self):
         """Urutan id titik seperti yang tampil di halaman."""
@@ -137,16 +158,16 @@ class RoutePageTests(RouteTestBase):
         self.client.logout()
         self.assertEqual(self.client.get(reverse("courier:show_route_today")).status_code, 302)
 
-    def test_reset_restores_initial_state(self):
+    def test_legacy_reset_parameter_does_not_clear_completed_pickup(self):
         first = self.payload()[1]["targetId"]
         self.finish(first, "60")
         res = self.client.get(reverse("courier:show_route_today") + "?reset=1")
-        self.assertEqual(res.status_code, 302)
+        self.assertEqual(res.status_code, 200)
         _, route = self.payload()
-        self.assertNotIn("Selesai", [s["statusLabel"] for s in route["stops"]])
+        self.assertIn("Selesai", [s["statusLabel"] for s in route["stops"]])
 
     def test_page_without_data_still_renders(self):
-        CollectionPoint.objects.all().delete()
+        PickupSchedule.objects.all().delete()
         res, route = self.payload()
         self.assertEqual(res.status_code, 200)
         self.assertEqual(route["total"], 0)
@@ -198,8 +219,10 @@ class LiveLocationTests(RouteTestBase):
         first = self.payload()[1]["targetId"]
         plan = self.start(first, **USER_POS).json()["plan"]
         self.assertEqual(plan["origin"], {"lat": -6.37, "lng": 106.825})
-        plan = self.finish(first, "10", **USER_POS).json()["plan"]
-        self.assertEqual(plan["origin"], {"lat": -6.37, "lng": 106.825})
+        plan = self.finish(first, "10").json()["plan"]
+        pickup = PickupSchedule.objects.get(pk=first)
+        profile = MitraProfile.objects.get(user=pickup.mitra)
+        self.assertEqual(plan["origin"], {"lat": profile.latitude, "lng": profile.longitude})
 
     def test_finished_stops_are_not_part_of_the_route(self):
         first = self.payload()[1]["targetId"]
@@ -244,14 +267,14 @@ class StartPickupTests(RouteTestBase):
 class FinishPickupTests(RouteTestBase):
     def test_finish_saves_weight_log(self):
         pk = self.ids()[0]
-        name = CollectionPoint.objects.get(pk=pk).name
+        name = PickupSchedule.objects.get(pk=pk).mitra.profile.business_name
         self.assertEqual(self.finish(pk, "58,6").status_code, 200)
         log = WeightLog.objects.get(courier=self.user)
         self.assertEqual(log.partner_name, name)
         self.assertEqual(log.weight_kg, Decimal("58.6"))
         self.assertEqual(log.points, 293)  # 58,6 x 5 
         self.assertEqual(log.collected_at, timezone.localdate())
-        self.assertIn(CollectionPoint.objects.get(pk=pk).code, log.notes)
+        self.assertIn(f"PK-{pk:04d}", log.notes)
 
     def test_message_has_points(self):
         data = self.finish(self.ids()[0], "58.6").json()
@@ -314,10 +337,10 @@ class FinishPickupTests(RouteTestBase):
         pk = self.ids()[0]
         self.finish(pk, "10")
         other = self.client_class()
-        other.force_login(make_user("andi"))
+        other.force_login(make_approved_courier("andi"))
         res = other.get(reverse("courier:show_route_today"))
         stops = {s["id"]: s for s in res.context["route"]["stops"]}
-        self.assertNotEqual(stops[pk]["statusLabel"], "Selesai")
+        self.assertNotIn(pk, stops)
 
 
 class DutyToggleTests(RouteTestBase):
@@ -350,40 +373,38 @@ class DutyToggleTests(RouteTestBase):
 
 
 class NearbyStopsTests(RouteTestBase):
-    """Titik hari ini dikumpulkan di satu daerah, bukan tersebar di seluruh Depok."""
+    """Rute hanya menampilkan pickup hari ini yang ditugaskan ke kurir login."""
 
     def setUp(self):
         super().setUp()
-        CollectionPoint.objects.all().delete()
+        PickupSchedule.objects.all().delete()
         west = [(f"W-{i}", f"Barat {i}", -6.40 + i * 0.0003, 106.76, 20) for i in range(8)]
         east = [(f"E-{i}", f"Timur {i}", -6.40 + i * 0.0003, 106.86, 20) for i in range(8)]
-        make_points(west + east)
+        self.points = make_points(west + east, courier=self.user, prefix="nearby")
 
     def spread_km(self, stops):
         from courier.maps import haversine_m
         return max(haversine_m((a.latitude, a.longitude), (b.latitude, b.longitude)) for a in stops for b in stops) / 1000
 
-    def test_stops_come_from_one_area_every_day(self):
-        today = timezone.localdate()
-        for offset in range(30):
-            stops = get_today_stops({}, today + timedelta(days=offset))
-            self.assertEqual(len(stops), 5)
-            self.assertLess(self.spread_km(stops), 1.0, f"hari ke-{offset} melebar")
-            self.assertEqual(len({s.name.split()[0] for s in stops}), 1)   # semua Barat atau semua Timur
+    def test_all_assigned_pickups_are_returned_for_the_requested_day(self):
+        stops = get_today_stops(self.user, timezone.localdate())
+        self.assertEqual(len(stops), 16)
+        self.assertEqual({s.pk for s in stops}, {p.pk for p in self.points})
 
-    def test_both_areas_get_picked_on_some_days(self):
+    def test_unassigned_pickups_are_not_shown(self):
         today = timezone.localdate()
-        areas = {get_today_stops({}, today + timedelta(days=i))[0].name.split()[0] for i in range(30)}
-        self.assertEqual(areas, {"Barat", "Timur"})
+        unassigned = make_points([("U-1", "Tidak ditugaskan", -6.4, 106.8, 20)], prefix="unassigned")
+        self.assertEqual(len(get_today_stops(self.user, today)), 16)
+        self.assertNotIn(unassigned[0].pk, {s.pk for s in get_today_stops(self.user, today)})
 
     def test_same_stops_all_day(self):
         today = timezone.localdate()
-        first = [s.pk for s in get_today_stops({}, today)]
-        self.assertEqual(first, [s.pk for s in get_today_stops({}, today)])
+        first = [s.pk for s in get_today_stops(self.user, today)]
+        self.assertEqual(first, [s.pk for s in get_today_stops(self.user, today)])
 
     def test_fewer_points_than_a_day_uses_all(self):
-        CollectionPoint.objects.exclude(code__in=["W-0", "W-1", "W-2"]).delete()
-        self.assertEqual(len(get_today_stops({}, timezone.localdate())), 3)
+        PickupSchedule.objects.exclude(pk__in=[p.pk for p in self.points[:3]]).delete()
+        self.assertEqual(len(get_today_stops(self.user, timezone.localdate())), 3)
 
 
 class EstimateByCourierVehicleTests(RouteTestBase):
@@ -393,36 +414,37 @@ class EstimateByCourierVehicleTests(RouteTestBase):
         CourierProfile.objects.update_or_create(user=user, defaults={"vehicle_type": vehicle})
 
     def replace_points(self, rows):
-        CollectionPoint.objects.all().delete()
-        make_points(rows)
+        PickupSchedule.objects.all().delete()
+        self.points = make_points(rows, courier=self.user, prefix="estimate")
 
     def est_by_name(self, client=None):
         res = (client or self.client).get(reverse("courier:show_route_today"))
         return {s["name"]: s["estKg"] for s in res.context["route"]["stops"]}
 
-    def test_motor_courier_gets_at_most_5_kg(self):
+    def test_estimated_weight_comes_from_mitra_pickup(self):
         self.set_vehicle(self.user, CourierProfile.VehicleType.MOTOR_BOX)
         self.replace_points([("A-1", "Besar", -6.38, 106.82, 10), ("A-2", "Sedang", -6.381, 106.82, 6),
                              ("A-3", "Kecil", -6.382, 106.82, 2), ("A-4", "Lama", -6.383, 106.82, 88)])
         est = self.est_by_name()
-        self.assertEqual(est, {"Besar": 5, "Sedang": 3, "Kecil": 1, "Lama": 5})
+        self.assertEqual(est, {"Besar": 10, "Sedang": 6, "Kecil": 2, "Lama": 88})
 
-    def test_pickup_courier_gets_at_most_10_kg(self):
+    def test_estimate_does_not_change_with_vehicle_type(self):
         self.set_vehicle(self.user, CourierProfile.VehicleType.PICKUP_BAK)
         self.replace_points([("A-1", "Besar", -6.38, 106.82, 10), ("A-2", "Sedang", -6.381, 106.82, 6),
                              ("A-3", "Kecil", -6.382, 106.82, 2), ("A-4", "Lama", -6.383, 106.82, 88)])
         est = self.est_by_name()
-        self.assertEqual(est, {"Besar": 10, "Sedang": 6, "Kecil": 2, "Lama": 10})
+        self.assertEqual(est, {"Besar": 10, "Sedang": 6, "Kecil": 2, "Lama": 88})
 
     def test_each_courier_sees_own_vehicle_on_same_stops(self):
         self.replace_points([("A-1", "Titik", -6.38, 106.82, 10), ("A-2", "Lain", -6.381, 106.82, 8)])
         self.set_vehicle(self.user, CourierProfile.VehicleType.PICKUP_BAK)
-        other_user = make_user("andi")
+        other_user = make_approved_courier("andi")
         self.set_vehicle(other_user, CourierProfile.VehicleType.MOTOR_BOX)
+        make_points([("B-1", "Titik", -6.38, 106.82, 10)], courier=other_user, prefix="other")
         other = self.client_class()
         other.force_login(other_user)
         self.assertEqual(self.est_by_name()["Titik"], 10)
-        self.assertEqual(self.est_by_name(other)["Titik"], 5)
+        self.assertEqual(self.est_by_name(other)["Titik"], 10)
 
     def test_all_stops_show_the_couriers_vehicle(self):
         self.set_vehicle(self.user, CourierProfile.VehicleType.MOTOR_BOX)
@@ -432,11 +454,9 @@ class EstimateByCourierVehicleTests(RouteTestBase):
         _, route = self.payload()
         self.assertEqual({s["vehicle"] for s in route["stops"]}, {"Pickup Bak"})
 
-    def test_nothing_above_capacity_even_with_big_stored_values(self):
-        for vehicle, cap in ((CourierProfile.VehicleType.MOTOR_BOX, 5), (CourierProfile.VehicleType.PICKUP_BAK, 10)):
-            self.set_vehicle(self.user, vehicle)
-            for stop in self.payload()[1]["stops"]:     # data uji bernilai 18 sampai 60
-                self.assertTrue(1 <= stop["estKg"] <= cap, stop)
+    def test_pickup_estimate_is_not_scaled_by_courier_vehicle(self):
+        self.set_vehicle(self.user, CourierProfile.VehicleType.MOTOR_BOX)
+        self.assertEqual({s["estKg"] for s in self.payload()[1]["stops"]}, {18, 25, 36, 60})
 
     def test_estimate_function(self):
         from courier.route_state import estimate_for
@@ -456,9 +476,8 @@ class DayRolloverTests(RouteTestBase):
         pk = self.ids()[0]
         self.finish(pk, "10")
         tomorrow = timezone.localdate() + timedelta(days=1)
-        stops = {s.pk: s for s in get_today_stops(self.client.session, tomorrow)}
-        self.assertEqual(stops[pk].status, "approved")
-        self.assertIsNone(stops[pk].actual_kg)
+        stops = {s.pk: s for s in get_today_stops(self.user, tomorrow)}
+        self.assertNotIn(pk, stops)
 
 
 def fake_route(points):
@@ -510,7 +529,7 @@ class DirectionsTests(RouteTestBase):
 
     def test_directions_follow_current_target(self):
         pk = self.ids()[0]
-        data = self.finish(pk, "10", **USER_POS).json()
+        data = self.finish(pk, "10").json()
         self.assertTrue(data["plan"]["directions"])
         target = next(s for s in data["plan"]["stops"] if s["id"] == data["plan"]["targetId"])
         self.assertEqual(data["plan"]["targetName"], target["name"])

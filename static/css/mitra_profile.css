@@ -23,13 +23,54 @@
   pointer-events: none;
 }
 .profile-banner > * { position: relative; z-index: 1; }
+.mitra-profile-username,
+.mitra-profile-joined,
+.profile-meta-separator { color: rgba(255, 255, 255, .8); }
 
 .profile-avatar {
+  position: relative;
   width: 64px; height: 64px;
   font-size: 1.5rem;
   background-color: var(--gl-sage);
   color: var(--gl-dark) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+}
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.profile-photo-trigger {
+  position: absolute !important;
+  inset: 50% auto auto 50% !important;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .78) !important;
+  color: #0F3D2A;
+  box-shadow: 0 2px 8px rgba(15, 61, 42, .2);
+  transform: translate(-50%, -50%) !important;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.profile-photo-trigger i { font-size: 18px; line-height: 1; }
+.profile-avatar { cursor: pointer; }
+.profile-avatar:hover .profile-photo-trigger,
+.profile-avatar:focus-visible .profile-photo-trigger { opacity: 1; }
+.profile-avatar[aria-disabled="true"] { cursor: wait; }
+.profile-avatar[aria-disabled="true"] .profile-photo-trigger { opacity: 1; }
+.profile-avatar:not(.profile-avatar--empty) .profile-photo-trigger {
+  color: #0F3D2A;
+}
+
+@media (hover: none) {
+  .profile-photo-trigger { opacity: 1; }
 }
 .badge-silver { background-color: var(--gl-sage); color: var(--gl-dark); }
 
@@ -57,6 +98,15 @@
 .form-control:focus, .form-select:focus {
   border-color: var(--gl-primary);
   box-shadow: 0 0 0 .25rem rgba(0, 138, 95, .15);
+}
+
+.profile-save-button {
+  --bs-btn-bg: #0F3D2A;
+  --bs-btn-border-color: #0F3D2A;
+  --bs-btn-hover-bg: #145238;
+  --bs-btn-hover-border-color: #145238;
+  --bs-btn-active-bg: #145238;
+  --bs-btn-active-border-color: #145238;
 }
 
 /* Field wilayah otomatis (readonly, gaya seperti desain) */
