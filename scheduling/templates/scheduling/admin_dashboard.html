@@ -12,17 +12,20 @@
 
   <!-- CSS Admin -->
   <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+  <link rel="stylesheet" href="{% static 'css/page_transitions.css' %}">
 </head>
 
-<body>
+<body data-page="admin-dashboard">
 
-<div class="d-flex min-vh-100">
+<div class="d-flex min-vh-100 admin-page-shell">
 
   <!-- SIDEBAR DESKTOP (Sembunyi di Mobile) -->
   <aside class="sidebar-b2b p-3 d-none d-lg-flex flex-column justify-content-between">
     <div>
       <div class="mb-3 px-2">
-        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo" onerror="this.style.display='none';">
+        <a href="{% url 'home' %}" data-transition-target="home" aria-label="Kembali ke beranda">
+          <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo" onerror="this.style.display='none';">
+        </a>
       </div>
 
       <div class="mb-4 px-2">
@@ -69,7 +72,9 @@
   <!-- OFFCANVAS SIDEBAR (Muncul saat Klik Hamburger Menu di HP/Mobile) -->
   <div class="offcanvas offcanvas-start offcanvas-admin" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
     <div class="offcanvas-header border-bottom">
-      <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo" onerror="this.style.display='none';">
+      <a href="{% url 'home' %}" data-transition-target="home" aria-label="Kembali ke beranda">
+        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo" onerror="this.style.display='none';">
+      </a>
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body d-flex flex-column justify-content-between p-3">
@@ -410,6 +415,7 @@
 {% endfor %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/page_transitions.js' %}"></script>
 
 </body>
 </html>

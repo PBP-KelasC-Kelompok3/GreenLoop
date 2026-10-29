@@ -1,0 +1,17 @@
+<div id="checkoutModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Detail Pengiriman</h3>
+        </div>
+        <p style="font-size: 0.9em; color: #666; font-weight: normal;">Silakan masukkan detail tujuan pengiriman Anda untuk kalkulasi ongkos kirim otomatis via RajaOngkir.</p>
+        
+        <input type="hidden" id="checkoutProductId">
+        <p>ID Kota Tujuan (RajaOngkir)</p>
+        <input type="number" id="destinationCityId" class="form-input" placeholder="Contoh: 114 (Untuk Denpasar)">
+        
+        <div style="text-align: right; margin-top: 15px;">
+            <button class="btn btn-danger" onclick="closeModal('checkoutModal')" style="margin-right: 5px;">Batal</button>
+            <button class="btn" onclick="processCheckout()">Cek Ongkir & Bayar</button>
+        </div>
+    </div>
+</div>

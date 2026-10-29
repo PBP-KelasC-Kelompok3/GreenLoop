@@ -12,10 +12,8 @@ urlpatterns = [
     path('courier/', include('courier.urls')),
     path('scheduling/', include('scheduling.urls')),
     path('mitra/waste-reward/', include('waste_reward.urls')),
-    # Keep the legacy dashboard route, but do not reuse the scheduling
-    # dashboard's URL name. Admin navigation should resolve to
-    # /scheduling/admin-panel/.
-    path('admin-dashboard/', admin_dashboard, name='legacy_admin_dashboard'),
+    path('katalog/', include('catalog.urls')),
+    path('admin-dashboard/', admin_dashboard, name='site_admin_dashboard'),
     path('coming-soon/<slug:module>/', coming_soon, name='coming_soon'),
 ]
 

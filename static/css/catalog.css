@@ -1,0 +1,29 @@
+:root {
+    --primary: #008A5F;
+    --dark-green: #506649;
+    --green: #789C6D;
+    --light-green: #C0CCBB;
+    --white: #FFFFFF;
+
+    /* Tambahan mengikuti Figma */
+    --forest: #0F3D2A;
+    --forest-2: #145238;
+    --mint: #EAF5EC;
+    --accent: #3DBE7E;
+
+    /* Turunan Figma untuk halaman publik */
+    --lime: #B6E07A;
+    --surface: #F5F8F3;
+    --line: #E3E9E0;
+    --muted: #6B7A68;
+    --radius: 14px;
+}
+
+.body {
+	background-color: var(--surface);
+}
+
+.katalog-container {
+	margin: 8px 0 6px;
+	padding: 56px 0 64px;
+}
