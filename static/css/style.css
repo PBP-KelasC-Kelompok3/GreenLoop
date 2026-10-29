@@ -897,44 +897,129 @@ main { min-height: 70vh; }
     gap: 12px;
 }
 
+/* Here until I move them into separate css */
+
 .form-input {
 	flex: 1;
 	padding: 12px 20px;
 	border: 1px solid #e2e8f0;
-	border-radius: 9999px;
+	border-radius: 12px;
 	font-size: 1rem;
 	outline: none;
 	box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .product-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-	gap: 20px;
+	display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+    gap: 20px !important;
+    width: 100% !important;
+    justify-content: center !important;
+    align-items: start !important;
+    margin-top: 20px;
 }
 
 .product-card {
-	background: #ffffff;
-	border: 1px solid #e2e8f0;
-	border-radius: 12px;
-	padding: 20px;
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+	background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    box-sizing: border-box;
+    width: 100% !important;
 }
 .catalog-page {
     margin-top: 24px;
-	margin-bottom: 72px;
+	margin-bottom: 25px;
     background: var(--white);
     border-radius: 32px;
     padding: 72px 64px 64px;
-    display: grid;
+    display: flex;
+	flex-direction: column;
     grid-template-columns: 1.1fr .9fr;
     align-items: center;
-    gap: 32px;
+    gap: 15px;
     overflow: hidden;
     position: relative;
+}
+
+.header-actions{
+	display: flex; 
+	gap: 10px; 
+	flex-wrap: wrap; 
+	align-items: center;
+}
+
+.custom-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+}
+
+.custom-modal-content {
+    background-color: #ffffff;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 25px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); 
+    border: 1px solid #ddd;
+}
+
+.custom-modal-content.medium {
+    max-width: 650px !important;
+    width: 90% !important;
+}
+
+#productFormElement p {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 14px;
+}
+
+#productFormElement label {
+    font-weight: 600;
+    color: #2e7d32;
+    font-size: 14px;
+}
+
+#productFormElement input, 
+#productFormElement textarea {
+    width: 100% !important;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+#productFormElement .helptext {
+    font-size: 12px;
+    color: #666;
+    font-weight: normal;
+    margin-top: 2px;
+}
+
+.modal-header {
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
 }
 
 @media (max-width: 700px) {

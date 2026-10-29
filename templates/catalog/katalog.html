@@ -7,7 +7,7 @@
 
 {% block content %}
 <div class="catalog-page page-wrap">
-    <h1>Katalog Produk {% if is_mitra %}(B2B Mitra){% else %}(B2C Konsumen){% endif %}</h1>
+    <h1 class="top">Katalog Produk</h1>
     
     <div class="header-actions">
         <input type="text" id="searchInput" class="form-input" placeholder="Cari produk..." onkeyup="loadProducts()">
@@ -34,21 +34,24 @@
 <script>
     const isAdmin = "{{ is_admin }}" === "True";
 
-    function showMessage(title, text) {
-        document.getElementById('messageTitle').innerText = title;
-        document.getElementById('messageText').innerText = text;
-        document.getElementById('messageModal').style.display = 'block';
-    }
+    // Fungsi untuk memunculkan window popup
+	function showMessage(title, text) {
+		document.getElementById('messageTitle').innerText = title;
+		document.getElementById('messageText').innerText = text;
+		document.getElementById('messageModal').style.display = 'block'; 
+	}
 
-    function closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
-    }
+	// Fungsi untuk menutup window popup
+	function closeModal(modalId) {
+		document.getElementById(modalId).style.display = 'none';
+	}
 
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = "none";
-        }
-    }
+	// Menutup popup jika user mengklik area gelap di luar jendela
+	window.onclick = function(event) {
+		if (event.target.classList.contains('custom-modal')) {
+			event.target.style.display = "none";
+		}
+	}
 
     async function loadProducts() {
         const query = document.getElementById('searchInput').value;
