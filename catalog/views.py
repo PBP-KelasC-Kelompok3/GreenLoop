@@ -68,6 +68,7 @@ def katalog_page(request):
             expires_at__gt=timezone.now(),
         ).select_related('voucher').order_by('expires_at')
     return render(request, 'catalog/katalog.html', {
+        'base_template': 'scheduling/mitra_base.html' if is_mitra else 'base.html',
         'midtrans_client_key': settings.MIDTRANS_CLIENT_KEY or '',
         'snap_js_url': snap_js_url(),
         'is_admin': can_manage_greenloop(request.user),

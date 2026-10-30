@@ -61,8 +61,6 @@
                     </a>
                 </li>
 
-                <li><a href="{% url 'katalog:katalog_page' %}">Katalog</a></li>
-
                 <li>
                     <a data-nav-section="impact" href="{% url 'home' %}#impact">
                         Dampak
@@ -75,25 +73,25 @@
                     </a>
                 </li>
 
+                {% if not user.is_authenticated or user.userprofile.role != 'mitra' and user.userprofile.role != 'admin' %}
+                    <li class="nav-catalog-item">
+                        <a class="nav-catalog-link{% if request.resolver_match.url_name == 'katalog_page' %} nav-current{% endif %}"
+                           href="{% url 'katalog:katalog_page' %}"
+                           {% if request.resolver_match.url_name == 'katalog_page' %}aria-current="page"{% endif %}>
+                            Katalog
+                        </a>
+                    </li>
+                {% endif %}
+
                 {% if user.is_authenticated %}
 
-                    {% if user.userprofile.role == 'consumer' %}
-
-                        <li>
-                            <a href="{% url 'katalog:katalog_page' %}?orders=1">
-                                Pesanan Saya
-                            </a>
-                        </li>
-
-                    {% elif user.userprofile.role == 'mitra' %}
+                    {% if user.userprofile.role == 'mitra' %}
 
                         <li>
                             <a data-nav-section="mitra-dashboard" data-transition-target="mitra-dashboard" href="{% url 'mitra_dashboard' %}"{% if request.resolver_match.url_name == 'mitra_dashboard' %} class="nav-current" aria-current="page"{% endif %}>
                                 Dashboard Mitra
                             </a>
                         </li>
-                        <li><a href="{% url 'waste_reward:dashboard' %}">Waste &amp; Reward</a></li>
-
                     {% elif user.userprofile.role == 'courier' %}
 
                         <li>
@@ -196,7 +194,9 @@
 
             <div class="footer-col">
                 <h3>Produk</h3>
-                <a href="{% url 'katalog:katalog_page' %}">Katalog &amp; Pesanan</a>
+                {% if not user.is_authenticated or user.userprofile.role != 'mitra' and user.userprofile.role != 'admin' %}
+                    <a href="{% url 'katalog:katalog_page' %}">Katalog &amp; Pesanan</a>
+                {% endif %}
             </div>
 
             <div class="footer-col">
@@ -207,9 +207,7 @@
                     <a href="{% url 'register' %}?role=mitra">Daftar Mitra</a>
                 {% endif %}
                 <a href="{% url 'coming_soon' 'pickup' %}">Smart Pick-Up</a>
-                {% if user.is_authenticated and user.userprofile.role == 'mitra' %}
-                    <a href="{% url 'waste_reward:dashboard' %}">Waste &amp; Reward</a>
-                {% else %}
+                {% if not user.is_authenticated or user.userprofile.role != 'mitra' %}
                     <a href="{% url 'home' %}#cara-kerja">Waste Points</a>
                 {% endif %}
             </div>

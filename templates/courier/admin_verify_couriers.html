@@ -9,8 +9,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=5">
   <link rel="stylesheet" href="{% static 'css/sidebar_shared.css' %}">
+  <link rel="stylesheet" href="{% static 'css/page_transitions.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard_roles.css' %}">
 </head>
-<body>
+<body data-page="admin-dashboard">
 <div class="d-flex min-vh-100 admin-page-shell">
   <aside class="sidebar-b2b gl-sidebar d-none d-lg-flex">
     <a class="brand" href="{% url 'home' %}" data-transition-target="home" aria-label="Kembali ke beranda">
@@ -19,11 +21,17 @@
     <span class="role-pill">Admin</span>
     <p class="menu-label">Menu</p>
     <nav class="menu">
+      <a href="{% url 'home' %}" class="menu-item" data-transition-target="home">
+        <i class="bi bi-house"></i><span>Beranda Utama</span>
+      </a>
       <a href="{% url 'admin_dashboard' %}" class="menu-item">
         <i class="bi bi-shield-check"></i><span>Verifikasi Foto</span>
       </a>
       <a href="{% url 'courier:admin_verify_couriers' %}" class="menu-item active">
         <i class="bi bi-truck"></i><span>Verifikasi Kurir</span>
+      </a>
+      <a href="{% url 'katalog:katalog_page' %}" class="menu-item">
+        <i class="bi bi-shop"></i><span>Katalog Produk</span>
       </a>
     </nav>
     <div class="sidebar-bottom">
@@ -53,11 +61,17 @@
       <span class="role-pill">Admin</span>
       <p class="menu-label">Menu</p>
       <nav class="menu">
+        <a href="{% url 'home' %}" class="menu-item" data-transition-target="home">
+          <i class="bi bi-house"></i><span>Beranda Utama</span>
+        </a>
         <a href="{% url 'admin_dashboard' %}" class="menu-item">
           <i class="bi bi-shield-check"></i><span>Verifikasi Foto</span>
         </a>
         <a href="{% url 'courier:admin_verify_couriers' %}" class="menu-item active">
           <i class="bi bi-truck"></i><span>Verifikasi Kurir</span>
+        </a>
+        <a href="{% url 'katalog:katalog_page' %}" class="menu-item">
+          <i class="bi bi-shop"></i><span>Katalog Produk</span>
         </a>
       </nav>
       <div class="sidebar-bottom">
@@ -91,6 +105,7 @@
 
     <div class="admin-main-content p-3 p-lg-4">
     <div class="mb-4">
+      <p class="role-dashboard-kicker role-dashboard-kicker--admin mb-1">Dashboard Admin</p>
       <h3 class="fw-bold text-dark mb-1">Verifikasi Pendaftaran Kurir</h3>
       <p class="text-muted small mb-0">Setujui akun kurir agar dapat menerima penugasan.</p>
     </div>
@@ -148,5 +163,6 @@
   </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/page_transitions.js' %}"></script>
 </body>
 </html>

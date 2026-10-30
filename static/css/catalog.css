@@ -46,12 +46,34 @@
 .catalog-heading .catalog-eyebrow { margin-bottom: 7px; color: var(--primary); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 .header-actions .form-input { min-width: 210px; }
-.product-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 245px), 1fr)); }
-.product-card { min-height: 240px; gap: 12px; border-color: var(--line); box-shadow: 0 6px 18px rgb(24 55 33 / 6%); }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 245px), 1fr)); gap: 20px; }
+.product-card { min-height: 240px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: 0 6px 18px rgb(24 55 33 / 6%); }
 .product-card h3 { margin: 0; color: var(--forest); }
 .product-card p { margin: 0; color: var(--muted); }
 .product-card .price { color: var(--primary); font-size: 20px; font-weight: 700; }
 .product-card .btn { align-self: flex-start; }
+.catalog-page--mitra {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+.catalog-page--mitra .product-card .btn:not(.btn-info) {
+    border-color: var(--forest-2);
+    border-radius: 10px;
+    background: var(--forest-2);
+    color: #fff;
+    font-weight: 600;
+}
+.catalog-page--mitra .product-card .btn:not(.btn-info):hover { background: var(--forest); color: #fff; }
+.catalog-page--mitra .product-card .btn:disabled { opacity: .55; }
+.mitra-catalog-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.mitra-catalog-actions .form-control { width: min(260px, 100%); border-radius: 999px; }
 .catalog-page .modal-content { max-height: calc(100vh - 36px); overflow-y: auto; }
 #checkoutModal .modal-content { display: grid; gap: 10px; }
 #checkoutModal .modal-header h3 { margin: 0; }
@@ -64,4 +86,6 @@
     .catalog-heading { align-items: stretch; flex-direction: column; }
     .header-actions { justify-content: flex-start; }
     .header-actions .form-input { width: 100%; }
+    .mitra-catalog-actions { justify-content: flex-start; }
+    .mitra-catalog-actions .form-control { width: 100%; }
 }

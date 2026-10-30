@@ -145,6 +145,28 @@ html { scroll-behavior: smooth; scroll-padding-top: 96px; }
     border-bottom-color: transparent;
 }
 
+.nav-catalog-item { display: flex; align-items: center; }
+.nav-links a.nav-catalog-link {
+    padding: 10px 19px;
+    border: 1px solid #d8e9c0;
+    border-radius: 999px;
+    background: #eff7e6;
+    color: #315f38;
+    font-weight: 700;
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
+}
+.nav-links a.nav-catalog-link:hover {
+    transform: translateY(-1px);
+    border-color: var(--lime);
+    background: #e5f2d4;
+    color: var(--forest);
+}
+.nav-links a.nav-catalog-link.nav-current {
+    border-color: var(--lime);
+    background: var(--lime);
+    color: var(--forest);
+}
+
 .nav-indicator {
     position: absolute;
     bottom: 0;
@@ -669,6 +691,17 @@ main { min-height: 70vh; }
     .nav-links { flex-direction: column; margin: 0; gap: 0; }
     .nav-links a { padding: 12px 0; border-bottom: 1px solid var(--line); }
     .nav-links a.nav-current { border-bottom-color: var(--line); color: var(--primary); }
+    .nav-links a.nav-catalog-link,
+    .nav-links a.nav-catalog-link.nav-current {
+        width: fit-content;
+        margin: 8px 0 12px;
+        padding: 9px 18px;
+        border: 1px solid #d8e9c0;
+        border-radius: 999px;
+        background: #eff7e6;
+        color: #315f38;
+    }
+    .nav-links a.nav-catalog-link.nav-current { border-color: var(--lime); background: var(--lime); color: var(--forest); }
     .nav-indicator { display: none; }
     .nav-auth { flex-wrap: wrap; padding-top: 16px; }
 
