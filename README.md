@@ -24,7 +24,7 @@ Sistem aplikasi web ini bekerja menggunakan satu basis data terpusat (*centraliz
    Menyediakan fitur *Smart Pick-Up Scheduler* untuk menjadwalkan penjemputan limbah secara digital serta melacak akumulasi poin reward (*Waste-to-Points*).
 
 2. **Dashboard Kurir (Mobile-Responsive)**  
-   Terintegrasi langsung dengan Google Maps API untuk menyajikan navigasi rute perjalanan penjemputan paling optimal di wilayah operasional guna efisiensi bahan bakar, sekaligus menyediakan form input berat sampah (kg) secara *real-time* di lapangan.
+   Terintegrasi langsung dengan OpenStreetMap untuk menyajikan navigasi rute perjalanan penjemputan paling optimal di wilayah operasional guna efisiensi bahan bakar, sekaligus menyediakan form input berat sampah (kg) secara *real-time* di lapangan.
 
 3. **E-Commerce & Live Impact Dashboard (Publik)**  
    Berfungsi sebagai etalase penjualan retail (*B2C*) maupun grosir (*B2B* amenitas hotel) dari produk sabun mandi batang estetis dan sabun cuci piring alami yang diproduksi secara mandiri oleh tim kami menggunakan cairan hasil fermentasi *eco-enzyme* dari limbah organik tersebut.
@@ -55,7 +55,7 @@ Aplikasi web ini memberikan dampak dan bantuan langsung kepada tiga pilar penggu
 #### 4. How will this website help them?
 
 - **Bagi Cafe & Hotel:** Sistem web mengotomatisasi pengangkutan limbah mereka melalui pengingat jadwal penjemputan digital. Setiap sampah yang disetor dikonversi otomatis oleh web menjadi poin ekonomi (*Waste Points*) yang dapat mereka gunakan sebagai voucher potongan harga untuk membeli kembali sabun dari platform. Web juga menyediakan *Live Tracker Data* dampak lingkungan untuk menaikkan *branding* bisnis hijau mereka.
-- **Bagi Kurir:** Integrasi Google Maps API langsung di browser HP kurir membantu mengarahkan jalan secara berurutan dari satu cafe ke cafe lain agar tidak membuang waktu dan BBM di kemacetan kota.
+- **Bagi Kurir:** Integrasi OpenStreetMap langsung di browser HP kurir membantu mengarahkan jalan secara berurutan dari satu cafe ke cafe lain agar tidak membuang waktu dan BBM di kemacetan kota.
 - **Bagi Konsumen Umum:** Menyediakan modul *e-commerce* modern yang memudahkan transaksi digital untuk membeli sabun hasil produksi kita.
 
 ## 4. Perbandingan dengan Aplikasi Serupa
@@ -80,7 +80,7 @@ Dengan GreenLoop, Mitra B2B tidak hanya menyetor limbah organik, tetapi juga men
 |---|---|---|
 | **Authentication, User & Base UI** | • Mengelola fitur pendaftaran akun (*register*), masuk sistem (*login*), keluar (*logout*), dan pengelolaan profil pengguna.<br>• Menerapkan pembatasan hak akses halaman berbasis peran (*Role-Based Access Control*).<br>• Membuat kerangka tampilan utama aplikasi (*base template*, navbar, footer, dan sistem navigasi utama).<br>• Menampilkan Live Impact Dashboard (grafik visual interaktif statistik total sampah terkumpul dan reduksi emisi karbon) pada halaman depan (*Home Page* / Publik). | Afiqah |
 | **Mitra & Pickup Scheduling** | • Menyediakan halaman *Dashboard* khusus untuk pengguna berstatus Mitra B2B (kafe, restoran, hotel).<br>• Fitur kalender digital jadwal penjemputan sampah organik (*Smart Pick-Up Scheduler*).<br>• Kolom pengisian estimasi volume limbah harian untuk menentukan jenis armada.<br>• *Digital Image Validation*: Mitra wajib mengunggah foto kualitas limbah kulit buah/sayur segar mereka di web. Kurir hanya akan ditugaskan berangkat jika foto tersebut sudah diverifikasi dan disetujui (*Approved*) oleh admin di sistem. Jika foto menunjukkan sampah tidak layak, pesanan ditolak secara digital sejak awal di web tanpa membuang bensin kurir.<br>• Menyediakan tabel pemantauan riwayat dan status penjemputan. | Filza |
-| **Courier & Route Management** | • Menyediakan halaman *Dashboard* khusus kurir lapangan berbasis tampilan seluler responsif (*mobile-responsive*).<br>• Mengintegrasikan Google Maps API untuk memetakan lokasi mitra yang sudah lolos verifikasi foto secara otomatis dan menampilkan rute perjalanan penjemputan paling optimal secara berurutan.<br>• Menyediakan tombol kendali kurir (Mulai Perjalanan, Selesai Pikap) dan formulir digital untuk menginput data berat bersih sampah (kg) secara *real-time* langsung di lokasi penjemputan. | Rafata |
+| **Courier & Route Management** | • Menyediakan halaman *Dashboard* khusus kurir lapangan berbasis tampilan seluler responsif (*mobile-responsive*).<br>• Mengintegrasikan OpenStreetMap untuk memetakan lokasi mitra yang sudah lolos verifikasi foto secara otomatis dan menampilkan rute perjalanan penjemputan paling optimal secara berurutan.<br>• Menyediakan tombol kendali kurir (Mulai Perjalanan, Selesai Pikap) dan formulir digital untuk menginput data berat bersih sampah (kg) secara *real-time* langsung di lokasi penjemputan. | Rafata |
 | **Waste & Reward System** | • Mengelola komputasi backend untuk pemrosesan basis data limbah organik yang masuk.<br>• Bertanggung jawab atas jalannya fungsi algoritma otomatis konversi berat sampah menjadi poin ekonomi (*Waste-to-Points System*).<br>• Mencatat riwayat perolehan poin mitra.<br>• Menyediakan modul sistem penukaran poin menjadi voucher atau kupon potongan harga belanja produk sabun di platform. | Akbar |
 | **E-Commerce** | • Mengelola seluruh alur toko online publik untuk penjualan ritel (*B2C*) maupun grosir (*B2B* untuk fasilitas/amenitas hotel).<br>• Menampilkan halaman katalog produk, detail deskripsi produk sabun premium (kemasan *aluminum foil stand pouch*), keranjang belanja (*cart*), dan halaman *checkout/order* otomatis.<br>• Mengintegrasikan gerbang pembayaran digital otomatis via Midtrans API (QRIS/E-Wallet/VA Bank).<br>• Mengintegrasikan kalkulator perhitungan biaya ongkos kirim otomatis via RajaOngkir API berdasarkan berat produk. | Fayadh |
 
@@ -95,10 +95,13 @@ Public API yang digunakan dalam aplikasi:
 
 ### Dokumentasi/API
 
-- Google Maps Direction API: https://developers.google.com/maps/documentation/directions
+- OpenStreetMap (peta dasar via Leaflet): https://www.openstreetmap.org/
+- Nominatim API (pencarian alamat dan pengisian wilayah dari titik peta): https://nominatim.org/
+- OSRM Routing API (rute dan petunjuk arah kurir): https://project-osrm.org/
+- Overpass API (data awal titik jemput di Kota Depok): https://overpass-api.de/
+- Open-Meteo API (cuaca di halaman rute kurir): https://open-meteo.com/
 - Midtrans Payment API: https://docs.midtrans.com/
 - RajaOngkir API: https://rajaongkir.com/dokumentasi
-- API Wilayah Indonesia: https://github.com/emsifa/api-wilayah-indonesia
 
 ## 7. Jenis/Peran Pengguna Aplikasi (User Role & Target User)
 
@@ -107,7 +110,7 @@ Aplikasi ini memiliki tiga jenis pengguna utama yang masing-masing memiliki akse
 | User Role | Target User | Fungsi dan Akses |
 |---|---|---|
 | **Mitra B2B (Cafe/Hotel)** | Pemilik atau pengelola cafe dan hotel yang menghasilkan limbah organik | Menjadwalkan penjemputan limbah melalui fitur *Smart Pick-Up Scheduler*, memantau riwayat penjemputan, serta mengumpulkan dan menggunakan *Waste-to-Points* sebagai reward atau voucher pembelian produk. |
-| **Kurir** | Petugas lapangan yang bertanggung jawab melakukan penjemputan limbah organik | Melihat daftar dan jadwal penjemputan, memperoleh navigasi rute melalui Google Maps API, serta mencatat berat limbah (kg) secara *real-time* setelah melakukan penjemputan. |
+| **Kurir** | Petugas lapangan yang bertanggung jawab melakukan penjemputan limbah organik | Melihat daftar dan jadwal penjemputan, memperoleh navigasi rute melalui OpenStreetMap, serta mencatat berat limbah (kg) secara *real-time* setelah melakukan penjemputan. |
 | **Konsumen / Pengunjung Publik** | Masyarakat urban, konsumen umum, dan *eco-enthusiast* | Melihat informasi dampak lingkungan melalui *Live Impact Dashboard*, menjelajahi katalog produk, membeli sabun ramah lingkungan secara B2C, serta melakukan pelacakan pesanan. |
 
 ## 8. Deployment
