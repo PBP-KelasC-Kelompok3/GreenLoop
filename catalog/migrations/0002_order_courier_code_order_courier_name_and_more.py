@@ -2,7 +2,18 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
+<<<<<<< HEAD
 from catalog.migration_compat import AddMissingFields
+=======
+from catalog.migration_operations import AddMissingFields
+
+
+def ensure_order_item_table(apps, schema_editor):
+    order_item = apps.get_model('catalog', 'OrderItem')
+    table_name = order_item._meta.db_table
+    if table_name not in schema_editor.connection.introspection.table_names():
+        schema_editor.create_model(order_item)
+>>>>>>> 3f7050a (feat: tambah fitur CRUD mitra)
 
 
 class Migration(migrations.Migration):
@@ -13,7 +24,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.SeparateDatabaseAndState(
-            database_operations=[AddMissingFields([('catalog', 'Product'), ('catalog', 'Order'), ('catalog', 'OrderItem')])],
+            database_operations=[AddMissingFields([('catalog', 'Product'), ('catalog', 'Order')])],
             state_operations=[
         migrations.AddField(
             model_name='order',
@@ -113,4 +124,5 @@ class Migration(migrations.Migration):
         ),
             ],
         ),
+        migrations.RunPython(ensure_order_item_table, migrations.RunPython.noop),
     ]
