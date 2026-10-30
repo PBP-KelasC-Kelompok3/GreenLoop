@@ -18,15 +18,18 @@ GreenLoop adalah sebuah platform aplikasi web terintegrasi berbasis ekonomi sirk
 
 Platform ini beroperasi dengan memfokuskan layanan awal pada satu wilayah kota percontohan (*pilot project*) berskala mikro yang terdata menyumbang volume limbah organik terbesar.
 
-Sistem aplikasi web ini bekerja menggunakan satu basis data terpusat (*centralized database*) yang membagi hak akses ke dalam tiga modul dashboard interaktif:
+Sistem aplikasi web ini bekerja menggunakan satu basis data terpusat (*centralized database*) dengan halaman dan akses yang disesuaikan untuk Mitra, Kurir, Admin, Konsumen, dan pengunjung publik:
 
-1. **Dashboard Mitra B2B (Cafe/Hotel)**  
+1. **Dashboard Mitra B2B (Cafe/Hotel)**
    Menyediakan fitur *Smart Pick-Up Scheduler* untuk menjadwalkan penjemputan limbah secara digital serta melacak akumulasi poin reward (*Waste-to-Points*).
 
-2. **Dashboard Kurir (Mobile-Responsive)**  
+2. **Dashboard Kurir (Mobile-Responsive)**
    Terintegrasi langsung dengan OpenStreetMap untuk menyajikan navigasi rute perjalanan penjemputan paling optimal di wilayah operasional guna efisiensi bahan bakar, sekaligus menyediakan form input berat sampah (kg) secara *real-time* di lapangan.
 
-3. **E-Commerce & Live Impact Dashboard (Publik)**  
+3. **Dashboard Admin**
+   Mengelola verifikasi pickup dan kurir serta administrasi katalog produk dan voucher.
+
+4. **E-Commerce & Live Impact Dashboard (Publik)**
    Berfungsi sebagai etalase penjualan retail (*B2C*) maupun grosir (*B2B* amenitas hotel) dari produk sabun mandi batang estetis dan sabun cuci piring alami yang diproduksi secara mandiri oleh tim kami menggunakan cairan hasil fermentasi *eco-enzyme* dari limbah organik tersebut.
 
    Halaman utama web juga menampilkan grafik dinamis statistik riil jumlah sampah yang berhasil diselamatkan demi transparansi dampak lingkungan.
@@ -86,32 +89,36 @@ Dengan GreenLoop, Mitra B2B tidak hanya menyetor limbah organik, tetapi juga men
 
 ## 6. Public API
 
-Public API yang digunakan dalam aplikasi:
+Layanan eksternal yang benar-benar dipanggil aplikasi:
 
-- **Google Maps Direction API** - Menyajikan navigasi rute penjemputan paling optimal (*route optimization*) bagi kurir dari satu lokasi mitra ke lokasi lainnya guna efisiensi waktu dan bahan bakar, serta mengubah koordinat peta menjadi alamat presisi.
+- **OpenStreetMap tile server** - Menampilkan peta dasar dan tile peta pada halaman lokasi.
+- **Nominatim** - Mencari lokasi dan mengubah koordinat menjadi alamat/wilayah pada profil mitra.
+- **OSRM** - Menghitung rute jalan dan urutan perjalanan kurir; endpoint bawaan yang dipakai tercantum di `courier/maps.py`.
+- **Open-Meteo** - Menampilkan prakiraan cuaca untuk halaman rute kurir.
 - **Midtrans Payment API (Sandbox)** - Memfasilitasi proses transaksi pembayaran digital secara otomatis pada modul E-Commerce (B2C & B2B) menggunakan berbagai metode seperti QRIS, Virtual Account, dan Bank Transfer.
-- **RajaOngkir API** - Mengalkulasi estimasi ongkos kirim produk sabun eco-enzyme dari etalase e-commerce ke lokasi pembeli secara otomatis berdasarkan jarak dan pilihan kurir ekspedisi.
-- **API Wilayah Indonesia** - Menyediakan data administratif wilayah Indonesia (Provinsi, Kota/Kabupaten, Kecamatan, Kelurahan) untuk memvalidasi area pendaftaran Mitra B2B agar berada dalam jangkauan operasional *pilot project*.
+- **RajaOngkir Komerce API** - Menghitung ongkos kirim checkout berdasarkan tujuan, berat barang, dan kurir yang dikonfigurasi.
+
+Data polygon Kota Depok dibundel pada `courier/depok_boundary.json` dan diturunkan dari data batas administrasi WADMKK edisi September 2023 milik BIG ([sumber layanan BIG](https://geoservices.big.go.id/rbi/rest/services/Hosted/Wilayah_Administrasi_Kabupaten__Kota/FeatureServer/0)). Data pickup dan berat aktual berasal dari aktivitas mitra/kurir di aplikasi. Katalog voucher awal dibuat oleh migration `waste_reward/0001_initial.py`. Repo ini tidak mengimpor dataset sampah dari API eksternal atau menggunakan Overpass API.
 
 ### Dokumentasi/API
 
-- OpenStreetMap (peta dasar via Leaflet): https://www.openstreetmap.org/
-- Nominatim API (pencarian alamat dan pengisian wilayah dari titik peta): https://nominatim.org/
-- OSRM Routing API (rute dan petunjuk arah kurir): https://project-osrm.org/
-- Overpass API (data awal titik jemput di Kota Depok): https://overpass-api.de/
-- Open-Meteo API (cuaca di halaman rute kurir): https://open-meteo.com/
+- OpenStreetMap: https://www.openstreetmap.org/
+- Nominatim: https://nominatim.org/
+- OSRM: https://project-osrm.org/
+- Open-Meteo: https://open-meteo.com/
 - Midtrans Payment API: https://docs.midtrans.com/
 - RajaOngkir API: https://rajaongkir.com/dokumentasi
 
 ## 7. Jenis/Peran Pengguna Aplikasi (User Role & Target User)
 
-Aplikasi ini memiliki tiga jenis pengguna utama yang masing-masing memiliki akses dan fungsi berbeda sesuai dengan kebutuhan operasional platform.
+Aplikasi ini memiliki peran Konsumen/Pengunjung, Mitra B2B, Kurir, dan Admin. Hak akses dibatasi sesuai kebutuhan masing-masing peran.
 
 | User Role | Target User | Fungsi dan Akses |
 |---|---|---|
 | **Mitra B2B (Cafe/Hotel)** | Pemilik atau pengelola cafe dan hotel yang menghasilkan limbah organik | Menjadwalkan penjemputan limbah melalui fitur *Smart Pick-Up Scheduler*, memantau riwayat penjemputan, serta mengumpulkan dan menggunakan *Waste-to-Points* sebagai reward atau voucher pembelian produk. |
 | **Kurir** | Petugas lapangan yang bertanggung jawab melakukan penjemputan limbah organik | Melihat daftar dan jadwal penjemputan, memperoleh navigasi rute melalui OpenStreetMap, serta mencatat berat limbah (kg) secara *real-time* setelah melakukan penjemputan. |
 | **Konsumen / Pengunjung Publik** | Masyarakat urban, konsumen umum, dan *eco-enthusiast* | Melihat informasi dampak lingkungan melalui *Live Impact Dashboard*, menjelajahi katalog produk, membeli sabun ramah lingkungan secara B2C, serta melakukan pelacakan pesanan. |
+| **Admin GreenLoop** | Petugas yang mengelola operasional aplikasi | Memverifikasi pickup dan kurir, mengelola katalog/voucher, serta meninjau data operasional melalui dashboard admin. |
 
 ## 8. Deployment
 
@@ -122,3 +129,44 @@ Untuk Checkpoint 1, deployment menampilkan Django rocket page.
 ## 9. Figma
 
 Figma: https://www.figma.com/design/dbY780FG3lgq1ffLdyuBm3/Untitled?node-id=0-1&p=f
+
+## 10. Menjalankan aplikasi secara lokal
+
+Gunakan Python yang kompatibel dengan Django 5.2. Dari direktori root proyek:
+
+```powershell
+py -3 -m venv env
+.\env\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+Buka `http://127.0.0.1:8000/`. Database lokal memakai SQLite. `createsuperuser` membuat akun administrator Django; alur pengujian peran Mitra/Kurir/Konsumen memerlukan akun dengan profil dan role yang sesuai.
+
+Integrasi checkout memerlukan konfigurasi `MIDTRANS_CLIENT_KEY`, `MIDTRANS_SERVER_KEY`, `MIDTRANS_IS_PRODUCTION`, `RAJAONGKIR_API_KEY`, dan bila perlu `RAJAONGKIR_ORIGIN_ID`, `RAJAONGKIR_BASE_URL`, serta `RAJAONGKIR_COURIERS` di file `.env` lokal. Jangan commit `.env` atau kredensial API. Kunci pembayaran dan API eksternal tidak diperlukan untuk membuka dashboard Waste & Reward.
+
+Untuk PostgreSQL, setting memilih database produksi melalui `PRODUCTION=True` dan variabel `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, serta `SCHEMA`. Konfigurasi lokal di `greenloop/settings.py` masih memakai `DEBUG=True` dan development secret key; konfigurasi tersebut perlu diamankan sebelum deployment baru.
+
+Tes proyek dijalankan dengan `python manage.py test`; tes khusus Waste & Reward dengan `python manage.py test waste_reward`.
+
+## 11. Pengungkapan penggunaan AI
+
+OpenAI Codex (GPT-6) digunakan sebagai asisten coding pada pengerjaan Waste & Reward ini. AI membantu meninjau struktur modul, mengusulkan dan mengedit implementasi, menyusun skenario tes, menjalankan tes/coverage, serta merapikan dokumentasi. Strategi prompt yang digunakan adalah memberikan rubric sebagai kriteria, meminta pemeriksaan kode yang sudah ada, lalu mengerjakan perubahan per area dan memverifikasinya dengan tes.
+
+AI dapat salah memahami alur bisnis atau mengusulkan perubahan yang tidak cocok dengan konfigurasi produksi. Review dan tes menemukan beberapa hal yang kemudian dikoreksi: sinkronisasi poin pada riwayat pickup, pickup kecil yang dibulatkan menjadi 0 poin, progres Platinum setelah penukaran, dan pemulihan penghitung rate limit saat cache counter hilang. Tes mencakup backend dan respons endpoint; tampilan AJAX belum diverifikasi lewat browser otomatis. Pemanggilan layanan eksternal dan konfigurasi deployment juga bergantung pada kredensial serta kondisi layanan di luar repo. Karena itu hasil AI tetap perlu ditinjau dan demo manual sebelum rilis.
+
+Screenshot di bawah diambil dari aplikasi lokal yang berjalan dengan database demo terisolasi. AI membantu menjalankan capture browser, tetapi gambar adalah hasil render UI aplikasi, bukan gambar atau mockup yang dihasilkan AI.
+
+## 12. Tampilan Waste & Reward
+
+Data pengguna, saldo, dan kode voucher pada screenshot adalah data demo, bukan data produksi.
+
+### Dashboard Mitra
+
+![Dashboard Waste & Reward dengan saldo, katalog voucher, riwayat poin, dan voucher milik Mitra](docs/images/waste-reward-dashboard.png)
+
+### Pengelolaan katalog voucher
+
+![Django Admin menampilkan katalog Reward Voucher dan jumlah penukaran](docs/images/waste-reward-admin-vouchers.png)
