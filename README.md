@@ -199,7 +199,27 @@ Meskipun sangat membantu, AI sempat keliru memahami beberapa aturan bisnis lokal
 
 Pengujian dilakukan pada alur endpoint, fungsi validasi, dan integrasi elemen HTMX di tingkat lokal. Namun, karena alur penjemputan dan verifikasi juga bergantung pada skenario data riil dan perilaku pengguna di browser, uji coba langsung (manual testing) secara end-to-end tetap wajib dilakukan sebelum aplikasi di-deploy secara penuh ke PWS.
 
-## 15. Banin Shula Afiqah Aradena - Authentication, User & Base UI
+## 15. Modul Kurir & Route Management — GreenLoop (Rafata Zahi Cherie)
+
+Modul Kurir menangani proses operasional setelah pengajuan pickup mitra disetujui. Kurir yang baru mendaftar tidak dapat langsung menggunakan dashboard karena akun dan profilnya harus diverifikasi admin terlebih dahulu. Setelah aktif, kurir dapat mengatur status bertugas dan melihat daftar pickup yang sudah ditugaskan kepadanya.
+
+Pada halaman rute hari ini, sistem mengambil jadwal pickup yang sesuai dengan tanggal, status, dan assignment kurir. Setiap titik menampilkan nama mitra, alamat, koordinat, estimasi berat, slot waktu, serta jenis armada. Data koordinat profil mitra digunakan untuk menampilkan marker pada peta dan menghitung urutan perjalanan menggunakan OpenStreetMap serta OSRM. Jika lokasi perangkat tersedia, posisi kurir dapat digunakan sebagai titik awal navigasi.
+
+Alur pickup dibuat bertahap melalui tombol mulai perjalanan dan selesai pickup. Saat kurir memulai perjalanan, sistem mencatat titik yang sedang dituju sebagai pickup yang sedang berjalan. Setelah sampai di lokasi, kurir dapat memasukkan berat aktual limbah melalui validasi input berat dalam satuan kilogram. Ketika pickup selesai, status, waktu penyelesaian, berat aktual, dan catatan disimpan ke riwayat pickup serta dapat digunakan oleh modul Waste & Reward untuk menghitung poin mitra.
+
+Selain alur utama tersebut, modul ini menyediakan halaman riwayat untuk melihat pickup yang telah selesai, dibatalkan, atau masih berjalan. Pembatasan berbasis role memastikan kurir hanya dapat mengakses assignment, rute, dan catatan berat yang berkaitan dengan akunnya sendiri.
+
+## 16. Penggunaan AI dalam Pengembangan Modul Kurir
+
+Saat mengerjakan Modul Kurir dan Route Management, saya menggunakan OpenAI Codex dan Claude untuk membantu membuat struktur kode dan alur fitur. AI membantu menghubungkan data mitra dengan kurir, membuat halaman rute, mengatur pickup, mencatat berat sampah, dan menampilkan riwayat penjemputan.
+
+AI juga membantu memberikan beberapa ide untuk tampilan dan alur kerja kurir. Ide tersebut kemudian saya sesuaikan dengan modul Mitra, Admin, dan Waste & Reward yang sudah ada.
+
+Namun, hasil dari AI tidak selalu langsung sesuai dengan kebutuhan proyek. Ada beberapa bagian yang masih terlalu umum atau tidak sesuai dengan struktur kode yang digunakan. Karena itu, hasilnya tetap saya cek kembali dan saya uji sebelum digunakan.
+
+Contohnya pada pembagian pickup, hasil awal AI membagikan lima lokasi mitra secara acak tanpa mengecek apakah ada tujuan yang sama. Logic tersebut kemudian saya perbaiki agar pickup hanya diberikan kepada kurir berdasarkan mitra yang mengajukan, tidak terjadi tujuan yang sama antar-kurir, dan pembagiannya cukup merata secara bergiliran.
+
+## 17. Banin Shula Afiqah Aradena - Authentication, User & Base UI
 
 Dalam pengerjaan modul Authentication, User, dan Base UI ini, OpenAI ChatGPT dan OpenAI Codex digunakan sebagai coding assistant dan rekan diskusi. AI membantu dalam merancang dan meninjau struktur fitur authentication, pengelolaan user dan role, base template, navbar/sidebar, serta integrasi tampilan antar-modul. AI juga digunakan untuk membantu debugging error pada environment dan dependency, meninjau perubahan kode melalui git diff, serta membantu pengecekan konfigurasi deployment dan CI/CD.
 
