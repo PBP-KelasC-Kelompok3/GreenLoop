@@ -1,0 +1,35 @@
+name: Push to PWS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Push to PWS
+        env:
+          PWS_URL: ${{ secrets.PWS_URL }}
+        run: |
+          current_branch=$(git branch --show-current)
+
+          if push_output=$(git push "$PWS_URL" "$current_branch:master" 2>&1); then
+            echo "Push successful with output:"
+            echo "$push_output"
+          else
+            echo "Push failed with output:"
+            echo "$push_output"
+            exit 1
+          fi
