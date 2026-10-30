@@ -53,7 +53,7 @@
 
         <section class="voucher-section" aria-labelledby="voucher-heading">
             <div class="section-heading-row">
-                <div><h2 id="voucher-heading">Tukar Poin jadi Voucher</h2><p>Pilih voucher untuk digunakan saat belanja produk GreenLoop.</p></div>
+                <div><h2 id="voucher-heading">Tukar Poin jadi Voucher</h2><p>Pilih voucher, lalu gunakan di checkout katalog produk.</p></div>
                 <span class="reward-section-note">Poin terpotong setelah penukaran berhasil</span>
             </div>
             <div class="voucher-grid">
@@ -101,7 +101,7 @@
             </div>
 
             <aside class="my-vouchers" aria-labelledby="my-vouchers-heading">
-                <div class="my-vouchers-heading"><div><h2 id="my-vouchers-heading">Voucher Saya</h2><p>Voucher yang sudah ditukar.</p></div><span>{{ available_voucher_count }} aktif</span></div>
+                <div class="my-vouchers-heading"><div><h2 id="my-vouchers-heading">Voucher Saya</h2><p>Masukkan kode ini di checkout.</p></div><span>{{ available_voucher_count }} aktif</span></div>
                 {% for owned in owned_vouchers %}
                     <article class="owned-voucher{% if not owned.available %} owned-voucher-used{% endif %}">
                         <strong>{{ owned.voucher.title }} {{ owned.voucher.value_label }}</strong>
@@ -111,6 +111,7 @@
                 {% empty %}
                     <p class="owned-empty">Voucher yang kamu tukar akan muncul di sini.</p>
                 {% endfor %}
+                <a class="shop-vouchers-link" href="{% url 'katalog:katalog_page' %}">Belanja produk GreenLoop</a>
             </aside>
         </section>
     </div>

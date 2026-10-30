@@ -8,7 +8,10 @@ urlpatterns = [
     path('api/products/', views.get_products, name='get_products'),
     path('api/products/add/', views.add_product, name='add_product'),
     path('api/products/edit/<int:id>/', views.edit_product, name='edit_product'),
+    path('api/destinations/', views.find_destinations, name='find_destinations'),
     path('api/shipping/calculate/', views.calculate_shipping, name='calculate_shipping'),
     path('api/transaction/create/', views.create_transaction, name='create_transaction'),
+    path('api/transaction/confirm/', views.confirm_payment, name='confirm_payment'),
+    path('api/transaction/notification/', views.payment_notification, name='payment_notification'),
     path('api/orders/', views.get_orders, name='get_orders'),
 ]

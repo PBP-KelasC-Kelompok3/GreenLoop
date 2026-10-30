@@ -5,6 +5,7 @@
         </div>
         
         <form id="productFormElement">
+            {% csrf_token %}
             <input type="hidden" id="formProductId">
             <!-- Form otomatis dirender dari forms.py -->
             {{ form.as_p }}

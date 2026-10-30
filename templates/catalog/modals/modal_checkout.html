@@ -1,17 +1,48 @@
-<div id="checkoutModal" class="modal">
+<div id="checkoutModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
     <div class="modal-content">
-        <div class="modal-header">
-            <h3>Detail Pengiriman</h3>
-        </div>
-        <p style="font-size: 0.9em; color: #666; font-weight: normal;">Silakan masukkan detail tujuan pengiriman Anda untuk kalkulasi ongkos kirim otomatis via RajaOngkir.</p>
-        
+        <div class="modal-header"><h3 id="checkoutTitle">Checkout GreenLoop</h3></div>
         <input type="hidden" id="checkoutProductId">
-        <p>ID Kota Tujuan (RajaOngkir)</p>
-        <input type="number" id="destinationCityId" class="form-input" placeholder="Contoh: 114 (Untuk Denpasar)">
-        
-        <div style="text-align: right; margin-top: 15px;">
-            <button class="btn btn-danger" onclick="closeModal('checkoutModal')" style="margin-right: 5px;">Batal</button>
-            <button class="btn" onclick="processCheckout()">Cek Ongkir & Bayar</button>
+        <input type="hidden" id="checkoutWeightGrams">
+
+        <label for="checkoutQuantity">Jumlah</label>
+        <input type="number" min="1" max="50" value="1" id="checkoutQuantity" class="form-input">
+
+        <label for="recipientName">Nama penerima</label>
+        <input type="text" maxlength="100" id="recipientName" class="form-input" autocomplete="name">
+
+        <label for="recipientPhone">Nomor telepon</label>
+        <input type="tel" maxlength="20" id="recipientPhone" class="form-input" autocomplete="tel">
+
+        <label for="recipientAddress">Alamat lengkap</label>
+        <textarea id="recipientAddress" class="form-input" rows="3" maxlength="2000" autocomplete="street-address"></textarea>
+
+        <label for="destinationSearch">Kelurahan, kecamatan, atau kode pos</label>
+        <input type="search" id="destinationSearch" class="form-input" placeholder="Ketik minimal 3 karakter">
+        <select id="destinationId" class="form-input" aria-label="Pilih tujuan pengiriman" disabled>
+            <option value="">Cari dan pilih tujuan pengiriman</option>
+        </select>
+
+        <button class="btn" type="button" onclick="calculateShippingOptions()">Hitung opsi pengiriman</button>
+        <label for="shippingOption">Kurir dan layanan</label>
+        <select id="shippingOption" class="form-input" disabled>
+            <option value="">Pilih opsi pengiriman</option>
+        </select>
+
+        {% if is_mitra %}
+        <label for="checkoutVoucher">Voucher Waste &amp; Reward (opsional)</label>
+        <select id="checkoutVoucher" class="form-input">
+            <option value="">Tanpa voucher</option>
+            {% for owned in owned_vouchers %}
+            <option value="{{ owned.code }}">{{ owned.voucher.title }} · {{ owned.voucher.value_label }} · {{ owned.code }}</option>
+            {% endfor %}
+        </select>
+        <small>Voucher yang ditukar dengan Waste Points digunakan saat pesanan dibuat.</small>
+        {% endif %}
+
+        <p id="checkoutError" role="status" aria-live="polite"></p>
+        <div class="checkout-actions">
+            <button class="btn btn-danger" type="button" onclick="closeModal('checkoutModal')">Batal</button>
+            <button class="btn" type="button" onclick="processCheckout()">Lanjut ke pembayaran</button>
         </div>
     </div>
 </div>
