@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
 from accounts.models import UserProfile
-from courier.models import CourierProfile, PickupRecord, WeightLog
+from courier.models import CourierAssignment, CourierProfile, PickupRecord, WeightLog
 from scheduling.models import MitraProfile, PickupSchedule
 from waste_reward.models import RewardVoucher
 
@@ -108,7 +108,6 @@ class Command(BaseCommand):
                 notes=f"[SEED] Jadwal demo mitra {index:02d}",
                 defaults={
                     "pickup_date": today,
-                    "courier": courier,
                     "waste_type": [
                         "ORGANIC_FOOD",
                         "COFFEE_GROUNDS",
@@ -122,6 +121,10 @@ class Command(BaseCommand):
                     "actual_weight": actual_weight,
                     "points": int(actual_weight * 5) if actual_weight else 0,
                 },
+            )
+            CourierAssignment.objects.update_or_create(
+                pickup_schedule=schedule,
+                defaults={"courier": courier},
             )
             schedules.append((schedule, courier, mitra, actual_weight))
 
