@@ -61,12 +61,6 @@
                     </a>
                 </li>
 
-                {% if not user.is_authenticated or user.userprofile.role == 'consumer' or user.userprofile.role == 'mitra' %}
-                    <li>
-                        <a href="{% url 'katalog:katalog_page' %}">Katalog</a>
-                    </li>
-                {% endif %}
-
                 <li>
                     <a data-nav-section="impact" href="{% url 'home' %}#impact">
                         Dampak
@@ -79,35 +73,38 @@
                     </a>
                 </li>
 
+                {% if not user.is_authenticated or user.userprofile.role != 'mitra' and user.userprofile.role != 'admin' %}
+                    <li class="nav-catalog-item">
+                        <a class="nav-catalog-link{% if request.resolver_match.url_name == 'katalog_page' %} nav-current{% endif %}"
+                           href="{% url 'katalog:katalog_page' %}"
+                           {% if request.resolver_match.url_name == 'katalog_page' %}aria-current="page"{% endif %}>
+                            Katalog
+                        </a>
+                    </li>
+                {% endif %}
+
                 {% if user.is_authenticated %}
 
-                    {% if user.is_superuser or user.is_staff or user.userprofile.role == 'admin' %}
-                        <li><a data-transition-target="admin-dashboard" href="{% url 'admin_dashboard' %}">Dashboard Admin</a></li>
-                    {% elif user.userprofile.role == 'consumer' %}
-
-                        <li>
-                            <a href="{% url 'coming_soon' 'rewards' %}">
-                                Rewards
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="{% url 'katalog:orders' %}">Lacak Pesanan</a>
-                        </li>
-
-                    {% elif user.userprofile.role == 'mitra' %}
+                    {% if user.userprofile.role == 'mitra' %}
 
                         <li>
                             <a data-nav-section="mitra-dashboard" data-transition-target="mitra-dashboard" href="{% url 'mitra_dashboard' %}"{% if request.resolver_match.url_name == 'mitra_dashboard' %} class="nav-current" aria-current="page"{% endif %}>
                                 Dashboard Mitra
                             </a>
                         </li>
-
                     {% elif user.userprofile.role == 'courier' %}
 
                         <li>
                             <a data-transition-target="courier-dashboard" href="{% url 'courier:show_dashboard' %}">
                                 Dashboard Courier
+                            </a>
+                        </li>
+
+                    {% elif user.userprofile.role == 'admin' %}
+
+                        <li>
+                            <a data-transition-target="admin-dashboard" href="{% url 'admin_dashboard' %}">
+                                Dashboard Admin
                             </a>
                         </li>
 
@@ -197,8 +194,9 @@
 
             <div class="footer-col">
                 <h3>Produk</h3>
-                <a href="{% url 'coming_soon' 'katalog' %}">Katalog</a>
-                <a href="{% url 'coming_soon' 'lacak-pesanan' %}">Lacak Pesanan</a>
+                {% if not user.is_authenticated or user.userprofile.role != 'mitra' and user.userprofile.role != 'admin' %}
+                    <a href="{% url 'katalog:katalog_page' %}">Katalog &amp; Pesanan</a>
+                {% endif %}
             </div>
 
             <div class="footer-col">
@@ -209,7 +207,9 @@
                     <a href="{% url 'register' %}?role=mitra">Daftar Mitra</a>
                 {% endif %}
                 <a href="{% url 'coming_soon' 'pickup' %}">Smart Pick-Up</a>
-                <a href="{% url 'coming_soon' 'rewards' %}">Waste Points</a>
+                {% if not user.is_authenticated or user.userprofile.role != 'mitra' %}
+                    <a href="{% url 'home' %}#cara-kerja">Waste Points</a>
+                {% endif %}
             </div>
 
             <div class="footer-col">
@@ -233,7 +233,6 @@
 {% endblock footer %}
 
 <script src="{% static 'js/page_transitions.js' %}"></script>
-{% block extra_js %}{% endblock extra_js %}
 
 </body>
 </html>

@@ -14,13 +14,92 @@
   <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=5">
   <link rel="stylesheet" href="{% static 'css/page_transitions.css' %}">
   <link rel="stylesheet" href="{% static 'css/sidebar_shared.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard_roles.css' %}">
 </head>
 
 <body data-page="admin-dashboard">
 
 <div class="d-flex min-vh-100 admin-page-shell">
 
-  {% include 'admin/_sidebar.html' %}
+  <!-- SIDEBAR DESKTOP (Sembunyi di Mobile) -->
+  <aside class="sidebar-b2b gl-sidebar d-none d-lg-flex">
+    <a class="brand" href="{% url 'home' %}" data-transition-target="home" aria-label="Kembali ke beranda">
+      <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" onerror="this.style.display='none';">
+    </a>
+    <span class="role-pill">Admin</span>
+    <p class="menu-label">Menu</p>
+    <nav class="menu">
+      <a href="{% url 'home' %}" class="menu-item" data-transition-target="home">
+        <i class="bi bi-house"></i><span>Beranda Utama</span>
+      </a>
+      <a href="{% url 'admin_dashboard' %}" class="menu-item active">
+        <i class="bi bi-shield-check"></i><span>Verifikasi Foto</span>
+      </a>
+      <a href="{% url 'courier:admin_verify_couriers' %}" class="menu-item">
+        <i class="bi bi-truck"></i><span>Verifikasi Kurir</span>
+      </a>
+      <a href="{% url 'katalog:katalog_page' %}" class="menu-item">
+        <i class="bi bi-shop"></i><span>Katalog Produk</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="pilot-card">
+        <p class="pilot-title"><i class="bi bi-geo-alt-fill"></i> Area Pilot: Kota Depok</p>
+        <p>Layanan penjemputan khusus wilayah Kota Depok.</p>
+      </div>
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="logout">
+            <i class="bi bi-box-arrow-right"></i><span>Keluar</span>
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- OFFCANVAS SIDEBAR (Muncul saat Klik Hamburger Menu di HP/Mobile) -->
+  <div class="offcanvas offcanvas-start offcanvas-admin" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+    <div class="offcanvas-header border-bottom">
+      <a href="{% url 'home' %}" data-transition-target="home" aria-label="Kembali ke beranda">
+        <img src="{% static 'img/Logo_Lockup.png' %}" alt="GreenLoop" class="sidebar-logo" onerror="this.style.display='none';">
+      </a>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body admin-mobile-sidebar gl-sidebar">
+      <span class="role-pill">Admin</span>
+      <p class="menu-label">Menu</p>
+      <nav class="menu">
+        <a href="{% url 'home' %}" class="menu-item" data-transition-target="home">
+          <i class="bi bi-house"></i><span>Beranda Utama</span>
+        </a>
+        <a href="{% url 'admin_dashboard' %}" class="menu-item active">
+          <i class="bi bi-shield-check"></i><span>Verifikasi Foto</span>
+        </a>
+        <a href="{% url 'courier:admin_verify_couriers' %}" class="menu-item">
+          <i class="bi bi-truck"></i><span>Verifikasi Kurir</span>
+        </a>
+        <a href="{% url 'katalog:katalog_page' %}" class="menu-item">
+          <i class="bi bi-shop"></i><span>Katalog Produk</span>
+        </a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="pilot-card">
+          <p class="pilot-title"><i class="bi bi-geo-alt-fill"></i> Area Pilot: Kota Depok</p>
+          <p>Layanan penjemputan khusus wilayah Kota Depok.</p>
+        </div>
+        {% if user.is_authenticated %}
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="logout">
+              <i class="bi bi-box-arrow-right"></i><span>Keluar</span>
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 
   <!-- AREA UTAMA HALAMAN -->
   <main class="admin-main flex-grow-1 overflow-auto">
@@ -50,6 +129,7 @@
     {% endif %}
 
     <div class="mb-4">
+      <p class="role-dashboard-kicker role-dashboard-kicker--admin mb-1">Dashboard Admin</p>
       <h3 class="fw-bold text-dark mb-1">Verifikasi Foto Limbah</h3>
       <p class="text-muted small mb-0">Setujui foto yang layak agar kurir dapat ditugaskan. Tolak bila limbah tidak sesuai.</p>
     </div>

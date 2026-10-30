@@ -14,6 +14,7 @@
   <!-- base dulu, baru css halaman supaya css halaman bisa menimpa -->
   <link rel="stylesheet" href="{% static 'css/mitra_base.css' %}">
   <link rel="stylesheet" href="{% static 'css/page_transitions.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard_roles.css' %}">
   <link rel="stylesheet" href="{% static 'css/mitra_dashboard.css' %}">
   <link rel="stylesheet" href="{% static 'css/sidebar_shared.css' %}">
 
@@ -115,7 +116,7 @@
       <!-- Judul halaman -->
       <section class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div>
-          <h1 class="page-title">
+          <h1 class="page-title role-dashboard-title role-dashboard-title--mitra">
             {% block header_title %}<span id="hero-greet">Halo</span>, {{ request.user.profile.business_name|default:request.user.username }}{% endblock %}
           </h1>
           <p class="page-subtitle">
