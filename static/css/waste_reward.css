@@ -70,6 +70,16 @@
 .reward-message { margin: 0; padding: 10px 14px; border-radius: 8px; }
 .reward-message.success { color: #175b31; background: #e3f3d4; }
 .reward-message.error { color: #8a2525; background: #fde8e6; }
+.reward-ajax-status { margin: 0 0 14px; padding: 11px 14px; border-radius: 9px; color: #175b31; background: #e3f3d4; }
+.reward-ajax-status.error { color: #8a2525; background: #fde8e6; }
+.reward-history-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.reward-history-filters select,
+.reward-history-filters button { min-height: 36px; padding: 6px 10px; border: 1px solid var(--reward-border); border-radius: 8px; color: var(--reward-forest); background: #fff; font: inherit; font-size: 11px; }
+.reward-history-filters button { border-color: var(--reward-green); color: #fff; background: var(--reward-green); cursor: pointer; }
+.reward-pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 4px; color: var(--reward-muted); font-size: 12px; }
+.reward-pagination a { color: var(--reward-green); font-weight: 700; text-decoration: none; }
+.reward-pagination a:hover { text-decoration: underline; }
+.voucher-action-row form[aria-busy="true"] { opacity: .7; }
 
 .balance-rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .balance-card,
@@ -178,6 +188,7 @@
     .reward-search { width: 100%; }
     .reward-bottom-grid { grid-template-columns: 1fr; }
     .section-heading-row { align-items: flex-start; flex-direction: column; gap: 5px; }
+    .reward-history-filters { justify-content: flex-start; }
 }
 
 @media (max-width: 480px) {

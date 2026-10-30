@@ -9,6 +9,9 @@ Modul ini mengelola poin milik mitra B2B, katalog voucher, penukaran poin, dan p
 - Konversi saat ini adalah 5 poin untuk setiap kilogram. Berat dibulatkan ke bawah sampai satu angka desimal sebelum dihitung.
 - Kirim referensi pickup yang stabil dan unik sebagai `pickup_reference`. Pemanggilan ulang dengan referensi milik mitra yang sama tidak menggandakan poin.
 - Saldo dihitung dari transaksi poin, dan riwayatnya tersimpan di `RewardTransaction`.
+- Poin pada riwayat pickup disalin dari ledger setelah pemberian poin berhasil; ledger tetap menjadi sumber saldo utama.
+- Voucher katalog diarsipkan, bukan dihapus permanen, agar riwayat penukaran tetap utuh.
+- `RewardTransaction` dan `UserVoucher` bersifat read-only di admin. Perubahan saldo harus lewat service agar jejak audit dan saldo tidak rusak.
 
 Contoh pemanggilan setelah status pickup berubah menjadi terverifikasi:
 
@@ -22,7 +25,7 @@ Pemanggilan dilakukan sekali ketika pickup mencapai status terverifikasi. Gunaka
 
 ## Penukaran voucher
 
-`redeem_voucher(user, voucher_id)` memvalidasi role, status voucher, dan saldo. Jika berhasil, layanan membuat `UserVoucher` dan transaksi debit poin dalam satu transaksi database. View dashboard dan endpoint penukaran tersedia melalui namespace `waste_reward`.
+`redeem_voucher(user, voucher_id)` memvalidasi role, status voucher, dan saldo. Jika berhasil, layanan membuat `UserVoucher` dan transaksi debit poin dalam satu transaksi database. View dashboard dan endpoint penukaran tersedia melalui namespace `waste_reward`. Dashboard menyediakan pencarian, filter jenis/periode, dan paginasi riwayat. Penukaran berjalan lewat AJAX dengan umpan balik optimistis; form POST tetap tersedia sebagai fallback.
 
 ## Integrasi katalog dan checkout
 
@@ -55,4 +58,12 @@ Jalankan tes modul dari direktori root proyek:
 
 ```powershell
 .\env\Scripts\python.exe manage.py test waste_reward
+```
+
+Ukur coverage modul (pasang `coverage` di virtualenv lokal terlebih dahulu):
+
+```powershell
+python -m pip install coverage
+python -m coverage run --source=waste_reward manage.py test waste_reward
+python -m coverage report -m
 ```

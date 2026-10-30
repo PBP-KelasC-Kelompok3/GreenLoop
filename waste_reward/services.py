@@ -42,14 +42,15 @@ def award_verified_pickup(user, kilograms, pickup_reference):
     """Award points for a verified pickup; a stable reference makes retries safe."""
     _require_mitra(user)
     try:
-        weight = Decimal(str(kilograms)).quantize(
+        raw_weight = Decimal(str(kilograms))
+        weight = raw_weight.quantize(
             Decimal('0.1'),
             rounding=ROUND_DOWN,
         )
     except (InvalidOperation, TypeError, ValueError) as exc:
         raise ValueError('Berat limbah harus berupa angka yang valid.') from exc
 
-    if not weight.is_finite() or weight <= 0:
+    if not raw_weight.is_finite() or raw_weight <= 0:
         raise ValueError('Berat limbah harus lebih dari 0 kg.')
     if not pickup_reference:
         raise ValueError('Referensi penjemputan wajib diisi.')

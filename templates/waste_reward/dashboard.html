@@ -22,18 +22,18 @@
             <article class="balance-card">
                 <img class="balance-decoration" src="{% static 'img/waste_reward/dot_rewards.svg' %}" alt="">
                 <span class="balance-label">Saldo Waste Points</span>
-                <span class="level-badge">Level {{ level }}</span>
-                <div class="balance-total"><strong>{{ balance }}</strong><span>poin</span></div>
+                <span id="reward-level-badge" class="level-badge">Level {{ level }}</span>
+                <div class="balance-total"><strong id="reward-balance" data-value="{{ balance_value }}">{{ balance }}</strong><span>poin</span></div>
                 {% if level == 'Platinum' %}
-                    <div class="level-progress-copy"><span>Level tertinggi</span><span>Platinum</span></div>
+                    <div id="reward-level-copy" class="level-progress-copy"><span>Level tertinggi</span><span>Platinum</span></div>
                 {% else %}
-                    <div class="level-progress-copy">
+                    <div id="reward-level-copy" class="level-progress-copy">
                         <span>Menuju {{ next_level }}</span>
                         <span>{{ balance }} / {{ next_threshold }}</span>
                     </div>
                 {% endif %}
-                <progress class="progress-meter" value="{{ progress }}" max="100" aria-label="Progres menuju {{ next_level }}">{{ progress }}%</progress>
-                {% if level != 'Platinum' %}<p class="next-level-hint">{{ points_to_next }} poin lagi menuju {{ next_level }}</p>{% endif %}
+                <progress id="reward-level-progress" class="progress-meter" value="{{ progress }}" max="100" aria-label="Progres menuju {{ next_level }}">{{ progress }}%</progress>
+                {% if level != 'Platinum' %}<p id="reward-level-hint" class="next-level-hint">{{ points_to_next }} poin lagi menuju {{ next_level }}</p>{% else %}<p id="reward-level-hint" class="next-level-hint" hidden></p>{% endif %}
             </article>
 
             <article class="conversion-card">
@@ -65,7 +65,7 @@
                         </div>
                         <div class="voucher-action-row">
                             <div><strong>{{ voucher.points_cost_display }} poin</strong><small>Berlaku {{ voucher.valid_days }} hari</small></div>
-                            <form method="post" action="{% url 'waste_reward:redeem' voucher.id %}">
+                            <form method="post" action="{% url 'waste_reward:redeem' voucher.id %}" data-redeem-form data-points-cost="{{ voucher.points_cost }}">
                                 {% csrf_token %}
                                 <button type="submit" {% if not voucher.can_redeem %}disabled title="Poin belum cukup"{% endif %}>Tukar</button>
                             </form>
@@ -79,11 +79,31 @@
 
         <section class="reward-bottom-grid">
             <div class="history-section">
-                <div class="section-heading-row"><div><h2>Riwayat Poin</h2><p>Transaksi Waste Points terbaru.</p></div></div>
+                <div class="section-heading-row">
+                    <div><h2>Riwayat Poin</h2><p>Transaksi Waste Points terbaru.</p></div>
+                    <form class="reward-history-filters" method="get">
+                        {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+                        <label><span class="visually-hidden">Jenis transaksi</span>
+                            <select name="kind" aria-label="Jenis transaksi">
+                                <option value="" {% if not transaction_kind %}selected{% endif %}>Semua transaksi</option>
+                                <option value="pickup" {% if transaction_kind == 'pickup' %}selected{% endif %}>Setoran limbah</option>
+                                <option value="redemption" {% if transaction_kind == 'redemption' %}selected{% endif %}>Penukaran voucher</option>
+                            </select>
+                        </label>
+                        <label><span class="visually-hidden">Periode riwayat</span>
+                            <select name="period" aria-label="Periode riwayat">
+                                <option value="all" {% if transaction_period == 'all' %}selected{% endif %}>Semua waktu</option>
+                                <option value="30" {% if transaction_period == '30' %}selected{% endif %}>30 hari terakhir</option>
+                                <option value="90" {% if transaction_period == '90' %}selected{% endif %}>90 hari terakhir</option>
+                            </select>
+                        </label>
+                        <button type="submit">Terapkan</button>
+                    </form>
+                </div>
                 <div class="history-table-wrap">
                     <table class="history-table">
                         <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Berat</th><th>Poin</th><th>Saldo</th></tr></thead>
-                        <tbody>
+                        <tbody id="reward-history-rows">
                             {% for item in transactions %}
                                 <tr>
                                     <td>{{ item.created_at|date:'d M Y' }}</td>
@@ -98,10 +118,18 @@
                         </tbody>
                     </table>
                 </div>
+                {% if transaction_page.has_other_pages %}
+                    <nav class="reward-pagination" aria-label="Halaman riwayat poin">
+                        {% if transaction_page.has_previous %}<a href="?{{ query_without_page.urlencode }}&amp;page={{ transaction_page.previous_page_number }}">Sebelumnya</a>{% endif %}
+                        <span>Halaman {{ transaction_page.number }} dari {{ transaction_page.paginator.num_pages }}</span>
+                        {% if transaction_page.has_next %}<a href="?{{ query_without_page.urlencode }}&amp;page={{ transaction_page.next_page_number }}">Berikutnya</a>{% endif %}
+                    </nav>
+                {% endif %}
             </div>
 
             <aside class="my-vouchers" aria-labelledby="my-vouchers-heading">
-                <div class="my-vouchers-heading"><div><h2 id="my-vouchers-heading">Voucher Saya</h2><p>Masukkan kode ini di checkout.</p></div><span>{{ available_voucher_count }} aktif</span></div>
+                <div class="my-vouchers-heading"><div><h2 id="my-vouchers-heading">Voucher Saya</h2><p>Masukkan kode ini di checkout.</p></div><span id="available-voucher-count" data-count="{{ available_voucher_count }}">{{ available_voucher_count }} aktif</span></div>
+                <div id="owned-voucher-list">
                 {% for owned in owned_vouchers %}
                     <article class="owned-voucher{% if not owned.available %} owned-voucher-used{% endif %}">
                         <strong>{{ owned.voucher.title }} {{ owned.voucher.value_label }}</strong>
@@ -111,9 +139,14 @@
                 {% empty %}
                     <p class="owned-empty">Voucher yang kamu tukar akan muncul di sini.</p>
                 {% endfor %}
+                </div>
                 <a class="shop-vouchers-link" href="{% url 'katalog:katalog_page' %}">Belanja produk GreenLoop</a>
             </aside>
         </section>
     </div>
 </div>
 {% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'js/waste_reward.js' %}" defer></script>
+{% endblock extra_js %}
