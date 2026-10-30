@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard Admin GreenLoop{% endblock title %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=5">
+  <link rel="stylesheet" href="{% static 'css/page_transitions.css' %}">
+  <link rel="stylesheet" href="{% static 'css/sidebar_shared.css' %}">
+  <link rel="stylesheet" href="{% static 'css/catalog.css' %}">
+  {% block extra_head %}{% endblock extra_head %}
+</head>
+<body data-page="admin-dashboard">
+<div class="d-flex min-vh-100 admin-page-shell">
+  {% include 'admin/_sidebar.html' %}
+  <main class="admin-main flex-grow-1 overflow-auto">
+    <header class="admin-topbar d-flex align-items-center justify-content-between">
+      <button class="btn admin-mobile-menu-button d-flex d-lg-none align-items-center justify-content-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Buka menu"><i class="bi bi-list fs-4"></i></button>
+      <div class="admin-topbar-user d-flex align-items-center gap-2 ms-auto">
+        <div class="admin-avatar-circle">{{ request.user.username|slice:":2"|upper|default:"AD" }}</div>
+        <div class="small lh-sm d-none d-sm-block"><div class="fw-semibold">{{ request.user.get_full_name|default:request.user.username }}</div><div class="text-muted" style="font-size:11px">Admin</div></div>
+      </div>
+    </header>
+    <div class="admin-main-content p-3 p-lg-4">
+      {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm mb-3" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button></div>{% endfor %}{% endif %}
+      {% block admin_content %}{% endblock admin_content %}
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/page_transitions.js' %}"></script>
+{% block extra_js %}{% endblock extra_js %}
+</body>
+</html>

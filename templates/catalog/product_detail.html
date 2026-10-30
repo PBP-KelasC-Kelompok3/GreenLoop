@@ -1,0 +1,4 @@
+{% extends 'catalog/base_catalog.html' %}
+{% load static %}
+{% block title %}{{ product.name }} | GreenLoop{% endblock title %}
+{% block content %}{% include 'catalog/_product_detail_content.html' %}{% endblock content %}

@@ -1,0 +1,35 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Kelola Pesanan | Dashboard Admin{% endblock title %}
+{% block admin_content %}
+<div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+  <div><h3 class="fw-bold text-dark mb-1">Kelola Pesanan</h3><p class="text-muted small mb-0">Pantau pembayaran dan perbarui status pengiriman pesanan.</p></div>
+  <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">{{ orders|length }} pesanan</span>
+</div>
+<section class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+  {% if orders %}
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead class="table-light"><tr><th>Pesanan</th><th>Pembeli</th><th>Pembayaran</th><th>Item &amp; Total</th><th>Pengiriman</th><th>Perbarui</th></tr></thead>
+    <tbody>{% for order in orders %}
+      <tr>
+        <td><strong>#{{ order.order_id|slice:":12" }}</strong><div class="small text-muted">{{ order.created_at|date:"d M Y, H:i" }}</div></td>
+        <td>{{ order.user.get_full_name|default:order.user.username }}</td>
+        <td><span class="badge {% if order.payment_status == 'PAID' %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %}">{{ order.get_payment_status_display }}</span><div class="small text-muted mt-1">{{ order.get_status_display }}</div></td>
+        <td>{{ order.items.count }} item<div class="fw-semibold">Rp {{ order.total_amount|floatformat:0 }}</div></td>
+        <td>{{ order.tracking_number|default:"Belum ada resi" }}</td>
+        <td style="min-width: 250px"><form method="post" action="{% url 'katalog:update_admin_order' order.order_id %}" class="d-flex flex-column gap-2">
+          {% csrf_token %}
+          <select class="form-select form-select-sm" name="status" aria-label="Status pesanan">
+            <option value="{{ order.status }}">{{ order.get_status_display }} (tetap)</option>
+            {% if order.next_admin_status %}<option value="{{ order.next_admin_status }}">Lanjut ke {{ order.next_admin_status|title }}</option>{% endif %}
+          </select>
+          <input class="form-control form-control-sm" type="text" name="tracking_number" value="{{ order.tracking_number }}" maxlength="100" placeholder="Nomor resi" aria-label="Nomor resi">
+          <button class="btn btn-success btn-sm rounded-pill align-self-start px-3" type="submit">Simpan</button>
+        </form></td>
+      </tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}
+  <div class="text-center py-5"><i class="bi bi-receipt text-success fs-1"></i><h5 class="fw-bold mt-3">Belum ada pesanan</h5><p class="text-muted mb-0">Pesanan konsumen dan Mitra akan muncul di sini setelah checkout.</p></div>
+  {% endif %}
+</section>
+{% endblock admin_content %}

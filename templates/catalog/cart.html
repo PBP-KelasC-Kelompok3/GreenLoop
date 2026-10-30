@@ -1,0 +1,45 @@
+{% extends 'catalog/base_catalog.html' %}
+{% block title %}Keranjang Belanja | GreenLoop{% endblock title %}
+{% block content %}
+<div class="commerce-page cart-page page-wrap">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Beranda</a><span>›</span><span aria-current="page">Keranjang</span></nav>
+    <div class="page-title-row"><div><p class="catalog-kicker">GreenLoop · Belanja</p><h1>Keranjang Belanja</h1></div><span class="count-pill">{{ count }} item</span></div>
+    {% if items %}
+    <div class="cart-layout">
+        <section class="cart-items" aria-label="Produk di keranjang">
+            <div class="cart-list-heading"><strong>Produk</strong><span>Jumlah dan subtotal</span></div>
+            {% for line in items %}
+            <article class="cart-line" data-product-id="{{ line.product.pk }}">
+                <a class="cart-art" href="{% url 'katalog:product_detail' line.product.pk %}">{% if line.product.image %}<img class="product-photo cart-photo" src="{{ line.product.image.url }}" alt="">{% else %}<span class="pouch-mark">●</span><strong>GREENLOOP</strong>{% endif %}</a>
+                <div class="cart-item-info"><a href="{% url 'katalog:product_detail' line.product.pk %}"><h2>{{ line.product.name }}</h2></a><span class="cart-item-weight">{{ line.product.weight_grams }} g / pcs</span><button class="text-button danger-text" type="button" onclick="removeItem({{ line.product.pk }})">Hapus</button></div>
+                <div class="cart-item-price"><strong>Rp {{ line.line_total|floatformat:0 }}</strong><small>{{ line.quantity }} × Rp {{ line.unit_price|floatformat:0 }}</small><div class="quantity-control"><button type="button" onclick="changeQuantity({{ line.product.pk }}, {{ line.quantity|add:'-1' }})" aria-label="Kurangi">−</button><span>{{ line.quantity }}</span><button type="button" onclick="changeQuantity({{ line.product.pk }}, {{ line.quantity|add:'1' }})" aria-label="Tambah">+</button></div></div>
+            </article>
+            {% endfor %}
+        </section>
+        <aside class="summary-card">
+            <h2>Ringkasan Belanja</h2>
+            <div class="summary-row"><span>Subtotal</span><strong>Rp {{ subtotal|floatformat:0 }}</strong></div>
+            <div class="summary-row"><span>Total berat</span><strong>{{ weight_grams }} g</strong></div>
+            <div class="summary-row"><span>Ongkos kirim</span><span>Dihitung saat checkout</span></div>
+            <div class="summary-total"><span>Total sementara</span><strong>Rp {{ subtotal|floatformat:0 }}</strong></div>
+            <a class="btn btn-primary btn-block" href="{% url 'katalog:checkout' %}">Lanjut ke Checkout</a>
+            <a class="btn btn-light btn-block" href="{% url 'katalog:katalog_page' %}">Lanjut Belanja</a>
+            <p class="secure-note">Harga Mitra B2B telah diterapkan sesuai akun.</p>
+        </aside>
+    </div>
+    {% else %}
+    <section class="cart-empty-state"><span class="empty-icon">⌑</span><h2>Keranjangmu masih kosong</h2><p>Yuk, temukan produk sabun ramah lingkungan untuk kebutuhanmu.</p><a class="btn btn-primary" href="{% url 'katalog:katalog_page' %}">Jelajahi Katalog</a></section>
+    {% endif %}
+</div>
+<form id="catalogCsrfForm" hidden>{% csrf_token %}</form>
+<script>
+async function updateItem(productId, body) {
+    const response = await fetch(`/katalog/api/cart/${productId}/`, {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':document.querySelector('#catalogCsrfForm [name=csrfmiddlewaretoken]').value}, body:JSON.stringify(body)});
+    const data = await response.json();
+    if (!response.ok) { alert(data.error || 'Keranjang gagal diperbarui.'); return; }
+    window.location.reload();
+}
+function changeQuantity(productId, quantity) { updateItem(productId, {quantity}); }
+function removeItem(productId) { updateItem(productId, {remove:true}); }
+</script>
+{% endblock content %}

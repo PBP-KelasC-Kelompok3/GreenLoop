@@ -41,6 +41,7 @@
 
             <form method="post" class="auth-form" novalidate>
                 {% csrf_token %}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
                 {% if error %}
                     <p class="auth-alert" role="alert">{{ error }}</p>

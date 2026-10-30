@@ -1,0 +1,6 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Profil Admin | Dashboard Admin{% endblock title %}
+{% block admin_content %}
+<div class="mb-4"><h3 class="fw-bold text-dark mb-1">Profil Admin</h3><p class="text-muted small mb-0">Informasi akun yang sedang mengelola GreenLoop.</p></div>
+<section class="card border-0 shadow-sm rounded-4 p-4 bg-white admin-profile-card"><h5 class="fw-bold mb-3">Informasi Akun</h5><dl><div><dt>Username</dt><dd>{{ user.username }}</dd></div><div><dt>Email</dt><dd>{{ user.email|default:"Belum diisi" }}</dd></div><div><dt>Role</dt><dd><span class="badge bg-success-subtle text-success rounded-pill">{{ role_display }}</span></dd></div></dl></section>
+{% endblock admin_content %}

@@ -1,0 +1,52 @@
+<div class="commerce-page detail-page page-wrap">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">{% if is_preview %}<a href="{% url 'admin_dashboard' %}">Dashboard Admin</a><span>&rsaquo;</span><a href="{% url 'katalog:catalog_preview' %}">Preview Katalog</a>{% else %}<a href="{% url 'home' %}">Beranda</a><span>&rsaquo;</span><a href="{% url 'katalog:katalog_page' %}">Katalog</a>{% endif %}<span>&rsaquo;</span><span aria-current="page">{{ product.name }}</span></nav>
+    <div class="detail-layout">
+        <section class="detail-gallery" aria-label="Gambar produk">
+            <div class="detail-art">{% if product.image %}<img class="product-photo detail-photo" src="{{ product.image.url }}" alt="Foto {{ product.name }}">{% else %}<span class="product-art-orbit"></span><div class="product-pouch product-pouch-large"><span class="pouch-mark">●</span><strong>GREENLOOP</strong><span>{{ product.name }}</span><small>ECO-ENZYME</small></div><span class="detail-pack-note">Kemasan ramah lingkungan</span>{% endif %}</div>
+            <div class="impact-card"><p>Dampak dari produk ini</p><div><strong>Eco-enzyme</strong><span>Dibuat dari olahan limbah organik mitra</span></div><small>Bagian dari siklus ekonomi sirkular GreenLoop.</small></div>
+        </section>
+        <section class="detail-info">
+            <span class="product-tag">Sabun · Eco-Enzyme</span>
+            <h1>{{ product.name }}</h1>
+            <div class="detail-meta"><span>Stok {{ product.stock }}</span><span>Berat {{ product.weight_grams }} g / pcs</span></div>
+            <div class="detail-price">Rp {{ price|floatformat:0 }}</div>
+            <div class="detail-divider"></div>
+            <div class="purchase-role"><span>Harga untuk</span><strong>{% if is_mitra %}Mitra B2B{% else %}Konsumen{% endif %}</strong><small>{% if is_mitra %}Harga mitra GreenLoop{% else %}Harga retail{% endif %}</small></div>
+{% if can_shop %}
+            <label class="field-label" for="detailQuantity">Jumlah</label>
+            <div class="quantity-control detail-quantity"><button type="button" onclick="changeDetailQuantity(-1)" aria-label="Kurangi jumlah">−</button><input id="detailQuantity" type="number" min="1" max="{{ product.stock }}" value="1"><button type="button" onclick="changeDetailQuantity(1)" aria-label="Tambah jumlah">+</button></div>
+{% endif %}
+            {% if is_preview %}<div class="catalog-preview-banner"><span><i class="bi bi-eye me-2"></i>Mode preview: pembelian dinonaktifkan.</span><a href="{% url 'katalog:catalog_preview' %}">Kembali ke katalog</a></div>{% endif %}
+            {% if can_shop %}<div class="detail-actions"><button class="btn btn-primary" type="button" onclick="addDetailToCart(false)" {% if product.stock < 1 %}disabled{% endif %}>Tambah ke Keranjang</button><button class="btn btn-outline" type="button" onclick="addDetailToCart(true)" {% if product.stock < 1 %}disabled{% endif %}>Beli Sekarang</button></div>{% elif is_preview %}<p class="admin-shopping-note">Tombol pembelian dinonaktifkan dalam preview.</p>{% elif is_admin %}<p class="admin-shopping-note">Admin dapat mengelola produk dari katalog, tetapi tidak dapat melakukan pembelian.</p>{% elif not user.is_authenticated %}{% url 'login' as login_path %}<div class="detail-actions"><a class="btn btn-primary" href="{{ login_path }}?next={{ request.get_full_path|urlencode }}">Masuk untuk membeli</a></div>{% else %}<p class="admin-shopping-note">Belanja hanya tersedia untuk akun konsumen dan Mitra.</p>{% endif %}
+            <div class="detail-tabs"><h2>Deskripsi</h2><p>{{ product.description|linebreaksbr }}</p></div>
+            <div class="feature-tags"><span>Eco-enzyme</span><span>Ramah lingkungan</span><span>Dukung mitra lokal</span></div>
+            <div id="detailMessage" class="inline-message" role="status" aria-live="polite"></div>
+        </section>
+    </div>
+</div>
+{% if can_shop %}<form id="catalogCsrfForm" hidden>{% csrf_token %}</form>
+<script>
+async function addDetailToCart(goToCheckout) {
+    const quantity = Number(document.getElementById('detailQuantity').value);
+    const response = await fetch("{% url 'katalog:add_to_cart' %}", {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'X-CSRFToken':document.querySelector('#catalogCsrfForm [name=csrfmiddlewaretoken]').value},
+        body: JSON.stringify({product_id: {{ product.pk }}, quantity})
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        document.getElementById('detailMessage').textContent = data.error || 'Produk belum berhasil ditambahkan.';
+        return;
+    }
+    if (goToCheckout) window.location.href = "{% url 'katalog:checkout' %}";
+    else {
+        document.getElementById('catalog-cart-count').textContent = data.count;
+        document.getElementById('detailMessage').textContent = 'Produk berhasil ditambahkan ke keranjang.';
+    }
+}
+function changeDetailQuantity(amount) {
+    const input = document.getElementById('detailQuantity');
+    const max = Number(input.max) || 99;
+    input.value = Math.max(1, Math.min(max, Number(input.value || 1) + amount));
+}
+</script>{% endif %}

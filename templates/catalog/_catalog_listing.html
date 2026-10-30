@@ -1,0 +1,126 @@
+<div class="commerce-page catalog-page page-wrap">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">{% if is_preview %}<a href="{% url 'admin_dashboard' %}">Dashboard Admin</a>{% else %}<a href="{% url 'home' %}">Beranda</a>{% endif %}<span aria-hidden="true">&rsaquo;</span><span aria-current="page">{% if is_preview %}Preview Katalog{% else %}Katalog{% endif %}</span></nav>
+    {% if is_preview %}<div class="catalog-preview-banner"><span><i class="bi bi-eye me-2"></i>Mode preview: tampilan katalog konsumen, pembelian dinonaktifkan.</span><a href="{% url 'katalog:admin_products' %}">Kembali ke Kelola Produk</a></div>{% endif %}
+    <section class="catalog-header" aria-labelledby="catalog-title">
+        <div class="catalog-heading">
+            <p class="catalog-kicker">GreenLoop · Produk ramah lingkungan</p>
+            <h1 id="catalog-title">Katalog Produk {% if is_mitra %}(B2B Mitra){% else %}(B2C Konsumen){% endif %}</h1>
+            <p class="catalog-subtitle">Sabun eco-enzyme dari limbah organik mitra GreenLoop.</p>
+        </div>
+        <div class="catalog-controls" role="search" aria-label="Cari produk">
+            <label class="catalog-search" for="searchInput">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+                <input type="search" id="searchInput" class="form-input" placeholder="Cari sabun, pouch, paket..." oninput="loadProducts()">
+            </label>
+            {% if is_admin and not is_preview %}<button class="btn btn-outline" type="button" onclick="openProductModal()">+ Tambah Produk</button>{% endif %}
+        </div>
+    </section>
+    <div class="catalog-toolbar"><span class="catalog-results-label">Produk GreenLoop</span><span id="catalogResultsCount" class="catalog-result-count"></span></div>
+    <div id="productContainer" class="product-grid" aria-live="polite"></div>
+</div>
+
+<form id="catalogCsrfForm" hidden>{% csrf_token %}</form>
+{% include 'catalog/modals/modal_message.html' %}
+{% if is_admin and not is_preview %}{% include 'catalog/modals/modal_form.html' %}{% endif %}
+<script>
+    const isAdmin = "{{ is_admin }}" === "True";
+    const canShop = "{{ can_shop }}" === "True";
+    const isAuthenticated = "{{ is_authenticated }}" === "True";
+    const isPreview = "{{ is_preview }}" === "True";
+    const loginUrl = "{% url 'login' %}";
+    const productEndpoint = "{% url 'katalog:get_products' %}";
+    const addCartEndpoint = "{% url 'katalog:add_to_cart' %}";
+    const cartCountElement = document.getElementById('catalog-cart-count');
+
+    function showMessage(title, text) {
+        document.getElementById('messageTitle').innerText = title;
+        document.getElementById('messageText').innerText = text;
+        document.getElementById('messageModal').style.display = 'block';
+    }
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) event.target.style.display = 'none';
+    };
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    }
+    function csrfToken() { return document.querySelector('#catalogCsrfForm [name=csrfmiddlewaretoken]').value; }
+    function productArt(name, imageUrl) {
+        if (imageUrl) return `<div class="product-art"><img class="product-photo" src="${escapeHtml(imageUrl)}" alt=""></div>`;
+        const label = escapeHtml(name.split(/\s+/).slice(0, 3).join(' '));
+        return `<div class="product-art" aria-hidden="true"><span class="product-art-orbit"></span><div class="product-pouch"><span class="pouch-mark">●</span><strong>GREENLOOP</strong><span>${label}</span><small>ECO-ENZYME</small></div><span class="product-art-leaf">✦</span></div>`;
+    }
+    async function loadProducts() {
+        const query = document.getElementById('searchInput').value;
+        const container = document.getElementById('productContainer');
+        try {
+            const response = await fetch(`${productEndpoint}?search=${encodeURIComponent(query)}`);
+            if (!response.ok) throw new Error('Gagal memuat katalog.');
+            const data = await response.json();
+            const products = data.products || [];
+            document.getElementById('catalogResultsCount').textContent = `${products.length} produk`;
+            if (products.length === 0) {
+                container.innerHTML = '<div class="catalog-empty-state"><span class="empty-icon">⌕</span><h2>Produk belum ditemukan</h2><p>Tidak ada produk yang cocok. Coba kata kunci lain.</p></div>';
+                return;
+            }
+            container.innerHTML = products.map(product => `
+                <article class="product-card">
+                    <a class="product-card-art-link" href="${isPreview ? `/katalog/preview/produk/${Number(product.id)}/` : escapeHtml(product.detail_url)}" aria-label="Lihat detail ${escapeHtml(product.name)}">${productArt(product.name, product.image_url)}</a>
+                    <div class="product-card-body">
+                        <p class="product-category">Sabun eco-enzyme</p>
+                        <a class="product-title-link" href="${isPreview ? `/katalog/preview/produk/${Number(product.id)}/` : escapeHtml(product.detail_url)}"><h2>${escapeHtml(product.name)}</h2></a>
+                        <p class="product-description">${escapeHtml(product.description)}</p>
+                        <div class="product-card-meta"><strong>Rp ${Number(product.price).toLocaleString('id-ID')}</strong><span>${product.stock > 0 ? `Stok ${product.stock}` : 'Stok habis'}</span></div>
+                        <div class="product-card-actions">
+                            <a class="btn btn-outline" href="${isPreview ? `/katalog/preview/produk/${Number(product.id)}/` : escapeHtml(product.detail_url)}">Detail</a>
+                            ${canShop ? `<button class="btn btn-primary" type="button" onclick="addToCart(${Number(product.id)})" ${product.stock < 1 ? 'disabled' : ''}>Tambah ke Keranjang</button>` : isPreview ? `<button class="btn btn-primary" type="button" disabled>Tambah ke Keranjang</button>` : (!isAuthenticated && !isAdmin) ? `<a class="btn btn-primary" href="${escapeHtml(loginUrl)}?next=${encodeURIComponent(window.location.pathname + window.location.search)}">Masuk untuk membeli</a>` : ''}
+                        </div>
+                        ${isAdmin && !isPreview ? `<button class="btn btn-info admin-edit-product" type="button" data-id="${Number(product.id)}" data-name="${escapeHtml(product.name)}" data-description="${escapeHtml(product.description)}" data-price-b2c="${Number(product.price_b2c)}" data-price-b2b="${Number(product.price_b2b)}" data-stock="${Number(product.stock)}" data-weight="${Number(product.weight_grams)}">Edit Produk</button>` : ''}
+                    </div>
+                </article>`).join('');
+            document.querySelectorAll('.admin-edit-product').forEach(button => button.addEventListener('click', () => openProductModal(button)));
+        } catch (error) {
+            showMessage('Katalog belum dapat dimuat', error.message || 'Periksa koneksi lalu coba lagi.');
+        }
+    }
+    async function addToCart(productId) {
+        try {
+            const response = await fetch(addCartEndpoint, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'X-CSRFToken':csrfToken()},
+                body: JSON.stringify({product_id: productId, quantity: 1})
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Produk tidak dapat ditambahkan.');
+            cartCountElement.textContent = data.count;
+            showMessage('Masuk ke keranjang', 'Produk berhasil ditambahkan ke keranjang belanja.');
+        } catch (error) { showMessage('Belum berhasil', error.message); }
+    }
+    function openProductModal(button = null) {
+        document.getElementById('productModalTitle').innerText = button ? 'Edit Produk' : 'Tambah Produk Baru';
+        document.getElementById('formProductId').value = button?.dataset.id || '';
+        const form = document.getElementById('productFormElement');
+        if (!button) form.reset();
+        document.getElementById('id_name').value = button?.dataset.name || '';
+        document.getElementById('id_description').value = button?.dataset.description || '';
+        document.getElementById('id_price_b2c').value = button?.dataset.priceB2c || '';
+        document.getElementById('id_price_b2b').value = button?.dataset.priceB2b || '';
+        document.getElementById('id_stock').value = button?.dataset.stock || '';
+        document.getElementById('id_weight_grams').value = button?.dataset.weight || 500;
+        document.getElementById('productModal').style.display = 'block';
+    }
+    async function submitProduct() {
+        const id = document.getElementById('formProductId').value;
+        const form = document.getElementById('productFormElement');
+        const url = id ? `/katalog/api/products/edit/${id}/` : '/katalog/api/products/add/';
+        try {
+            const response = await fetch(url, {method:'POST', body:new FormData(form)});
+            const data = await response.json();
+            if (!response.ok) throw new Error(JSON.stringify(data.errors || data));
+            closeModal('productModal');
+            showMessage('Berhasil', 'Data produk berhasil disimpan.');
+            loadProducts();
+        } catch (error) { showMessage('Gagal menyimpan', error.message); }
+    }
+    document.addEventListener('DOMContentLoaded', loadProducts);
+</script>

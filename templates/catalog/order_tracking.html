@@ -1,0 +1,42 @@
+{% extends 'catalog/base_catalog.html' %}
+{% load static %}
+{% block title %}Pesanan {{ order.order_id|slice:":12" }} | GreenLoop{% endblock title %}
+{% block extra_head %}{{ block.super }}{% endblock extra_head %}
+{% block content %}
+<div class="commerce-page tracking-page page-wrap">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Beranda</a><span>›</span><a href="{% url 'katalog:orders' %}">Lacak Pesanan</a><span>›</span><span aria-current="page">{{ order.order_id|slice:":12" }}</span></nav>
+    <div class="page-title-row"><div><p class="catalog-kicker">Status terkini</p><h1>Pesanan #{{ order.order_id|slice:":12" }}</h1><p class="catalog-subtitle">Dibuat {{ order.created_at|date:"d M Y, H:i" }}</p></div><span class="status-pill status-{{ order.status|lower }}">{{ order.get_status_display }}</span></div>
+    <div class="tracking-layout">
+        <section class="tracking-card">
+            <h2>Perjalanan Pesanan</h2>
+            <div class="tracking-meta"><div><span>Pembayaran</span><strong>{{ order.get_payment_status_display }}</strong></div><div><span>Kurir</span><strong>{{ order.courier_name|default:"Belum dipilih" }} {{ order.courier_service }}</strong></div><div><span>Nomor resi</span><strong>{{ order.tracking_number|default:"Belum tersedia" }}</strong></div></div>
+            {% if order.status == 'PENDING' %}<div class="payment-notice"><strong>Menunggu pembayaran</strong><p>Selesaikan pembayaran agar pesanan dapat diproses.</p>{% if order.snap_token %}<button class="btn btn-primary" id="resumePayment" type="button">Bayar Sekarang</button>{% endif %}<button class="btn btn-outline" id="refreshPayment" type="button">Perbarui Status</button></div>{% endif %}
+            {% if order.status == 'CANCELLED' %}<div class="payment-notice payment-notice-error"><strong>Pesanan dibatalkan</strong><p>Pembayaran gagal, dibatalkan, atau melewati batas waktu.</p></div>{% endif %}
+            <ol class="tracking-timeline">{% for label, complete in steps %}<li class="{% if complete %}is-complete{% elif order.status == 'CANCELLED' %}is-cancelled{% endif %}"><span class="timeline-dot">{% if complete %}✓{% endif %}</span><div><strong>{{ label }}</strong>{% if forloop.first %}<small>{{ order.created_at|date:"d M Y, H:i" }}</small>{% elif label == 'Diserahkan ke kurir' and order.tracking_number %}<small>{{ order.tracking_number }}</small>{% endif %}</div></li>{% endfor %}</ol>
+        </section>
+        <aside class="tracking-side">
+            <section class="summary-card"><h2>Ringkasan Pesanan</h2><div class="checkout-order-items">{% for item in order.items.all %}<div class="checkout-order-item"><span class="checkout-item-qty">{{ item.quantity }}×</span><div><strong>{{ item.product_name }}</strong><small>Rp {{ item.unit_price|floatformat:0 }} / pcs</small></div><b>Rp {{ item.line_total|floatformat:0 }}</b></div>{% endfor %}</div><div class="summary-row"><span>Subtotal</span><strong>Rp {{ order.subtotal|floatformat:0 }}</strong></div><div class="summary-row"><span>Ongkos kirim</span><strong>Rp {{ order.shipping_cost|floatformat:0 }}</strong></div>
+{% if order.goods_discount %}<div class="summary-row discount-row"><span>Voucher {{ order.user_voucher.voucher.title }}</span><strong>− Rp {{ order.goods_discount|floatformat:0 }}</strong></div>{% endif %}
+{% if order.shipping_discount %}<div class="summary-row discount-row"><span>Diskon ongkir</span><strong>− Rp {{ order.shipping_discount|floatformat:0 }}</strong></div>{% endif %}<div class="summary-total"><span>Total bayar</span><strong>Rp {{ order.total_amount|floatformat:0 }}</strong></div></section>
+            <section class="tracking-address"><h2>Alamat Pengiriman</h2><strong>{{ order.recipient_name }}</strong><span>{{ order.phone }}</span><p>{{ order.shipping_address }}<br>{{ order.destination_label }}</p><small>{{ order.courier_name }} · {{ order.shipping_eta|default:"Estimasi mengikuti kurir" }}</small></section>
+        </aside>
+    </div>
+</div>
+<form id="trackingCsrfForm" hidden>{% csrf_token %}</form>
+{% endblock content %}
+{% block extra_js %}
+<script>
+const refreshButton = document.getElementById('refreshPayment');
+if (refreshButton) refreshButton.addEventListener('click', async () => {
+    refreshButton.disabled = true;
+    try {
+        const response = await fetch("{% url 'katalog:refresh_order_payment' order.order_id %}", {method:'POST',headers:{'X-CSRFToken':document.querySelector('#trackingCsrfForm [name=csrfmiddlewaretoken]').value}});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Status belum dapat diperbarui.');
+        window.location.reload();
+    } catch (error) { alert(error.message); refreshButton.disabled = false; }
+});
+const resumePayment = document.getElementById('resumePayment');
+if (resumePayment) resumePayment.addEventListener('click', () => window.snap.pay("{{ order.snap_token|escapejs }}", {onSuccess:()=>window.location.reload(),onPending:()=>window.location.reload(),onError:()=>window.location.reload()}));
+</script>
+{% endblock extra_js %}

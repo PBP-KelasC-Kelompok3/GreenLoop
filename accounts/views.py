@@ -3,8 +3,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from accounts.permissions import can_manage_greenloop
 from waste_reward.points import POINTS_PER_KILOGRAM
 
 from .forms import RegisterForm
@@ -58,15 +60,18 @@ def login_view(request):
         )
         if user is not None:
             login(request, user)
+            redirect_to = request.POST.get('next') or request.GET.get('next')
+            if redirect_to and url_has_allowed_host_and_scheme(redirect_to, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+                return redirect(redirect_to)
             return redirect_after_login(user)
 
         return render(
             request,
             'accounts/login.html',
-            {'error': 'Username atau password salah.'},
+            {'error': 'Username atau password salah.', 'next': request.POST.get('next') or request.GET.get('next', '')},
         )
 
-    return render(request, 'accounts/login.html')
+    return render(request, 'accounts/login.html', {'next': request.GET.get('next', '')})
 
 
 @require_POST
@@ -78,4 +83,8 @@ def logout_view(request):
 @login_required
 def profile(request):
     user_profile = getattr(request.user, 'userprofile', None)
-    return render(request, 'accounts/profile.html', {'profile': user_profile})
+    is_admin = can_manage_greenloop(request.user)
+    role_display = "Admin" if is_admin else (user_profile.get_role_display() if user_profile else "Pengguna")
+    context = {"profile": user_profile, "role_display": role_display}
+    template = "accounts/admin_profile.html" if is_admin else "accounts/profile.html"
+    return render(request, template, context)

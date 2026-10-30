@@ -1,0 +1,138 @@
+{% extends 'catalog/base_catalog.html' %}
+{% load static %}
+{% block title %}Checkout | GreenLoop{% endblock title %}
+{% block content %}
+<div class="commerce-page checkout-page page-wrap">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Beranda</a><span>›</span><a href="{% url 'katalog:cart' %}">Keranjang</a><span>›</span><span aria-current="page">Checkout</span></nav>
+    <div class="checkout-heading-row"><div><p class="catalog-kicker">Langkah terakhir</p><h1>Checkout</h1></div><ol class="checkout-steps"><li class="step-done"><span>✓</span> Keranjang</li><li class="step-active"><span>2</span> Pengiriman</li><li><span>3</span> Pembayaran</li><li><span>4</span> Selesai</li></ol></div>
+    <form id="checkoutForm" class="checkout-layout">
+        {% csrf_token %}
+        <div class="checkout-main">
+            <section class="checkout-card">
+                <div class="checkout-card-heading"><span class="checkout-icon">⌖</span><div><h2>Alamat Pengiriman</h2><p>Masukkan nama, nomor WhatsApp, dan alamat tujuan.</p></div></div>
+                <div class="checkout-fields">
+                    <label>Nama penerima<input class="form-input" name="recipient_name" maxlength="150" required autocomplete="name"></label>
+                    <label>Nomor WhatsApp<input class="form-input" name="phone" maxlength="25" required autocomplete="tel" placeholder="08xxxxxxxxxx"></label>
+                    <label class="field-full">Alamat lengkap<textarea class="form-input" name="shipping_address" rows="3" required autocomplete="street-address"></textarea></label>
+                    <label class="field-full destination-field">Cari kota / kecamatan tujuan
+                        <input class="form-input" id="destinationSearch" type="search" autocomplete="off" placeholder="Ketik nama kecamatan atau kota...">
+                        <input type="hidden" name="destination_id" id="destinationId" required>
+                        <input type="hidden" name="destination_label" id="destinationLabel" required>
+                        <div id="destinationResults" class="destination-results" role="listbox"></div>
+                    </label>
+                </div>
+            </section>
+            <section class="checkout-card">
+                <div class="checkout-card-heading"><span class="checkout-icon">▱</span><div><h2>Pilih Kurir Pengiriman</h2><p>Ongkir dihitung otomatis berdasarkan tujuan dan berat {{ weight_grams }} g.</p></div><span class="api-pill">RajaOngkir</span></div>
+                <div id="shippingOptions" class="shipping-options"><p class="shipping-placeholder">Pilih tujuan pengiriman untuk melihat pilihan kurir.</p></div>
+                <input type="hidden" name="courier_code" id="courierCode">
+                <input type="hidden" name="courier_service" id="courierService">
+            </section>
+        </div>
+        <aside class="summary-card checkout-summary">
+            <h2>Ringkasan Pesanan</h2>
+            <div class="checkout-order-items">
+                {% for line in items %}<div class="checkout-order-item"><span class="checkout-item-qty">{{ line.quantity }}×</span><div><strong>{{ line.product.name }}</strong><small>Rp {{ line.unit_price|floatformat:0 }} / pcs</small></div><b>Rp {{ line.line_total|floatformat:0 }}</b></div>{% endfor %}
+            </div>
+            {% if vouchers %}
+            <label class="voucher-picker" for="voucherCode">Voucher Waste Points
+                <select id="voucherCode" name="voucher_code">
+                    <option value="">Tanpa voucher</option>
+                    {% for user_voucher in vouchers %}
+                    <option value="{{ user_voucher.code }}">{{ user_voucher.voucher.title }} · {{ user_voucher.voucher.value_label }} ({{ user_voucher.code }})</option>
+                    {% endfor %}
+                </select>
+                <small>Voucher grosir berlaku untuk minimal 24 pcs.</small>
+            </label>
+            {% endif %}
+            <div class="summary-row"><span>Subtotal</span><strong>Rp {{ subtotal|floatformat:0 }}</strong></div>
+            <div class="summary-row"><span>Ongkos kirim</span><strong id="checkoutShippingCost">Pilih kurir</strong></div>
+            <div class="summary-total"><span>Total bayar</span><strong id="checkoutTotal">Rp {{ subtotal|floatformat:0 }}</strong></div>
+            <button class="btn btn-primary btn-block" id="createOrderButton" type="submit">Buat Pesanan &amp; Bayar</button>
+            <p class="secure-note">Pembayaran diproses aman melalui Midtrans Snap.</p>
+            <p id="checkoutError" class="form-error" role="alert"></p>
+        </aside>
+    </form>
+</div>
+{% endblock content %}
+{% block extra_js %}
+<script>
+const checkoutForm = document.getElementById('checkoutForm');
+const csrf = checkoutForm.querySelector('[name=csrfmiddlewaretoken]').value;
+const destinationInput = document.getElementById('destinationSearch');
+const destinationResults = document.getElementById('destinationResults');
+let destinationTimer;
+let selectedShipping = null;
+const subtotal = {{ subtotal }};
+
+destinationInput.addEventListener('input', () => {
+    clearTimeout(destinationTimer);
+    document.getElementById('destinationId').value = '';
+    document.getElementById('destinationLabel').value = '';
+    document.getElementById('shippingOptions').innerHTML = '<p class="shipping-placeholder">Pilih tujuan pengiriman untuk melihat pilihan kurir.</p>';
+    destinationTimer = setTimeout(searchDestinations, 350);
+});
+async function searchDestinations() {
+    const query = destinationInput.value.trim();
+    if (query.length < 2) { destinationResults.innerHTML = ''; return; }
+    try {
+        const response = await fetch(`{% url 'katalog:search_destinations' %}?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Pencarian tujuan gagal.');
+        destinationResults.innerHTML = data.destinations.map(item => `<button class="destination-option" type="button" data-id="${item.id}" data-label="${item.label.replaceAll('"','&quot;')}">${item.label}</button>`).join('') || '<p class="destination-empty">Tujuan tidak ditemukan.</p>';
+        destinationResults.querySelectorAll('.destination-option').forEach(option => option.addEventListener('click', () => chooseDestination(option.dataset.id, option.dataset.label)));
+    } catch (error) { showCheckoutError(error.message); }
+}
+async function chooseDestination(id, label) {
+    document.getElementById('destinationId').value = id;
+    document.getElementById('destinationLabel').value = label;
+    destinationInput.value = label;
+    destinationResults.innerHTML = '';
+    await loadShippingOptions(id);
+}
+async function loadShippingOptions(destinationId) {
+    const container = document.getElementById('shippingOptions');
+    container.innerHTML = '<p class="shipping-placeholder">Menghitung pilihan ongkir…</p>';
+    try {
+        const response = await fetch("{% url 'katalog:calculate_shipping' %}", {
+            method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':csrf},
+            body:JSON.stringify({destination_id:destinationId})
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Ongkir tidak dapat dihitung.');
+        if (!data.options.length) { container.innerHTML = '<p class="shipping-placeholder">Belum ada kurir untuk tujuan ini.</p>'; return; }
+        container.innerHTML = data.options.map((option, index) => `<label class="shipping-option"><input type="radio" name="shippingChoice" value="${index}"><span class="shipping-radio"></span><strong>${option.courier_name} <small>${option.courier_code.toUpperCase()}</small></strong><span class="shipping-service">${option.service}<small>${option.etd ? `Estimasi ${option.etd}` : ''}</small></span><b>Rp ${Number(option.cost).toLocaleString('id-ID')}</b></label>`).join('');
+        container.querySelectorAll('input[name=shippingChoice]').forEach((radio, index) => radio.addEventListener('change', () => {
+            selectedShipping = data.options[index];
+            document.getElementById('courierCode').value = selectedShipping.courier_code;
+            document.getElementById('courierService').value = selectedShipping.service;
+            document.getElementById('checkoutShippingCost').textContent = `Rp ${Number(selectedShipping.cost).toLocaleString('id-ID')}`;
+        document.getElementById('checkoutTotal').textContent = 'Rp ' + Number(subtotal + Number(selectedShipping.cost)).toLocaleString('id-ID');
+        }));
+        const first = container.querySelector('input[name=shippingChoice]');
+        if (first) { first.checked = true; first.dispatchEvent(new Event('change')); }
+    } catch (error) { container.innerHTML = `<p class="shipping-error">${error.message}</p>`; }
+}
+function showCheckoutError(message) { document.getElementById('checkoutError').textContent = message; }
+checkoutForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!document.getElementById('destinationId').value || !selectedShipping) { showCheckoutError('Pilih tujuan dan kurir pengiriman terlebih dahulu.'); return; }
+    const button = document.getElementById('createOrderButton');
+    button.disabled = true;
+    showCheckoutError('Membuat pesanan dan menyiapkan pembayaran…');
+    try {
+        const response = await fetch("{% url 'katalog:create_order' %}", {method:'POST',headers:{'X-CSRFToken':csrf},body:new FormData(checkoutForm)});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Pesanan gagal dibuat.');
+        document.getElementById('checkoutTotal').textContent = 'Rp ' + Number(data.total_amount).toLocaleString('id-ID');
+        if (!window.snap) { window.location.href = data.order_url; return; }
+        window.snap.pay(data.snap_token, {
+            onSuccess: () => window.location.href = data.order_url,
+            onPending: () => window.location.href = data.order_url,
+            onError: () => window.location.href = data.order_url,
+            onClose: () => window.location.href = data.order_url
+        });
+    } catch (error) { showCheckoutError(error.message); button.disabled = false; }
+});
+</script>
+{% endblock extra_js %}

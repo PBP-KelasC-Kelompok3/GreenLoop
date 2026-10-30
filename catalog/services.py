@@ -1,63 +1,56 @@
-"""Thin clients for RajaOngkir (Komerce) and Midtrans."""
+"""Clients for RajaOngkir shipping quotes and Midtrans Snap payments."""
 import hashlib
 import hmac
 
 import requests
 from django.conf import settings
-from django.core.cache import cache
 
 
 class ServiceError(Exception):
-    """Raised when an upstream API fails; message is safe to show to the user."""
+    """Raised when an upstream API fails with a safe user-facing message."""
 
 
-# --------------------------------------------------------------------------- RajaOngkir
 def _ro_headers():
     if not settings.RAJAONGKIR_API_KEY:
-        raise ServiceError("Shipping is not configured (missing RAJAONGKIR_API_KEY).")
+        raise ServiceError("Ongkir belum dikonfigurasi. Tambahkan RAJAONGKIR_API_KEY.")
     return {"key": settings.RAJAONGKIR_API_KEY}
 
 
 def search_destinations(term, limit=10):
-    """Search subdistricts by name/zip. Cached because the data rarely changes."""
-    term = term.strip().lower()
-    cache_key = f"ro:dest:{term}:{limit}"
-    hit = cache.get(cache_key)
-    if hit is not None:
-        return hit
+    term = (term or "").strip()
+    if len(term) < 2:
+        return []
     try:
-        r = requests.get(
-            f"{settings.RAJAONGKIR_BASE_URL}/destination/domestic-destination",
+        response = requests.get(
+            f"{settings.RAJAONGKIR_BASE_URL.rstrip('/')}/destination/domestic-destination",
             params={"search": term, "limit": limit, "offset": 0},
             headers=_ro_headers(),
             timeout=15,
         )
-        body = r.json()
+        body = response.json()
     except (requests.RequestException, ValueError):
-        raise ServiceError("Could not reach the shipping service. Try again.")
-    if r.status_code == 404:
-        return []
-    if r.status_code != 200:
-        raise ServiceError(_ro_message(body, "Destination lookup failed."))
+        raise ServiceError("Layanan pencarian alamat sedang tidak dapat dihubungi.")
+    if response.status_code != 200:
+        raise ServiceError(_ro_message(body, "Pencarian tujuan gagal."))
     results = []
-    for d in body.get("data") or []:
-        label = d.get("label") or ", ".join(
-            x for x in [d.get("subdistrict_name"), d.get("district_name"), d.get("city_name"),
-                        d.get("province_name"), d.get("zip_code")] if x
+    for item in body.get("data") or []:
+        label = item.get("label") or ", ".join(
+            str(part) for part in (
+                item.get("subdistrict_name"), item.get("district_name"),
+                item.get("city_name"), item.get("province_name"), item.get("zip_code"),
+            ) if part
         )
-        results.append({"id": str(d["id"]), "label": label})
-    cache.set(cache_key, results, 60 * 60)
+        results.append({"id": str(item["id"]), "label": label})
     return results
 
 
 def calculate_shipping(destination_id, weight_grams):
-    """Return a flat, cheapest-first list of courier services for a destination."""
-    if not settings.RAJAONGKIR_ORIGIN_ID or settings.RAJAONGKIR_ORIGIN_ID == "0":
-        raise ServiceError("Shipping origin is not configured (RAJAONGKIR_ORIGIN_ID).")
+    if not settings.RAJAONGKIR_ORIGIN_ID:
+        raise ServiceError("Lokasi asal pengiriman belum dikonfigurasi.")
     try:
-        r = requests.post(
-            f"{settings.RAJAONGKIR_BASE_URL}/calculate/domestic-cost",
-            headers=_ro_headers(),
+        response = requests.post(
+            f"{settings.RAJAONGKIR_BASE_URL.rstrip('/')}/calculate/domestic-cost",
+            headers={**_ro_headers(), "Content-Type": "application/x-www-form-urlencoded"},
             data={
                 "origin": settings.RAJAONGKIR_ORIGIN_ID,
                 "destination": destination_id,
@@ -67,37 +60,34 @@ def calculate_shipping(destination_id, weight_grams):
             },
             timeout=20,
         )
-        body = r.json()
+        body = response.json()
     except (requests.RequestException, ValueError):
-        raise ServiceError("Could not reach the shipping service. Try again.")
-    if r.status_code != 200:
-        raise ServiceError(_ro_message(body, "No shipping options available for this destination."))
+        raise ServiceError("Layanan ongkir sedang tidak dapat dihubungi.")
+    if response.status_code != 200:
+        raise ServiceError(_ro_message(body, "Tidak ada pilihan pengiriman untuk tujuan ini."))
     options = []
-    for d in body.get("data") or []:
+    for item in body.get("data") or []:
         try:
-            cost = int(d["cost"])
+            cost = int(item["cost"])
         except (KeyError, TypeError, ValueError):
             continue
         options.append({
-            "courier_code": d.get("code", ""),
-            "courier_name": d.get("name", d.get("code", "")),
-            "service": d.get("service", ""),
-            "description": d.get("description", ""),
-            "etd": d.get("etd", ""),
+            "courier_code": item.get("code", ""),
+            "courier_name": item.get("name", item.get("code", "Kurir")),
+            "service": item.get("service", ""),
+            "description": item.get("description", ""),
+            "etd": item.get("etd", ""),
             "cost": cost,
         })
-    options.sort(key=lambda o: o["cost"])
-    return options
+    return sorted(options, key=lambda option: option["cost"])
 
 
 def _ro_message(body, fallback):
-    try:
-        return (body.get("meta") or {}).get("message") or body.get("message") or fallback
-    except AttributeError:
+    if not isinstance(body, dict):
         return fallback
+    return (body.get("meta") or {}).get("message") or body.get("message") or fallback
 
 
-# --------------------------------------------------------------------------- Midtrans
 def _midtrans_hosts():
     if settings.MIDTRANS_IS_PRODUCTION:
         return "https://app.midtrans.com", "https://api.midtrans.com"
@@ -108,82 +98,93 @@ def snap_js_url():
     return _midtrans_hosts()[0] + "/snap/snap.js"
 
 
-def create_snap_token(order, customer_email=""):
-    """Create a Snap transaction and return its token."""
+def create_snap_token(order):
     if not settings.MIDTRANS_SERVER_KEY:
-        raise ServiceError("Payments are not configured (missing MIDTRANS_SERVER_KEY).")
+        raise ServiceError("Pembayaran belum dikonfigurasi. Tambahkan MIDTRANS_SERVER_KEY.")
+    items = [
+        {
+            "id": str(item.product_id or item.pk)[:50],
+            "price": item.unit_price,
+            "quantity": item.quantity,
+            "name": item.product_name[:50],
+        }
+        for item in order.items.all()
+    ]
+    discount_amount = order.goods_discount + order.shipping_discount
+    if discount_amount:
+        items.append({
+            "id": "voucher",
+            "price": -discount_amount,
+            "quantity": 1,
+            "name": "Voucher Waste Points",
+        })
+    if order.shipping_cost:
+        items.append({
+            "id": "shipping",
+            "price": order.shipping_cost,
+            "quantity": 1,
+            "name": f"Ongkir {order.courier_code.upper()} {order.courier_service}"[:50],
+        })
     payload = {
-        "transaction_details": {"order_id": order.midtrans_order_id, "gross_amount": order.gross_amount},
-        "item_details": [
-            {"id": str(order.product_id or "item"), "price": order.unit_price,
-             "quantity": order.quantity, "name": order.product_name[:50]},
-            {"id": "shipping", "price": order.shipping_cost, "quantity": 1,
-             "name": f"Shipping {order.courier_code.upper()} {order.courier_service}"[:50]},
-        ],
+        "transaction_details": {"order_id": order.order_id, "gross_amount": order.total_amount},
+        "item_details": items,
         "expiry": {"unit": "hours", "duration": 24},
         "customer_details": {
             "first_name": order.recipient_name[:50],
+            "email": order.user.email,
             "phone": order.phone[:19],
-            "email": customer_email,
             "shipping_address": {
                 "first_name": order.recipient_name[:50],
                 "phone": order.phone[:19],
-                "address": order.address[:200],
+                "address": order.shipping_address[:200],
+                "city": order.destination_label[:50],
             },
         },
     }
     try:
-        r = requests.post(
+        response = requests.post(
             _midtrans_hosts()[0] + "/snap/v1/transactions",
             json=payload,
             auth=(settings.MIDTRANS_SERVER_KEY, ""),
             headers={"Accept": "application/json"},
             timeout=20,
         )
-        body = r.json()
+        body = response.json()
     except (requests.RequestException, ValueError):
-        raise ServiceError("Could not reach the payment service. Try again.")
+        raise ServiceError("Layanan pembayaran sedang tidak dapat dihubungi.")
     token = body.get("token")
-    if r.status_code not in (200, 201) or not token:
-        msgs = body.get("error_messages")
-        raise ServiceError("; ".join(msgs) if msgs else "Payment could not be started.")
+    if response.status_code not in (200, 201) or not token:
+        messages = body.get("error_messages") or []
+        raise ServiceError("; ".join(messages) or "Pembayaran tidak dapat dimulai.")
     return token
 
 
 def fetch_transaction_status(midtrans_order_id):
-    """Ask Midtrans for the current status (used when the webhook can't reach localhost)."""
+    if not settings.MIDTRANS_SERVER_KEY:
+        raise ServiceError("Pembayaran belum dikonfigurasi. Tambahkan MIDTRANS_SERVER_KEY.")
     try:
-        r = requests.get(
+        response = requests.get(
             f"{_midtrans_hosts()[1]}/v2/{midtrans_order_id}/status",
             auth=(settings.MIDTRANS_SERVER_KEY, ""),
             headers={"Accept": "application/json"},
             timeout=15,
         )
-        return r.json()
+        body = response.json()
     except (requests.RequestException, ValueError):
-        raise ServiceError("Could not reach the payment service. Try again.")
+        raise ServiceError("Status pembayaran sedang tidak dapat diperiksa.")
+    if response.status_code != 200:
+        raise ServiceError(_ro_message(body, "Status pembayaran tidak ditemukan."))
+    return body
 
 
 def valid_notification_signature(payload):
+    if not settings.MIDTRANS_SERVER_KEY:
+        return False
     raw = (
         str(payload.get("order_id", ""))
         + str(payload.get("status_code", ""))
         + str(payload.get("gross_amount", ""))
-        + settings.MIDTRANS_SERVER_KEY
+        + (settings.MIDTRANS_SERVER_KEY or "")
     )
     expected = hashlib.sha512(raw.encode()).hexdigest()
     return hmac.compare_digest(expected, str(payload.get("signature_key", "")))
-
-
-def cancel_transaction(midtrans_order_id):
-    """Cancel a transaction that has a payment attempt but is not yet paid."""
-    try:
-        r = requests.post(
-            f"{_midtrans_hosts()[1]}/v2/{midtrans_order_id}/cancel",
-            auth=(settings.MIDTRANS_SERVER_KEY, ""),
-            headers={"Accept": "application/json"},
-            timeout=15,
-        )
-        return r.json()
-    except (requests.RequestException, ValueError):
-        raise ServiceError("Could not reach the payment service. Try again.")

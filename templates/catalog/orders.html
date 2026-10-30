@@ -1,0 +1,22 @@
+{% extends 'catalog/base_catalog.html' %}
+{% block title %}Lacak Pesanan | GreenLoop{% endblock title %}
+{% block content %}
+<div class="commerce-page orders-page page-wrap">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Beranda</a><span>›</span><span aria-current="page">Lacak Pesanan</span></nav>
+    <div class="page-title-row"><div><p class="catalog-kicker">Riwayat belanja</p><h1>Lacak Pesanan</h1><p class="catalog-subtitle">Pantau pembayaran dan status pengiriman pesananmu.</p></div></div>
+    {% if orders %}
+    <div class="orders-list">
+        {% for order in orders %}
+        <a class="order-list-card" href="{% url 'katalog:order_tracking' order.order_id %}">
+            <div><span class="order-id-label">Pesanan</span><strong>#{{ order.order_id|slice:":12" }}</strong><small>{{ order.created_at|date:"d M Y, H:i" }}</small></div>
+            <div><span class="order-id-label">Status</span><strong class="status-pill status-{{ order.status|lower }}">{{ order.get_status_display }}</strong><small>{{ order.get_payment_status_display }}</small></div>
+            <div><span class="order-id-label">Total</span><strong>Rp {{ order.total_amount|floatformat:0 }}</strong><small>{{ order.items.count }} produk</small></div>
+            <span class="order-card-arrow" aria-hidden="true">→</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <section class="cart-empty-state"><span class="empty-icon">⌕</span><h2>Belum ada pesanan</h2><p>Pesanan yang dibuat akan muncul di sini.</p><a class="btn btn-primary" href="{% url 'katalog:katalog_page' %}">Jelajahi Katalog</a></section>
+    {% endif %}
+</div>
+{% endblock content %}

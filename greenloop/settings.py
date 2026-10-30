@@ -16,7 +16,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 MIDTRANS_CLIENT_KEY = os.getenv('MIDTRANS_CLIENT_KEY')
 MIDTRANS_SERVER_KEY = os.getenv('MIDTRANS_SERVER_KEY')
+MIDTRANS_IS_PRODUCTION = os.getenv('MIDTRANS_IS_PRODUCTION', 'False').lower() == 'true'
 RAJAONGKIR_API_KEY = os.getenv('RAJAONGKIR_API_KEY')
+RAJAONGKIR_BASE_URL = os.getenv('RAJAONGKIR_BASE_URL', 'https://rajaongkir.komerce.id/api/v1')
+RAJAONGKIR_ORIGIN_ID = os.getenv('RAJAONGKIR_ORIGIN_ID', '153')
+RAJAONGKIR_COURIERS = os.getenv('RAJAONGKIR_COURIERS', 'jne:jnt:sicepat:pos').split(':')
 
 SECRET_KEY = 'django-insecure-$tf4n)9sygw6c&m!m=xt75rhe#qbf4m#d5^)ikb-d%ko^_p&=k'
 
