@@ -14,7 +14,7 @@
 <form method="POST" enctype="multipart/form-data" id="pickup-form" class="pk-grid" novalidate>
   {% csrf_token %}
 
-  {# ===== FIELD ASLI DJANGO (disembunyikan) ===== #}
+  
   <div class="d-none">
     {{ form.pickup_date }}
     {{ form.pickup_time_slot }}
