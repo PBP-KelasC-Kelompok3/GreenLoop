@@ -170,3 +170,31 @@ Data pengguna, saldo, dan kode voucher pada screenshot adalah data demo, bukan d
 ### Pengelolaan katalog voucher
 
 ![Django Admin menampilkan katalog Reward Voucher dan jumlah penukaran](docs/images/waste-reward-admin-vouchers.png)
+
+## 13.  Modul Mitra, Admin, & Scheduling — GreenLoop (Filza Shafira)
+
+Modul ini nge-handle seluruh alur operasional dari awal sampai akhir. Jadi mulainya itu pas mitra bikin pengajuan penjemputan sampah. Di sini mitra enggak bisa asal pilih jadwal seenaknya, karena sistem kita sudah diatur pake validasi waktu yang ketat. Contohnya kalau sudah lewat jam 16:00, slot buat tanggal itu otomatis ketutup sendiri. Plus, mitra juga wajib banget upload foto limbahnya sebagai bukti awal.
+
+Nah, pas pengajuan itu masuk, lanjut ke sisi admin. Tugas admin di sini nge-cek dan verifikasi dua hal: foto sampah kiriman mitra tadi sama verifikasi akun kurir baru. Jadi kurir enggak bisa asal daftar dan langsung masuk sistem tanpa adanya persetujuan dulu biar aman. Kalau semuanya sudah dicek dan valid, barulah admin nge-approve pengajuannya.
+
+Setelah di-approve, sistem kita yang bakal otomatis milih dan nentuin kurir mana yang bertugas (auto-assignment) tanpa perlu admin ribet milih satu-satu secara manual.
+
+Nanti pas kurirnya dateng jemput ke tempat mitra, kurir bakal input berat aktual sampahnya ke sistem. Nah, berat aktual inilah yang nantinya otomatis masuk ke dashboard riwayat penjemputan mitra, terus dikali 0,5 buat dijadiin poin reward. Poin itu nantinya bisa ditukar sama voucher belanja.
+
+Selain itu, biar performanya makin mantap dan memenuhi standar interaktif, kita juga pakai HTMX buat bagian partials (kayak form_feedback.html dan pickup_history_results.html). Jadi semua interaksi form sama pencarian riwayat datanya bisa jalan mulus tanpa bikin web-nya reload ulang. Ditambah ada dekorator kustom juga buat mastiin hak akses admin sama mitra sudah terpisah dengan aman.
+
+## 14. Penggunaan AI dalam Pengembangan Modul Mitra & Admin:
+
+Dalam pengerjaan modul Mitra, Admin, dan Scheduling ini, OpenAI Codex dan Claude digunakan sebagai rekan diskusi (coding assistant). AI membantu dalam merancang arsitektur logika bisnis, menyusun integrasi partials HTMX untuk interaktivitas, mengimplementasikan dekorator hak akses, serta merapikan struktur file dan dokumentasi. Pendekatan yang dipakai adalah memberikan kebutuhan fitur dan aturan bisnis secara detail terlebih dahulu, meminta AI memeriksa struktur kode yang ada, lalu mengeksekusi penambahan fungsi secara bertahap sambil terus divalidasi.
+
+Meskipun sangat membantu, AI sempat keliru memahami beberapa aturan bisnis lokal dan batasan sistem. Dari hasil code review dan pengujian manual, terdapat beberapa logika yang harus disesuaikan dan dikoreksi secara mandiri:
+
+1. Validasi Waktu Penjemputan: AI sempat mengizinkan pemilihan jam bebas, sehingga harus diperbaiki agar slot otomatis terkunci jika sudah melewati batas jam operasional harian (pukul 16:00 WIB).
+
+2. Alur Verifikasi Ganda Admin: Logika awal dari AI sempat melewatkan tahap persetujuan akun kurir baru, lalu dikoreksi agar pendaftaran kurir wajib melalui proses verifikasi admin dan otentikasi mitra terlebih dahulu.
+
+3. Mekanisme Penugasan Otomatis (Auto-assignment): AI sempat menyarankan pemilihan kurir secara manual oleh admin, yang kemudian diubah menjadi penugasan otomatis oleh sistem berdasarkan ketersediaan jadwal.
+
+4. Respon Asinkron HTMX: Potongan templat partials (form_feedback.html dan pickup_history_results.html) disempurnakan agar respon umpan balik dan filter riwayat penjemputan benar-benar berjalan mulus tanpa full-page reload.
+
+Pengujian dilakukan pada alur endpoint, fungsi validasi, dan integrasi elemen HTMX di tingkat lokal. Namun, karena alur penjemputan dan verifikasi juga bergantung pada skenario data riil dan perilaku pengguna di browser, uji coba langsung (manual testing) secara end-to-end tetap wajib dilakukan sebelum aplikasi di-deploy secara penuh ke PWS.
