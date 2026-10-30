@@ -165,6 +165,13 @@ class MitraProfileCrudTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('waste_photo', form.errors)
 
+    def test_pickup_loading_indicator_does_not_occupy_a_form_grid_cell(self):
+        response = self.client.get(reverse('create_pickup'))
+
+        self.assertEqual(response.status_code, 200)
+        markup = response.content.decode()
+        self.assertLess(markup.index('id="pickup-saving"'), markup.index('id="pickup-form"'))
+
     @patch('courier.maps.in_depok', return_value=True)
     def test_create_pickup_supports_htmx_partial_response(self, _in_depok):
         MitraProfile.objects.create(user=self.mitra, latitude=-6.4, longitude=106.8, location_locked=True)

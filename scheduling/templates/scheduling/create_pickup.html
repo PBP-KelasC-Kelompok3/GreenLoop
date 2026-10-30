@@ -11,13 +11,13 @@
 {% endblock %}
 
 {% block content %}
+<div class="pk-form-shell">
 <div id="pickup-form-feedback" aria-live="polite"></div>
+<span id="pickup-saving" class="htmx-indicator pk-muted" role="status">Mengirim pengajuan…</span>
 <form method="POST" enctype="multipart/form-data" id="pickup-form" class="pk-grid" novalidate
       hx-post="{% url 'create_pickup' %}" hx-encoding="multipart/form-data"
       hx-target="#pickup-form-feedback" hx-swap="innerHTML" hx-indicator="#pickup-saving">
   {% csrf_token %}
-  <span id="pickup-saving" class="htmx-indicator pk-muted" role="status">Mengirim pengajuan…</span>
-
   
   <div class="d-none">
     {{ form.pickup_date }}
@@ -165,6 +165,7 @@
     </section>
   </div>
 </form>
+</div>
 {% endblock %}
 
 {% block extra_js %}
