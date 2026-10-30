@@ -1,15 +1,30 @@
-{% extends 'base.html' %}
+{% extends base_template %}
 {% load static %}
 
 {% block title %}Katalog Produk | GreenLoop{% endblock title %}
 {% block extra_head %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'css/catalog.css' %}">
+    {% if not is_mitra %}<link rel="stylesheet" href="{% static 'css/catalog.css' %}">{% endif %}
     {% if midtrans_client_key %}<script src="{{ snap_js_url }}" data-client-key="{{ midtrans_client_key }}"></script>{% endif %}
 {% endblock extra_head %}
+{% block extra_css %}
+    {% if is_mitra %}<link rel="stylesheet" href="{% static 'css/catalog.css' %}">{% endif %}
+{% endblock extra_css %}
+{% block header_title %}Belanja Produk{% endblock header_title %}
+{% block header_subtitle %}Harga khusus Mitra B2B · gunakan Waste Points saat checkout.{% endblock header_subtitle %}
+{% block topbar_action %}
+    {% if is_mitra %}
+        <div class="mitra-catalog-actions">
+            <input type="search" id="searchInput" class="form-control form-input" placeholder="Cari produk..." aria-label="Cari produk">
+            <button class="btn btn-outline-success" type="button" onclick="loadOrders()">Pesanan Saya</button>
+            <a class="btn btn-success" href="{% url 'waste_reward:dashboard' %}">Waste Points: {{ reward_balance }}</a>
+        </div>
+    {% endif %}
+{% endblock topbar_action %}
 
 {% block content %}
-<div class="catalog-page page-wrap">
+<div class="catalog-page{% if is_mitra %} catalog-page--mitra{% else %} page-wrap{% endif %}">
+    {% if not is_mitra %}
     <div class="catalog-heading">
         <div>
             <p class="catalog-eyebrow">Belanja dengan dampak</p>
@@ -23,6 +38,7 @@
             {% if is_mitra %}<a class="btn" href="{% url 'waste_reward:dashboard' %}">Waste Points: {{ reward_balance }}</a>{% endif %}
         </div>
     </div>
+    {% endif %}
     <div id="productContainer" class="product-grid" aria-live="polite"></div>
 
     {% include 'catalog/modals/modal_message.html' %}
