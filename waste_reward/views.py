@@ -3,6 +3,7 @@ from functools import wraps
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.paginator import Paginator
 from django.http import JsonResponse
@@ -24,6 +25,34 @@ from .services import (
 
 def _format_points(value):
     return f'{value:,}'.replace(',', '.')
+
+
+def reward_rate_limit(max_requests=10, window_seconds=60):
+    """Cap voucher-redemption attempts per authenticated mitra in a short window."""
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapped(request, *args, **kwargs):
+            key = f'waste_reward:redeem:{request.user.pk}'
+            if cache.add(key, 1, timeout=window_seconds):
+                attempts = 1
+            else:
+                try:
+                    attempts = cache.incr(key)
+                except ValueError:
+                    cache.set(key, 1, timeout=window_seconds)
+                    attempts = 1
+
+            if attempts > max_requests:
+                message = 'Terlalu banyak percobaan. Coba lagi dalam satu menit.'
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'error': message}, status=429)
+                messages.error(request, message)
+                return redirect('waste_reward:dashboard')
+            return view_func(request, *args, **kwargs)
+
+        return wrapped
+
+    return decorator
 
 
 def mitra_required(view_func):
@@ -140,6 +169,7 @@ def dashboard(request):
 
 @mitra_required
 @require_POST
+@reward_rate_limit(max_requests=10, window_seconds=60)
 def redeem(request, voucher_id):
     voucher = get_object_or_404(RewardVoucher, pk=voucher_id, is_active=True)
     try:

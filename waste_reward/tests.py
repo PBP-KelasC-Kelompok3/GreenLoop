@@ -6,6 +6,7 @@ from uuid import uuid4
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.messages.storage.fallback import FallbackStorage
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
 from django.db import transaction
@@ -612,6 +613,67 @@ class WasteRewardViewAccessTests(WasteRewardTestCase):
             )
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.json()['error'], 'Voucher berubah.')
+
+    def test_sensitive_redemption_endpoint_is_rate_limited_per_mitra(self):
+        mitra = self.make_user('mitra-redeem-rate-limit')
+        voucher = self.make_voucher(code='rate-limited-reward')
+        client = Client()
+        client.force_login(mitra)
+        cache.delete(f'waste_reward:redeem:{mitra.pk}')
+
+        with patch('waste_reward.views.redeem_voucher', side_effect=InsufficientPoints):
+            for _ in range(10):
+                response = client.post(
+                    reverse('waste_reward:redeem', args=[voucher.pk]),
+                    HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+                )
+                self.assertEqual(response.status_code, 409)
+
+            limited = client.post(
+                reverse('waste_reward:redeem', args=[voucher.pk]),
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            )
+
+        self.assertEqual(limited.status_code, 429)
+        self.assertIn('error', limited.json())
+
+    def test_rate_limiter_recovers_if_cache_counter_expires_mid_request(self):
+        mitra = self.make_user('mitra-redeem-cache-reset')
+        voucher = self.make_voucher(code='cache-reset-reward')
+        client = Client()
+        client.force_login(mitra)
+
+        with (
+            patch('waste_reward.views.cache.add', return_value=False),
+            patch('waste_reward.views.cache.incr', side_effect=ValueError),
+            patch('waste_reward.views.cache.set') as set_counter,
+            patch('waste_reward.views.redeem_voucher', side_effect=InsufficientPoints),
+        ):
+            response = client.post(
+                reverse('waste_reward:redeem', args=[voucher.pk]),
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            )
+
+        self.assertEqual(response.status_code, 409)
+        set_counter.assert_called_once_with(
+            f'waste_reward:redeem:{mitra.pk}', 1, timeout=60
+        )
+
+    def test_html_rate_limit_redirects_with_a_message(self):
+        mitra = self.make_user('mitra-redeem-html-limit')
+        voucher = self.make_voucher(code='html-limit-reward')
+        client = Client()
+        client.force_login(mitra)
+
+        with (
+            patch('waste_reward.views.cache.add', return_value=False),
+            patch('waste_reward.views.cache.incr', return_value=11),
+        ):
+            response = client.post(
+                reverse('waste_reward:redeem', args=[voucher.pk])
+            )
+
+        self.assertRedirects(response, reverse('waste_reward:dashboard'))
 
     def test_transaction_history_filters_and_paginates_per_member(self):
         mitra = self.make_user('mitra-history-pagination')

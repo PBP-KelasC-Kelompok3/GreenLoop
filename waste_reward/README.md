@@ -12,6 +12,7 @@ Modul ini mengelola poin milik mitra B2B, katalog voucher, penukaran poin, dan p
 - Poin pada riwayat pickup disalin dari ledger setelah pemberian poin berhasil; ledger tetap menjadi sumber saldo utama.
 - Voucher katalog diarsipkan, bukan dihapus permanen, agar riwayat penukaran tetap utuh.
 - `RewardTransaction` dan `UserVoucher` bersifat read-only di admin. Perubahan saldo harus lewat service agar jejak audit dan saldo tidak rusak.
+- Endpoint penukaran membatasi 10 percobaan per mitra per menit untuk mengurangi penyalahgunaan.
 
 Contoh pemanggilan setelah status pickup berubah menjadi terverifikasi:
 
