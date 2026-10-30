@@ -11,6 +11,7 @@
     <a href="{% url 'courier:admin_verify_couriers' %}" class="menu-item{% if request.resolver_match.url_name == 'admin_verify_couriers' %} active{% endif %}"><i class="bi bi-truck"></i><span>Verifikasi Kurir</span></a>
     <a href="{% url 'katalog:admin_products' %}" class="menu-item{% if request.resolver_match.url_name == 'admin_products' or request.resolver_match.url_name == 'add_admin_product' or request.resolver_match.url_name == 'update_admin_product' or request.resolver_match.url_name == 'delete_admin_product' or request.resolver_match.url_name == 'catalog_preview' or request.resolver_match.url_name == 'product_detail_preview' %} active{% endif %}"><i class="bi bi-shop"></i><span>Katalog Produk</span></a>
     <a href="{% url 'katalog:admin_orders' %}" class="menu-item{% if request.resolver_match.url_name == 'admin_orders' %} active{% endif %}"><i class="bi bi-receipt"></i><span>Pesanan</span></a>
+    <a href="{% url 'waste_reward:admin_vouchers' %}" class="menu-item{% if request.resolver_match.url_name == 'admin_vouchers' %} active{% endif %}"><i class="bi bi-gift"></i><span>Voucher Reward</span></a>
     <a href="{% url 'profile' %}" class="menu-item{% if request.resolver_match.url_name == 'profile' %} active{% endif %}"><i class="bi bi-person"></i><span>Profil Admin</span></a>
   </nav>
   <div class="sidebar-bottom">
@@ -27,6 +28,7 @@
       <a href="{% url 'courier:admin_verify_couriers' %}" class="menu-item{% if request.resolver_match.url_name == 'admin_verify_couriers' %} active{% endif %}"><i class="bi bi-truck"></i><span>Verifikasi Kurir</span></a>
       <a href="{% url 'katalog:admin_products' %}" class="menu-item{% if request.resolver_match.url_name == 'admin_products' or request.resolver_match.url_name == 'add_admin_product' or request.resolver_match.url_name == 'update_admin_product' or request.resolver_match.url_name == 'delete_admin_product' or request.resolver_match.url_name == 'catalog_preview' or request.resolver_match.url_name == 'product_detail_preview' %} active{% endif %}"><i class="bi bi-shop"></i><span>Katalog Produk</span></a>
       <a href="{% url 'katalog:admin_orders' %}" class="menu-item{% if request.resolver_match.url_name == 'admin_orders' %} active{% endif %}"><i class="bi bi-receipt"></i><span>Pesanan</span></a>
+      <a href="{% url 'waste_reward:admin_vouchers' %}" class="menu-item{% if request.resolver_match.url_name == 'admin_vouchers' %} active{% endif %}"><i class="bi bi-gift"></i><span>Voucher Reward</span></a>
       <a href="{% url 'profile' %}" class="menu-item{% if request.resolver_match.url_name == 'profile' %} active{% endif %}"><i class="bi bi-person"></i><span>Profil Admin</span></a>
     </nav>
     <div class="sidebar-bottom"><div class="pilot-card"><p class="pilot-title"><i class="bi bi-geo-alt-fill"></i> Area Pilot: Kota Depok</p><p>Layanan penjemputan khusus wilayah Kota Depok.</p></div><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="logout"><i class="bi bi-box-arrow-right"></i><span>Keluar</span></button></form></div>

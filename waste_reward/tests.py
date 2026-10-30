@@ -812,3 +812,69 @@ class RewardAdminSecurityTests(WasteRewardTestCase):
         voucher_admin.activate_vouchers(request, RewardVoucher.objects.filter(pk=voucher.pk))
         voucher.refresh_from_db()
         self.assertTrue(voucher.is_active)
+
+    def test_voucher_management_page_is_only_for_greenloop_admins(self):
+        response = self.client.get(reverse('waste_reward:admin_vouchers'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Katalog Voucher')
+        self.assertContains(response, 'Tambah voucher')
+
+        mitra = self.make_user('regular-mitra-management')
+        self.client.force_login(mitra)
+        response = self.client.get(reverse('waste_reward:admin_vouchers'))
+        self.assertEqual(response.status_code, 403)
+
+    def test_anonymous_voucher_management_redirects_to_login(self):
+        self.client.logout()
+        response = self.client.get(reverse('waste_reward:admin_vouchers'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/accounts/login/', response.url)
+
+    def test_ajax_voucher_crud_validates_and_archives_without_deleting(self):
+        create_url = reverse('waste_reward:create_voucher')
+        payload = {
+            'code': 'ajax-demo-voucher',
+            'title': 'Voucher AJAX',
+            'kind': RewardVoucher.Kind.DISCOUNT,
+            'value_label': 'Rp 15.000',
+            'points_cost': 300,
+            'description': 'Voucher contoh',
+            'valid_days': 14,
+            'is_active': 'on',
+            'sort_order': 1,
+        }
+        response = self.client.post(create_url, payload, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 201)
+        created = response.json()['voucher']
+        voucher = RewardVoucher.objects.get(pk=created['id'])
+
+        response = self.client.get(reverse(
+            'waste_reward:manage_voucher_detail', args=(voucher.pk,)
+        ))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['voucher']['title'], 'Voucher AJAX')
+
+        response = self.client.post(
+            reverse('waste_reward:manage_voucher_detail', args=(voucher.pk,)),
+            {**payload, 'title': 'Voucher Diperbarui'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['voucher']['title'], 'Voucher Diperbarui')
+
+        response = self.client.post(
+            create_url,
+            {**payload, 'code': 'invalid-cost-voucher', 'points_cost': 0},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('points_cost', response.json()['errors'])
+
+        response = self.client.post(
+            reverse('waste_reward:archive_voucher', args=(voucher.pk,)),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 200)
+        voucher.refresh_from_db()
+        self.assertFalse(voucher.is_active)
+        self.assertTrue(RewardVoucher.objects.filter(pk=voucher.pk).exists())
