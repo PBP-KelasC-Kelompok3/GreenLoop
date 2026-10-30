@@ -1,0 +1,20 @@
+.wr-admin { color: #1f2a1c; }
+.wr-admin-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+.wr-admin-heading h1 { margin: 0; color: #123620; font-size: clamp(24px, 3vw, 34px); }
+.wr-admin-heading p:last-child { margin: 5px 0 0; color: #58675a; }
+#wr-voucher-table th { color: #506649; font-size: 12px; white-space: nowrap; }
+#wr-voucher-table td { font-size: 13px; }
+.wr-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.wr-field { display: grid; align-content: start; gap: 6px; }
+.wr-field label { margin: 0; font-size: 13px; font-weight: 600; }
+.wr-field input:not([type="checkbox"]), .wr-field select, .wr-field textarea { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #cbd8cb; border-radius: 9px; background: #fff; }
+.wr-field input[type="checkbox"] { width: 18px; height: 18px; }
+.wr-field-wide { grid-column: 1 / -1; }
+.wr-field-error:not(:empty) { display: block; }
+.wr-admin button:focus-visible, .wr-admin input:focus-visible, .wr-admin select:focus-visible, .wr-admin textarea:focus-visible { outline: 3px solid #7cc89a; outline-offset: 2px; }
+@media (max-width: 650px) {
+  .wr-admin-heading { align-items: stretch; flex-direction: column; }
+  .wr-admin-heading > button { width: 100%; }
+  .wr-form-grid { grid-template-columns: 1fr; }
+  .wr-field-wide { grid-column: auto; }
+}

@@ -1,0 +1,62 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block title %}Voucher Reward | GreenLoop Admin{% endblock title %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/waste_reward_admin.css' %}">{% endblock extra_head %}
+
+{% block admin_content %}
+<section class="wr-admin" aria-labelledby="wr-admin-title">
+  <header class="wr-admin-heading">
+    <div><p class="text-uppercase small fw-bold text-success mb-1">Waste &amp; Reward</p><h1 id="wr-admin-title">Katalog Voucher</h1><p>Tambah, edit, dan arsipkan voucher mitra. Perubahan tersimpan tanpa memuat ulang halaman.</p></div>
+    <button type="button" class="btn btn-success" id="wr-new-voucher">Tambah voucher</button>
+  </header>
+
+  <p class="alert d-none" id="wr-admin-status" role="status" aria-live="polite"></p>
+
+  <form class="wr-search input-group mb-3" method="get" role="search">
+    <label class="visually-hidden" for="wr-voucher-search">Cari voucher</label>
+    <input class="form-control" id="wr-voucher-search" type="search" name="q" value="{{ query }}" placeholder="Cari nama, kode, atau nilai voucher">
+    <button class="btn btn-outline-success" type="submit">Cari</button>
+  </form>
+
+  <div class="table-responsive bg-white rounded-4 shadow-sm">
+    <table class="table align-middle mb-0" id="wr-voucher-table">
+      <thead><tr><th>Voucher</th><th>Jenis</th><th>Biaya poin</th><th>Masa aktif</th><th>Penukaran</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody>
+        {% for voucher in vouchers %}
+        <tr data-voucher-row="{{ voucher.pk }}">
+          <td><strong data-cell="title">{{ voucher.title }}</strong><small class="d-block text-muted" data-cell="code">{{ voucher.code }}</small></td>
+          <td data-cell="kind">{{ voucher.get_kind_display }}</td>
+          <td data-cell="cost">{{ voucher.points_cost }} poin</td>
+          <td data-cell="days">{{ voucher.valid_days }} hari</td>
+          <td>{{ voucher.redemption_count }}</td>
+          <td data-cell="status"><span class="badge {% if voucher.is_active %}text-bg-success{% else %}text-bg-secondary{% endif %}">{% if voucher.is_active %}Aktif{% else %}Diarsipkan{% endif %}</span></td>
+          <td class="text-nowrap"><button type="button" class="btn btn-sm btn-outline-primary" data-edit-voucher="{{ voucher.pk }}">Edit</button>{% if voucher.is_active %} <button type="button" class="btn btn-sm btn-outline-danger" data-archive-voucher="{{ voucher.pk }}">Arsipkan</button>{% endif %}</td>
+        </tr>
+        {% empty %}<tr id="wr-empty-row"><td colspan="7" class="text-center text-muted py-4">Belum ada voucher yang cocok.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <section class="wr-editor card border-0 shadow-sm mt-4 d-none" id="wr-voucher-editor" aria-labelledby="wr-editor-title">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-start justify-content-between gap-3 mb-3"><div><h2 class="h5 mb-1" id="wr-editor-title">Tambah voucher</h2><p class="text-muted small mb-0">Validasi dilakukan lagi di server sebelum disimpan.</p></div><button class="btn-close" type="button" id="wr-close-editor" aria-label="Tutup form"></button></div>
+      <form id="wr-voucher-form" method="post" action="{% url 'waste_reward:create_voucher' %}">
+        {% csrf_token %}<input type="hidden" id="wr-voucher-id" value="">
+        <div class="wr-form-grid">
+          {% for field in form %}
+          <div class="wr-field{% if field.name == 'description' %} wr-field-wide{% endif %}">
+            {{ field.label_tag }}{{ field }}
+            {% if field.help_text %}<small class="text-muted">{{ field.help_text }}</small>{% endif %}
+            <small class="wr-field-error text-danger" data-error-for="{{ field.name }}"></small>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="d-flex gap-2 mt-4"><button class="btn btn-success" type="submit" id="wr-save-voucher">Simpan voucher</button><button class="btn btn-outline-secondary" type="button" id="wr-cancel-editor">Batal</button></div>
+      </form>
+    </div>
+  </section>
+</section>
+{% endblock admin_content %}
+
+{% block extra_js %}<script src="{% static 'js/waste_reward_admin.js' %}" defer></script>{% endblock extra_js %}

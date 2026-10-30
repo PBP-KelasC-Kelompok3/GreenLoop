@@ -133,6 +133,8 @@ class CompositionTests(TestCase):
 
     def pickup_record(self, code, day, kg):
         source = self.schedules[code]
+        # PickupRecord has a OneToOne link to a single real pickup schedule.
+        # Each historical record therefore needs its own schedule fixture.
         schedule = PickupSchedule.objects.create(
             mitra=source.mitra,
             estimated_weight=source.estimated_weight,
