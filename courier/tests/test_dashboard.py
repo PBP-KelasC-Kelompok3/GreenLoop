@@ -132,7 +132,15 @@ class CompositionTests(TestCase):
             )
 
     def pickup_record(self, code, day, kg):
-        return rec(self.user, code, day, kg, pickup_schedule=self.schedules[code])
+        source = self.schedules[code]
+        schedule = PickupSchedule.objects.create(
+            mitra=source.mitra,
+            estimated_weight=source.estimated_weight,
+            pickup_date=day,
+            pickup_time_slot=source.pickup_time_slot,
+            status="COMPLETED",
+        )
+        return rec(self.user, code, day, kg, pickup_schedule=schedule)
 
     def test_groups_by_partner_type_not_waste_type(self):
         self.pickup_record("T1", date(2026, 10, 1), 6)
@@ -289,7 +297,7 @@ class DashboardPageTests(RouteTestBase):
         for key in ("7", "30", "365", "abc"):
             res = self.client.get(self.url, {"periode": key})
             self.assertEqual(res.status_code, 200, key)
-            self.assertContains(res, "Live courier dashboard")
+            self.assertContains(res, "Kinerja nyata, diperbarui setiap pikap")
         res = self.client.get(self.url, {"periode": "7"})
         self.assertContains(res, 'class="is-active" aria-current="true">7 Hari')
 

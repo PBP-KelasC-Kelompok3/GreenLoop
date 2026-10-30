@@ -7,7 +7,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from courier.models import PickupRecord, WeightLog
+from courier.models import CourierAssignment, PickupRecord, WeightLog
 from courier.tests.helpers import PLAIN_STATIC, make_approved_courier, make_user
 from scheduling.models import MitraProfile, PickupSchedule
 
@@ -44,11 +44,14 @@ class PickupArrivalTests(TestCase):
         )
         self.pickup = PickupSchedule.objects.create(
             mitra=self.mitra,
-            courier=self.courier,
             estimated_weight=12.5,
             pickup_date=timezone.localdate(),
             pickup_time_slot="08:00 - 10:00 WIB",
             status="SCHEDULED",
+        )
+        CourierAssignment.objects.create(
+            pickup_schedule=self.pickup,
+            courier=self.courier,
         )
         self.client.force_login(self.courier)
 

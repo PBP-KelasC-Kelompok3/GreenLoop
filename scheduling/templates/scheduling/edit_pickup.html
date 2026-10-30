@@ -17,8 +17,11 @@
     <h5 class="fw-bold mb-1">Form Perubahan Jadwal</h5>
     <p class="text-muted small mb-4">ID Penjemputan: #{{ pickup.id }}</p>
 
-    <form method="POST">
+    <div id="pickup-edit-feedback" aria-live="polite"></div>
+    <form method="POST" hx-post="{% url 'edit_pickup' pickup.id %}"
+          hx-target="#pickup-edit-feedback" hx-swap="innerHTML" hx-indicator="#pickup-edit-saving">
       {% csrf_token %}
+      <span id="pickup-edit-saving" class="htmx-indicator text-muted small" role="status">Menyimpan perubahan…</span>
       
       <!-- Tanggal Penjemputan -->
       <div class="mb-3">

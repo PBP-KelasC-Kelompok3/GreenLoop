@@ -1,0 +1,65 @@
+<div class="card history-card shadow-sm p-4 mb-4 bg-white">
+  <div class="table-responsive">
+    <table class="table table-history align-middle table-hover mb-0">
+      <thead>
+        <tr class="small">
+          <th>ID</th><th>TANGGAL &amp; SLOT</th><th>ESTIMASI</th><th>BERAT AKTUAL</th>
+          <th>ARMADA</th><th>FOTO</th><th>STATUS VERIFIKASI</th><th class="text-end">POIN</th><th>AKSI</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pickup in pickups %}
+        <tr id="pickup-row-{{ pickup.pk }}">
+          <td class="fw-bold">PK-{{ pickup.pk|stringformat:"04d" }}</td>
+          <td><div>{{ pickup.pickup_date|date:"d M Y" }}</div><small class="text-muted">{{ pickup.pickup_time_slot }}</small></td>
+          <td>{{ pickup.estimated_weight }} kg</td>
+          <td>{% if pickup.actual_weight %}{{ pickup.actual_weight }} kg{% else %}&mdash;{% endif %}</td>
+          <td>{{ pickup.armada }}</td>
+          <td>
+            {% if pickup.waste_photo %}
+              <img src="{{ pickup.waste_photo.url }}" alt="Foto pengajuan PK-{{ pickup.pk }}" class="border shadow-sm history-thumb-img">
+            {% else %}<span class="text-muted small">&mdash;</span>{% endif %}
+          </td>
+          <td>
+            {% if pickup.status == 'COMPLETED' %}<span class="badge bg-success-subtle text-success rounded-pill">Selesai</span>
+            {% elif pickup.status == 'PENDING' %}<span class="badge bg-warning-subtle text-warning rounded-pill">Menunggu Verifikasi</span>
+            {% elif pickup.status == 'IN_PROGRESS' or pickup.status == 'SCHEDULED' %}<span class="badge bg-info-subtle text-info rounded-pill">Dalam Perjalanan</span>
+            {% elif pickup.status == 'APPROVED' %}<span class="badge bg-primary-subtle text-primary rounded-pill">Disetujui</span>
+            {% else %}<span class="badge bg-danger-subtle text-danger rounded-pill">Ditolak</span>{% endif %}
+          </td>
+          <td class="text-end fw-semibold text-success">{% if pickup.status == 'COMPLETED' %}+{{ pickup.points }}{% else %}&mdash;{% endif %}</td>
+          <td>
+            {% if pickup.status == 'PENDING' %}
+              <div class="d-flex gap-1">
+                <a href="{% url 'edit_pickup' pickup.pk %}" class="btn btn-sm btn-outline-secondary" aria-label="Ubah PK-{{ pickup.pk }}"><i class="bi bi-pencil"></i></a>
+                <form method="post" action="{% url 'delete_pickup' pickup.pk %}"
+                      hx-post="{% url 'delete_pickup' pickup.pk %}" hx-target="#pickup-row-{{ pickup.pk }}"
+                      hx-swap="delete" hx-confirm="Hapus pengajuan PK-{{ pickup.pk }}?">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Hapus PK-{{ pickup.pk }}"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            {% else %}<span class="text-muted">&mdash;</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="text-center text-muted py-4">Tidak ada pengajuan yang cocok dengan filter ini.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<nav aria-label="Halaman riwayat penjemputan" class="d-flex justify-content-between align-items-center mb-4">
+  <span class="small text-muted">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span>
+  <div class="btn-group">
+    {% if page_obj.has_previous %}
+      <button type="button" class="btn btn-outline-success btn-sm" hx-get="?status={{ current_status }}&amp;q={{ query|urlencode }}&amp;page={{ page_obj.previous_page_number }}" hx-target="#history-results" hx-push-url="true">Sebelumnya</button>
+    {% endif %}
+    {% if page_obj.has_next %}
+      <button type="button" class="btn btn-outline-success btn-sm" hx-get="?status={{ current_status }}&amp;q={{ query|urlencode }}&amp;page={{ page_obj.next_page_number }}" hx-target="#history-results" hx-push-url="true">Berikutnya</button>
+    {% endif %}
+  </div>
+</nav>
+{% endif %}

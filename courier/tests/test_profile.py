@@ -447,7 +447,7 @@ class UpdateProfileEndpointTests(TestCase):
         self.client.post(self.url, {**VALID_PROFILE, "full_name": "Rina Wati"})
         res = self.client.get(reverse("courier:show_profile"))
         self.assertContains(res, "Rina Wati")
-        self.assertContains(res, ">RW</div>")
+        self.assertContains(res, ">RW</span>")
 
 
 # ======================================================================
