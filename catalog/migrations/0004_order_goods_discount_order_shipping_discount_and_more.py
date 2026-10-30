@@ -2,6 +2,7 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
+from .compat import AddMissingFields
 
 
 class Migration(migrations.Migration):
@@ -12,6 +13,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.SeparateDatabaseAndState(
+            database_operations=[AddMissingFields([('catalog', 'Order')])],
+            state_operations=[
         migrations.AddField(
             model_name='order',
             name='goods_discount',
@@ -26,5 +30,7 @@ class Migration(migrations.Migration):
             model_name='order',
             name='user_voucher',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='soap_orders', to='waste_reward.uservoucher'),
+        ),
+            ],
         ),
     ]

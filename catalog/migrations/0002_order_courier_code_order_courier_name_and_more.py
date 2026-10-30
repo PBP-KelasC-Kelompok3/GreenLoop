@@ -2,6 +2,7 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
+from .compat import AddMissingFields
 
 
 class Migration(migrations.Migration):
@@ -11,6 +12,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.SeparateDatabaseAndState(
+            database_operations=[AddMissingFields([('catalog', 'Product'), ('catalog', 'Order'), ('catalog', 'OrderItem')])],
+            state_operations=[
         migrations.AddField(
             model_name='order',
             name='courier_code',
@@ -105,6 +109,8 @@ class Migration(migrations.Migration):
                 ('quantity', models.PositiveSmallIntegerField()),
                 ('order', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='catalog.order')),
                 ('product', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='catalog.product')),
+            ],
+        ),
             ],
         ),
     ]

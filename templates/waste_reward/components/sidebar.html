@@ -11,6 +11,9 @@
         <a href="{% url 'waste_reward:dashboard' %}" class="menu-item {% if request.resolver_match.app_name == 'waste_reward' %}active{% endif %}">
             <i data-lucide="layout-dashboard"></i><span>Waste &amp; Reward</span>
         </a>
+        <a href="{% url 'katalog:katalog_page' %}" class="menu-item {% if request.resolver_match.app_name == 'katalog' %}active{% endif %}">
+            <i data-lucide="shopping-bag"></i><span>Belanja Produk</span>
+        </a>
         <a href="{% url 'mitra_dashboard' %}" class="menu-item {% if current == 'mitra_dashboard' %}active{% endif %}">
             <i data-lucide="gauge"></i><span>Dashboard Mitra</span>
         </a>

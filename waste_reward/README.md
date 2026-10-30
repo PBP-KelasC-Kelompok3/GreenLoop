@@ -24,32 +24,30 @@ Pemanggilan dilakukan sekali ketika pickup mencapai status terverifikasi. Gunaka
 
 `redeem_voucher(user, voucher_id)` memvalidasi role, status voucher, dan saldo. Jika berhasil, layanan membuat `UserVoucher` dan transaksi debit poin dalam satu transaksi database. View dashboard dan endpoint penukaran tersedia melalui namespace `waste_reward`.
 
-## Kontrak checkout
+## Integrasi katalog dan checkout
 
-Modul e-commerce dapat menggunakan `apply_voucher_at_checkout` untuk memvalidasi voucher milik mitra, membatasi penggunaan satu voucher per pesanan, menandai voucher terpakai, dan menghitung total.
+Mitra memakai katalog di `/katalog/` untuk melihat harga B2B, mencari tujuan pengiriman, memilih kurir, dan menggunakan voucher aktif yang sudah ditukar. Voucher tidak bisa dipakai oleh akun lain, dipakai ulang, atau digunakan setelah kedaluwarsa. Voucher grosir hanya berlaku untuk akun mitra.
 
-```python
-from django.db import transaction
-from waste_reward.services import apply_voucher_at_checkout
+Endpoint checkout memvalidasi kembali stok, harga berdasarkan role, dan ongkos kirim dari RajaOngkir di server. Pemakaian voucher, pengurangan stok, pembuatan pesanan, dan permintaan token Midtrans berada dalam transaksi database yang sama. Jika checkout gagal sebelum pesanan dibuat, stok dan voucher tidak terpotong. Pesanan menyimpan snapshot nama produk, jumlah, harga, ongkir, potongan, alamat, dan layanan kurir.
 
-with transaction.atomic():
-    result = apply_voucher_at_checkout(
-        user=buyer,
-        voucher_code=checkout_voucher_code,
-        order_reference=f'order-{order.pk}',
-        subtotal=order.subtotal,
-        shipping_cost=order.shipping_cost,
-        wholesale_order=order.is_wholesale,
-    )
-    order.goods_discount = result['goods_discount']
-    order.shipping_discount = result['shipping_discount']
-    order.total = result['total_due']
-    order.save()
+Status pembayaran diperbarui dari notifikasi Midtrans di `/katalog/api/transaction/notification/`. Notifikasi harus memakai tanda tangan valid. Jika pembayaran gagal atau kedaluwarsa, stok dan voucher dikembalikan. Untuk pembayaran sukses dari halaman Snap, katalog juga meminta konfirmasi status ke server Midtrans.
+
+## Konfigurasi dan migrasi
+
+Atur environment berikut sebelum mengaktifkan checkout:
+
+- `MIDTRANS_CLIENT_KEY` dan `MIDTRANS_SERVER_KEY`
+- `MIDTRANS_IS_PRODUCTION` (`False` untuk sandbox)
+- `RAJAONGKIR_API_KEY` dan `RAJAONGKIR_ORIGIN_ID`
+- Opsional: `RAJAONGKIR_BASE_URL` dan `RAJAONGKIR_COURIERS`
+
+Arahkan URL notifikasi pembayaran Midtrans ke `/katalog/api/transaction/notification/`, lalu jalankan migrasi:
+
+```powershell
+python manage.py migrate
 ```
 
-Panggil layanan dalam transaksi database yang sama dengan pembuatan atau penyimpanan pesanan. Jika penyimpanan pesanan gagal, perubahan status voucher ikut dibatalkan. `order_reference` harus unik dan stabil. Nilai `wholesale_order` hanya `True` untuk pesanan grosir B2B.
-
-Hasil layanan memuat `user_voucher`, `subtotal`, `shipping_cost`, `goods_discount`, `shipping_discount`, dan `total_due`. Untuk akun yang tidak berhak, layanan melempar `PermissionDenied`; untuk voucher tidak tersedia/invalid, layanan melempar `VoucherUnavailable`; nominal atau referensi tidak valid menghasilkan `ValueError`.
+Voucher bawaan dibuat oleh migrasi awal `waste_reward`. Poin otomatis ditambahkan saat pickup mitra selesai dan memiliki berat aktual; ID pickup dipakai sebagai referensi unik agar penyimpanan ulang tidak menggandakan poin.
 
 ## Verifikasi lokal
 
