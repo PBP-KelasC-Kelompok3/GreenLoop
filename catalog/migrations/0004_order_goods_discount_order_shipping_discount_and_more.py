@@ -2,11 +2,7 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
-<<<<<<< HEAD
 from catalog.migration_compat import AddMissingFields
-=======
-from catalog.migration_operations import AddMissingFields
->>>>>>> 3f7050a (feat: tambah fitur CRUD mitra)
 
 
 class Migration(migrations.Migration):
