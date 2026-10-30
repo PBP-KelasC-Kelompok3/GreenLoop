@@ -2,7 +2,7 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
-from .compat import AddMissingFields
+from catalog.migration_compat import AddMissingFields
 
 
 class Migration(migrations.Migration):

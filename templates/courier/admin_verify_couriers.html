@@ -30,8 +30,14 @@
       <a href="{% url 'courier:admin_verify_couriers' %}" class="menu-item active">
         <i class="bi bi-truck"></i><span>Verifikasi Kurir</span>
       </a>
-      <a href="{% url 'katalog:katalog_page' %}" class="menu-item">
+      <a href="{% url 'katalog:admin_products' %}" class="menu-item">
         <i class="bi bi-shop"></i><span>Katalog Produk</span>
+      </a>
+      <a href="{% url 'katalog:admin_orders' %}" class="menu-item">
+        <i class="bi bi-receipt"></i><span>Pesanan</span>
+      </a>
+      <a href="{% url 'profile' %}" class="menu-item">
+        <i class="bi bi-person"></i><span>Profil Admin</span>
       </a>
     </nav>
     <div class="sidebar-bottom">
@@ -70,8 +76,14 @@
         <a href="{% url 'courier:admin_verify_couriers' %}" class="menu-item active">
           <i class="bi bi-truck"></i><span>Verifikasi Kurir</span>
         </a>
-        <a href="{% url 'katalog:katalog_page' %}" class="menu-item">
+        <a href="{% url 'katalog:admin_products' %}" class="menu-item">
           <i class="bi bi-shop"></i><span>Katalog Produk</span>
+        </a>
+        <a href="{% url 'katalog:admin_orders' %}" class="menu-item">
+          <i class="bi bi-receipt"></i><span>Pesanan</span>
+        </a>
+        <a href="{% url 'profile' %}" class="menu-item">
+          <i class="bi bi-person"></i><span>Profil Admin</span>
         </a>
       </nav>
       <div class="sidebar-bottom">

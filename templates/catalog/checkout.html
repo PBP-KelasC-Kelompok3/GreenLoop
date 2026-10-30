@@ -3,7 +3,7 @@
 {% block title %}Checkout | GreenLoop{% endblock title %}
 {% block content %}
 <div class="commerce-page checkout-page page-wrap">
-    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Beranda</a><span>›</span><a href="{% url 'katalog:cart' %}">Keranjang</a><span>›</span><span aria-current="page">Checkout</span></nav>
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% if is_mitra %}{% url 'mitra_dashboard' %}{% else %}{% url 'home' %}{% endif %}">{% if is_mitra %}Dashboard Mitra{% else %}Beranda{% endif %}</a><span>›</span><a href="{% url 'katalog:cart' %}">Keranjang</a><span>›</span><span aria-current="page">Checkout</span></nav>
     <div class="checkout-heading-row"><div><p class="catalog-kicker">Langkah terakhir</p><h1>Checkout</h1></div><ol class="checkout-steps"><li class="step-done"><span>✓</span> Keranjang</li><li class="step-active"><span>2</span> Pengiriman</li><li><span>3</span> Pembayaran</li><li><span>4</span> Selesai</li></ol></div>
     <form id="checkoutForm" class="checkout-layout">
         {% csrf_token %}

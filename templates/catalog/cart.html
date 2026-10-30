@@ -2,7 +2,7 @@
 {% block title %}Keranjang Belanja | GreenLoop{% endblock title %}
 {% block content %}
 <div class="commerce-page cart-page page-wrap">
-    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Beranda</a><span>›</span><span aria-current="page">Keranjang</span></nav>
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% if is_mitra %}{% url 'mitra_dashboard' %}{% else %}{% url 'home' %}{% endif %}">{% if is_mitra %}Dashboard Mitra{% else %}Beranda{% endif %}</a><span>›</span><span aria-current="page">Keranjang</span></nav>
     <div class="page-title-row"><div><p class="catalog-kicker">GreenLoop · Belanja</p><h1>Keranjang Belanja</h1></div><span class="count-pill">{{ count }} item</span></div>
     {% if items %}
     <div class="cart-layout">

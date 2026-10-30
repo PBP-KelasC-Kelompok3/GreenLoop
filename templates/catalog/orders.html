@@ -2,7 +2,7 @@
 {% block title %}Lacak Pesanan | GreenLoop{% endblock title %}
 {% block content %}
 <div class="commerce-page orders-page page-wrap">
-    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Beranda</a><span>›</span><span aria-current="page">Lacak Pesanan</span></nav>
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% if is_mitra %}{% url 'mitra_dashboard' %}{% else %}{% url 'home' %}{% endif %}">{% if is_mitra %}Dashboard Mitra{% else %}Beranda{% endif %}</a><span>›</span><span aria-current="page">Lacak Pesanan</span></nav>
     <div class="page-title-row"><div><p class="catalog-kicker">Riwayat belanja</p><h1>Lacak Pesanan</h1><p class="catalog-subtitle">Pantau pembayaran dan status pengiriman pesananmu.</p></div></div>
     {% if orders %}
     <div class="orders-list">

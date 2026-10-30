@@ -60,7 +60,7 @@
           <a href="{% url 'waste_reward:dashboard' %}" class="menu-item {% if request.resolver_match.app_name == 'waste_reward' %}active{% endif %}">
             <i class="bi bi-gift"></i><span>Waste &amp; Reward</span>
           </a>
-          <a href="{% url 'katalog:katalog_page' %}" class="menu-item">
+          <a href="{% url 'katalog:katalog_page' %}" class="menu-item {% if request.resolver_match.app_name == 'katalog' %}active{% endif %}">
             <i class="bi bi-cart3"></i><span>Belanja Produk</span>
           </a>
           <a href="{% url 'mitra_profile' %}" class="menu-item {% if request.resolver_match.url_name == 'mitra_profile' %}active{% endif %}">

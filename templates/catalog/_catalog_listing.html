@@ -1,5 +1,5 @@
 <div class="commerce-page catalog-page page-wrap">
-    <nav class="breadcrumbs" aria-label="Breadcrumb">{% if is_preview %}<a href="{% url 'admin_dashboard' %}">Dashboard Admin</a>{% else %}<a href="{% url 'home' %}">Beranda</a>{% endif %}<span aria-hidden="true">&rsaquo;</span><span aria-current="page">{% if is_preview %}Preview Katalog{% else %}Katalog{% endif %}</span></nav>
+    <nav class="breadcrumbs" aria-label="Breadcrumb">{% if is_preview %}<a href="{% url 'admin_dashboard' %}">Dashboard Admin</a>{% elif is_mitra %}<a href="{% url 'mitra_dashboard' %}">Dashboard Mitra</a>{% else %}<a href="{% url 'home' %}">Beranda</a>{% endif %}<span aria-hidden="true">&rsaquo;</span><span aria-current="page">{% if is_preview %}Preview Katalog{% else %}Katalog{% endif %}</span></nav>
     {% if is_preview %}<div class="catalog-preview-banner"><span><i class="bi bi-eye me-2"></i>Mode preview: tampilan katalog konsumen, pembelian dinonaktifkan.</span><a href="{% url 'katalog:admin_products' %}">Kembali ke Kelola Produk</a></div>{% endif %}
     <section class="catalog-header" aria-labelledby="catalog-title">
         <div class="catalog-heading">

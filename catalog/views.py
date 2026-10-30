@@ -89,6 +89,7 @@ def _cart(request):
 
 def _page_context(request, **extra):
     context = {
+        "base_template": "scheduling/mitra_base.html" if _user_is_mitra(request.user) else "base.html",
         "cart_count": _cart(request)["count"] if _can_shop(request.user) else 0,
         "is_mitra": _user_is_mitra(request.user),
         "is_admin": _is_catalog_admin(request.user),

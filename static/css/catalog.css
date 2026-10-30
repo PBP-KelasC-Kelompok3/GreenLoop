@@ -1003,3 +1003,29 @@
 .catalog-preview-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; margin: 0 0 18px; padding: 12px 16px; color: var(--forest); background: #edf4e8; border: 1px solid #d8e8cc; border-radius: 12px; font-size: 13px; }
 .catalog-preview-banner a { color: var(--primary); font-weight: 700; text-decoration: none; }
 .catalog-preview-banner a:hover { text-decoration: underline; }
+
+/* Keep the entire mitra shopping flow inside the mitra dashboard shell. */
+body[data-page="mitra-dashboard"] .main-area .commerce-page.page-wrap {
+    width: 100%;
+    max-width: none;
+    margin: 0 auto 24px;
+    padding: clamp(18px, 2vw, 30px);
+    background: #fff;
+    border: 1px solid var(--gl-border, #dbe7dd);
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(15, 61, 42, .05);
+}
+
+.mitra-commerce-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.mitra-commerce-actions .btn { display: inline-flex; align-items: center; gap: 7px; border-radius: 11px; font-size: .8rem; font-weight: 600; }
+.mitra-cart-count { display: inline-grid; min-width: 19px; height: 19px; place-items: center; padding: 0 5px; color: var(--forest); background: var(--lime); border-radius: 999px; font-size: 10px; font-weight: 800; }
+
+@media (max-width: 600px) {
+    body[data-page="mitra-dashboard"] .main-area .commerce-page.page-wrap {
+        margin: 0 auto 16px;
+        padding: 16px;
+        border-radius: 16px;
+    }
+    .mitra-commerce-actions { gap: 6px; }
+    .mitra-commerce-actions .btn { padding: .45rem .65rem; font-size: .72rem; }
+}

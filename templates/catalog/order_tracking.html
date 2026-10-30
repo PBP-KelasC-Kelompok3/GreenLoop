@@ -4,7 +4,7 @@
 {% block extra_head %}{{ block.super }}{% endblock extra_head %}
 {% block content %}
 <div class="commerce-page tracking-page page-wrap">
-    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Beranda</a><span>›</span><a href="{% url 'katalog:orders' %}">Lacak Pesanan</a><span>›</span><span aria-current="page">{{ order.order_id|slice:":12" }}</span></nav>
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% if is_mitra %}{% url 'mitra_dashboard' %}{% else %}{% url 'home' %}{% endif %}">{% if is_mitra %}Dashboard Mitra{% else %}Beranda{% endif %}</a><span>›</span><a href="{% url 'katalog:orders' %}">Lacak Pesanan</a><span>›</span><span aria-current="page">{{ order.order_id|slice:":12" }}</span></nav>
     <div class="page-title-row"><div><p class="catalog-kicker">Status terkini</p><h1>Pesanan #{{ order.order_id|slice:":12" }}</h1><p class="catalog-subtitle">Dibuat {{ order.created_at|date:"d M Y, H:i" }}</p></div><span class="status-pill status-{{ order.status|lower }}">{{ order.get_status_display }}</span></div>
     <div class="tracking-layout">
         <section class="tracking-card">
