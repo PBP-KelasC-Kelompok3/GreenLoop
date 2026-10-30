@@ -1,218 +1,310 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block meta %}
-<title>Katalog Produk & Pesanan</title>
-<script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ midtrans_client_key }}"></script>
-{% endblock meta %}
+{% block title %}Katalog Produk | GreenLoop{% endblock title %}
+{% block extra_head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'css/catalog.css' %}">
+    {% if midtrans_client_key %}<script src="{{ snap_js_url }}" data-client-key="{{ midtrans_client_key }}"></script>{% endif %}
+{% endblock extra_head %}
 
 {% block content %}
 <div class="catalog-page page-wrap">
-    <h1>Katalog Produk {% if is_mitra %}(B2B Mitra){% else %}(B2C Konsumen){% endif %}</h1>
-    
-    <div class="header-actions">
-        <input type="text" id="searchInput" class="form-input" placeholder="Cari produk..." onkeyup="loadProducts()">
-        
-        {% if is_admin %}
-        <button class="btn" onclick="openProductModal()">+ Tambah Produk</button>
-        {% endif %}
-        <button class="btn btn-info" onclick="loadOrders()">Lacak Pesanan Saya</button>
-		
+    <div class="catalog-heading">
+        <div>
+            <p class="catalog-eyebrow">Belanja dengan dampak</p>
+            <h1>Katalog Produk</h1>
+            <p>{% if is_mitra %}Harga khusus Mitra B2B · gunakan Waste Points di checkout.{% else %}Produk GreenLoop untuk mendukung ekonomi sirkular.{% endif %}</p>
+        </div>
+        <div class="header-actions">
+            <input type="search" id="searchInput" class="form-input" placeholder="Cari produk..." aria-label="Cari produk">
+            {% if is_admin %}<button class="btn" type="button" onclick="openProductModal()">+ Tambah Produk</button>{% endif %}
+            {% if user.is_authenticated %}<button class="btn btn-info" type="button" onclick="loadOrders()">Pesanan Saya</button>{% endif %}
+            {% if is_mitra %}<a class="btn" href="{% url 'waste_reward:dashboard' %}">Waste Points: {{ reward_balance }}</a>{% endif %}
+        </div>
     </div>
-
-    <div id="productContainer" class="product-grid"></div>
+    <div id="productContainer" class="product-grid" aria-live="polite"></div>
 
     {% include 'catalog/modals/modal_message.html' %}
-    
-    {% if is_admin %}
-        {% include 'catalog/modals/modal_form.html' %}
-    {% endif %}
-    
+    {% if is_admin %}{% include 'catalog/modals/modal_form.html' %}{% endif %}
     {% include 'catalog/modals/modal_checkout.html' %}
     {% include 'catalog/modals/modal_order.html' %}
 </div>
 
+{{ is_admin|json_script:'catalog-is-admin' }}
+{{ user.is_authenticated|json_script:'catalog-is-authenticated' }}
 <script>
-    const isAdmin = "{{ is_admin }}" === "True";
+    const isAdmin = JSON.parse(document.getElementById('catalog-is-admin').textContent);
+    const isAuthenticated = JSON.parse(document.getElementById('catalog-is-authenticated').textContent);
+    const productMap = new Map();
 
-    function showMessage(title, text) {
-        document.getElementById('messageTitle').innerText = title;
-        document.getElementById('messageText').innerText = text;
+    function csrfToken() {
+        const cookie = document.cookie.split('; ').find(item => item.startsWith('csrftoken='));
+        return cookie ? decodeURIComponent(cookie.slice('csrftoken='.length)) : '';
+    }
+
+    async function postJson(url, body) {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken()},
+            body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || data.detail || 'Permintaan gagal diproses.');
+        return data;
+    }
+
+    function showMessage(title, message) {
+        document.getElementById('messageTitle').textContent = title;
+        document.getElementById('messageText').textContent = message;
         document.getElementById('messageModal').style.display = 'block';
     }
 
-    function closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
     }
 
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = "none";
-        }
+    window.addEventListener('click', event => {
+        if (event.target.classList.contains('modal')) event.target.style.display = 'none';
+    });
+
+    function formatRupiah(amount) {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency', currency: 'IDR', maximumFractionDigits: 0
+        }).format(amount);
     }
 
     async function loadProducts() {
         const query = document.getElementById('searchInput').value;
+        const container = document.getElementById('productContainer');
         try {
-            const res = await fetch(`/katalog/api/products/?search=${query}`);
-            const products = await res.json();
-            
-            const container = document.getElementById('productContainer');
-            container.innerHTML = '';
-            
-            if (products.length === 0) {
-                container.innerHTML = '<p>Tidak ada produk ditemukan.</p>';
+            const response = await fetch(`/katalog/api/products/?search=${encodeURIComponent(query)}`);
+            if (!response.ok) throw new Error('Produk tidak dapat dimuat.');
+            const products = await response.json();
+            container.replaceChildren();
+            productMap.clear();
+            if (!products.length) {
+                container.textContent = 'Tidak ada produk yang cocok dengan pencarian.';
                 return;
             }
 
-            products.forEach(p => {
-                let adminButtons = isAdmin ? 
-                    `<button class="btn btn-info" style="width:100%; margin-top:5px;" onclick="openProductModal(${p.id}, '${p.name}', '${p.description}', ${p.price}, ${p.price}, ${p.stock})">✏️ Edit Produk</button>` : '';
-                
-                container.innerHTML += `
-                    <div class="product-card">
-                        <h3>${p.name}</h3>
-                        <p>${p.description}</p>
-                        <div class="price">Rp ${p.price.toLocaleString('id-ID')}</div>
-                        <p>Sisa Stok: <strong>${p.stock}</strong></p>
-                        
-                        <button class="btn" onclick="openCheckoutModal(${p.id})">Beli Sekarang</button>
-                        ${adminButtons}
-                    </div>
-                `;
+            products.forEach(product => {
+                productMap.set(String(product.id), product);
+                const card = document.createElement('article');
+                card.className = 'product-card';
+                const title = document.createElement('h3');
+                title.textContent = product.name;
+                const description = document.createElement('p');
+                description.textContent = product.description;
+                const price = document.createElement('div');
+                price.className = 'price';
+                price.textContent = formatRupiah(product.price);
+                const stock = document.createElement('p');
+                stock.textContent = `Stok: ${product.stock}`;
+                const buy = document.createElement('button');
+                buy.className = 'btn';
+                buy.type = 'button';
+                buy.disabled = product.stock < 1;
+                buy.textContent = product.stock > 0 ? 'Beli Sekarang' : 'Stok Habis';
+                buy.addEventListener('click', () => openCheckoutModal(product));
+                card.append(title, description, price, stock, buy);
+
+                if (isAdmin) {
+                    const edit = document.createElement('button');
+                    edit.className = 'btn btn-info';
+                    edit.type = 'button';
+                    edit.textContent = 'Edit Produk';
+                    edit.addEventListener('click', () => openProductModal(product));
+                    card.append(edit);
+                }
+                container.append(card);
             });
         } catch (error) {
-            showMessage("Error", "Gagal memuat produk. Pastikan server berjalan.");
+            container.textContent = error.message;
         }
     }
 
-    function openProductModal(id = '', name = '', desc = '', priceB2C = '', priceB2B = '', stock = '') {
-        if (!isAdmin) return; // Proteksi frontend ganda
-        document.getElementById('productModalTitle').innerText = id ? "Edit Produk" : "Tambah Produk Baru";
-        
-        document.getElementById('formProductId').value = id;
-        const formElement = document.getElementById('productFormElement');
-        if(!id) formElement.reset(); 
-        
-        document.getElementById('id_name').value = name;
-        document.getElementById('id_description').value = desc;
-        document.getElementById('id_price_b2c').value = priceB2C;
-        document.getElementById('id_price_b2b').value = priceB2B || priceB2C; 
-        document.getElementById('id_stock').value = stock;
-        
+    function openProductModal(product = null) {
+        if (!isAdmin) return;
+        const form = document.getElementById('productFormElement');
+        form.reset();
+        document.getElementById('productModalTitle').textContent = product ? 'Edit Produk' : 'Tambah Produk Baru';
+        document.getElementById('formProductId').value = product ? product.id : '';
+        if (product) {
+            document.getElementById('id_name').value = product.name;
+            document.getElementById('id_description').value = product.description;
+            document.getElementById('id_price_b2c').value = product.price_b2c;
+            document.getElementById('id_price_b2b').value = product.price_b2b;
+            document.getElementById('id_stock').value = product.stock;
+            document.getElementById('id_weight_grams').value = product.weight_grams;
+        }
         document.getElementById('productModal').style.display = 'block';
     }
 
     async function submitProduct() {
+        if (!isAdmin) return;
         const id = document.getElementById('formProductId').value;
-        const formElement = document.getElementById('productFormElement');
-        const formData = new FormData(formElement);
-        const url = id ? `/katalog/api/products/edit/${id}/` : '/katalog/api/products/add/';
-        
+        const form = document.getElementById('productFormElement');
+        const formData = new FormData(form);
+        formData.set('weight_grams', document.getElementById('id_weight_grams').value);
         try {
-            const res = await fetch(url, { method: 'POST', body: formData });
-            if (res.ok) {
-                closeModal('productModal');
-                showMessage("Berhasil", "Data produk berhasil disimpan ke sistem.");
-                formElement.reset();
-                loadProducts();
-            } else {
-                const data = await res.json();
-                showMessage("Gagal Menyimpan", "Validasi Form Gagal: " + JSON.stringify(data.errors));
-            }
+            const response = await fetch(
+                id ? `/katalog/api/products/edit/${id}/` : '/katalog/api/products/add/',
+                {method: 'POST', headers: {'X-CSRFToken': csrfToken()}, body: formData}
+            );
+            const data = await response.json();
+            if (!response.ok) throw new Error(JSON.stringify(data.errors || data.error));
+            closeModal('productModal');
+            showMessage('Berhasil', 'Produk berhasil disimpan.');
+            loadProducts();
         } catch (error) {
-            showMessage("Error", "Terjadi kesalahan jaringan.");
+            showMessage('Gagal menyimpan', error.message);
         }
     }
 
-    function openCheckoutModal(productId) {
-        document.getElementById('checkoutProductId').value = productId;
-        document.getElementById('destinationCityId').value = ''; 
+    let destinationTimer;
+    document.getElementById('destinationSearch').addEventListener('input', event => {
+        clearTimeout(destinationTimer);
+        const query = event.target.value.trim();
+        const select = document.getElementById('destinationId');
+        select.replaceChildren(new Option('Cari dan pilih tujuan pengiriman', ''));
+        select.disabled = true;
+        if (query.length < 3) return;
+        destinationTimer = setTimeout(async () => {
+            try {
+                const response = await fetch(`/katalog/api/destinations/?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Pencarian tujuan gagal.');
+                select.replaceChildren(new Option('Pilih tujuan pengiriman', ''));
+                data.results.forEach(item => select.add(new Option(item.label, item.id)));
+                select.disabled = data.results.length === 0;
+            } catch (error) {
+                select.replaceChildren(new Option(error.message, ''));
+            }
+        }, 300);
+    });
+
+    function openCheckoutModal(product) {
+        if (!isAuthenticated) {
+            showMessage('Masuk untuk membeli', 'Silakan masuk ke akun GreenLoop sebelum melanjutkan checkout.');
+            return;
+        }
+        document.getElementById('checkoutProductId').value = product.id;
+        document.getElementById('checkoutWeightGrams').value = product.weight_grams;
+        document.getElementById('checkoutQuantity').value = 1;
+        document.getElementById('destinationSearch').value = '';
+        document.getElementById('destinationId').replaceChildren(new Option('Cari dan pilih tujuan pengiriman', ''));
+        document.getElementById('destinationId').disabled = true;
+        document.getElementById('shippingOption').replaceChildren(new Option('Pilih opsi pengiriman', ''));
+        document.getElementById('shippingOption').disabled = true;
+        document.getElementById('checkoutError').textContent = '';
         document.getElementById('checkoutModal').style.display = 'block';
     }
 
-    async function processCheckout() {
-        const productId = document.getElementById('checkoutProductId').value;
-        const destinationCityId = document.getElementById('destinationCityId').value;
-
-        if (!destinationCityId) {
-            showMessage("Input Tidak Lengkap", "Harap isi ID Kota Tujuan untuk pengiriman.");
-            return;
-        }
-        
-        closeModal('checkoutModal');
-        showMessage("Memproses...", "Sedang mengkalkulasi ongkos kirim dan membuat tagihan...");
-        
+    async function calculateShippingOptions() {
+        const destinationId = document.getElementById('destinationId').value;
+        const quantity = Number(document.getElementById('checkoutQuantity').value);
+        const weight = Number(document.getElementById('checkoutWeightGrams').value);
+        const select = document.getElementById('shippingOption');
         try {
-            const shippingRes = await fetch('/katalog/api/shipping/calculate/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ destination: destinationCityId })
-            });
-            const shippingData = await shippingRes.json();
-            
-            if (shippingData.rajaongkir.status.code !== 200) {
-                throw new Error(shippingData.rajaongkir.status.description);
+            if (!destinationId || !Number.isInteger(quantity) || quantity < 1 || quantity > 50) {
+                throw new Error('Pilih tujuan dan jumlah produk yang valid.');
             }
-            
-            const shippingCost = shippingData.rajaongkir.results[0].costs[0].cost[0].value;
-
-            const transRes = await fetch('/katalog/api/transaction/create/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ product_id: productId, shipping_cost: shippingCost })
+            const data = await postJson('/katalog/api/shipping/calculate/', {
+                destination_id: destinationId,
+                weight_grams: weight * quantity
             });
-            const transData = await transRes.json();
-            closeModal('messageModal'); 
+            select.replaceChildren(new Option('Pilih kurir dan layanan', ''));
+            data.options.forEach((item, index) => {
+                const option = new Option(
+                    `${item.courier_name} ${item.service} · ${formatRupiah(item.cost)} · ${item.etd || 'estimasi tidak tersedia'}`,
+                    String(index)
+                );
+                option.dataset.code = item.courier_code;
+                option.dataset.service = item.service;
+                select.add(option);
+            });
+            select.disabled = data.options.length === 0;
+            if (!data.options.length) throw new Error('Belum ada layanan pengiriman untuk tujuan ini.');
+            document.getElementById('checkoutError').textContent = '';
+        } catch (error) {
+            document.getElementById('checkoutError').textContent = error.message;
+        }
+    }
 
-            window.snap.pay(transData.token, {
-                onSuccess: function(result) { 
-                    showMessage("Pembayaran Berhasil", "Terima kasih! Pesanan Anda sedang diproses."); 
-                    loadProducts(); 
+    async function processCheckout() {
+        const errorTarget = document.getElementById('checkoutError');
+        const shipping = document.getElementById('shippingOption').selectedOptions[0];
+        try {
+            if (!window.snap) throw new Error('Pembayaran belum dikonfigurasi. Hubungi admin GreenLoop.');
+            if (!shipping || !shipping.dataset.code) throw new Error('Pilih layanan pengiriman terlebih dahulu.');
+            const data = await postJson('/katalog/api/transaction/create/', {
+                product_id: document.getElementById('checkoutProductId').value,
+                quantity: document.getElementById('checkoutQuantity').value,
+                recipient_name: document.getElementById('recipientName').value,
+                phone: document.getElementById('recipientPhone').value,
+                address: document.getElementById('recipientAddress').value,
+                destination_id: document.getElementById('destinationId').value,
+                courier_code: shipping.dataset.code,
+                courier_service: shipping.dataset.service,
+                voucher_code: document.getElementById('checkoutVoucher')?.value || ''
+            });
+            closeModal('checkoutModal');
+            if (!data.token) {
+                showMessage('Pesanan berhasil', `Pesanan ${data.order_id} telah dibayar dengan voucher.`);
+                return;
+            }
+            window.snap.pay(data.token, {
+                onSuccess: async () => {
+                    try {
+                        const confirmed = await postJson('/katalog/api/transaction/confirm/', {order_id: data.order_id});
+                        showMessage('Pembayaran berhasil', `Pesanan ${data.order_id} · ${confirmed.status}`);
+                    } catch (_) {
+                        showMessage('Pembayaran diterima', `Pesanan ${data.order_id} menunggu konfirmasi.`);
+                    }
                 },
-                onPending: function(result) { showMessage("Menunggu Pembayaran", "Silakan selesaikan pembayaran Anda."); },
-                onError: function(result) { showMessage("Pembayaran Gagal", "Maaf, transaksi Anda gagal diproses."); },
-                onClose: function() { showMessage("Transaksi Dibatalkan", "Anda menutup jendela pembayaran."); }
+                onPending: () => showMessage('Menunggu pembayaran', `Selesaikan pembayaran pesanan ${data.order_id}.`),
+                onError: () => showMessage('Pembayaran gagal', 'Pembayaran belum berhasil. Stok dan voucher dikembalikan setelah notifikasi gagal diterima.'),
+                onClose: () => showMessage('Pembayaran belum selesai', `Pesanan ${data.order_id} menunggu pembayaran.`)
             });
         } catch (error) {
-            closeModal('messageModal');
-            showMessage("Gagal Memproses Pesanan", error.message || "Terjadi kesalahan sistem saat menghubungi server.");
+            errorTarget.textContent = error.message;
         }
     }
 
     async function loadOrders() {
         try {
-            const res = await fetch('/katalog/api/orders/');
-            const orders = await res.json();
-            
-            let html = `<table><tr><th>ID Pesanan</th><th>Nama Produk</th><th>Total Tagihan</th><th>Status</th></tr>`;
-            
-            if (orders.length === 0) {
-                html += `<tr><td colspan="4" style="text-align:center;">Belum ada riwayat pesanan.</td></tr>`;
-            } else {
-                orders.forEach(o => {
-                    html += `
-                        <tr>
-                            <td><span style="font-family: monospace;">${o.order_id.substring(0,8)}</span></td>
-                            <td>${o.product}</td>
-                            <td>Rp ${o.amount.toLocaleString('id-ID')}</td>
-                            <td>
-                                <span style="padding: 4px 8px; border-radius: 12px; font-size: 0.85em; background-color: ${o.status.includes('Terkirim') ? '#e8f5e9' : '#fff3e0'}; color: ${o.status.includes('Terkirim') ? '#2e7d32' : '#e65100'};">
-                                    ${o.status}
-                                </span>
-                            </td>
-                        </tr>
-                    `;
+            const response = await fetch('/katalog/api/orders/');
+            if (!response.ok) throw new Error('Riwayat pesanan tidak dapat dimuat.');
+            const orders = await response.json();
+            const table = document.createElement('table');
+            table.innerHTML = '<thead><tr><th>Pesanan</th><th>Produk</th><th>Total</th><th>Status</th></tr></thead>';
+            const body = document.createElement('tbody');
+            orders.forEach(order => {
+                const row = document.createElement('tr');
+                const values = [
+                    order.order_id.slice(0, 8),
+                    `${order.product} × ${order.quantity}${order.voucher_code ? ` · ${order.voucher_code}` : ''}`,
+                    formatRupiah(order.amount),
+                    order.status
+                ];
+                values.forEach(value => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value;
+                    row.append(cell);
                 });
-            }
-            html += `</table>`;
-            
-            document.getElementById('ordersTableContainer').innerHTML = html;
+                body.append(row);
+            });
+            if (!orders.length) body.innerHTML = '<tr><td colspan="4">Belum ada pesanan.</td></tr>';
+            table.append(body);
+            document.getElementById('ordersTableContainer').replaceChildren(table);
             document.getElementById('ordersModal').style.display = 'block';
         } catch (error) {
-            showMessage("Error", "Gagal memuat riwayat pesanan.");
+            showMessage('Gagal memuat', error.message);
         }
     }
 
-    document.addEventListener("DOMContentLoaded", loadProducts);
+    document.getElementById('searchInput').addEventListener('input', loadProducts);
+    document.addEventListener('DOMContentLoaded', loadProducts);
 </script>
 {% endblock content %}
