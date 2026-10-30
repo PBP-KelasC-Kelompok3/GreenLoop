@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation, ROUND_DOWN
 import re
 
 from django.contrib.auth import get_user_model
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.utils import timezone
@@ -21,7 +21,10 @@ class VoucherUnavailable(Exception):
 
 
 def _require_mitra(user):
-    profile = getattr(user, 'userprofile', None)
+    try:
+        profile = user.userprofile
+    except (AttributeError, ObjectDoesNotExist):
+        profile = None
     if (
         not getattr(user, 'is_authenticated', False)
         or not profile
@@ -107,6 +110,7 @@ def redeem_voucher(user, voucher_id):
         points_delta=-voucher.points_cost,
         balance_after=new_balance,
         description=f'Tukar voucher {voucher.value_label}',
+        source_reference=f'redemption:{user_voucher.pk}',
     )
     return user_voucher
 

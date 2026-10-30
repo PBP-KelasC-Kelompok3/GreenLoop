@@ -114,12 +114,12 @@ def create_snap_token(order, customer_email=""):
         raise ServiceError("Payments are not configured (missing MIDTRANS_SERVER_KEY).")
     payload = {
         "transaction_details": {"order_id": order.midtrans_order_id, "gross_amount": order.gross_amount},
-        "item_details": [
-            {"id": str(order.product_id or "item"), "price": order.unit_price,
-             "quantity": order.quantity, "name": order.product_name[:50]},
-            {"id": "shipping", "price": order.shipping_cost, "quantity": 1,
-             "name": f"Shipping {order.courier_code.upper()} {order.courier_service}"[:50]},
-        ],
+        "item_details": [{
+            "id": "greenloop-order",
+            "price": order.gross_amount,
+            "quantity": 1,
+            "name": (order.product_name or "Pesanan GreenLoop")[:50],
+        }],
         "expiry": {"unit": "hours", "duration": 24},
         "customer_details": {
             "first_name": order.recipient_name[:50],
@@ -152,6 +152,8 @@ def create_snap_token(order, customer_email=""):
 
 def fetch_transaction_status(midtrans_order_id):
     """Ask Midtrans for the current status (used when the webhook can't reach localhost)."""
+    if not settings.MIDTRANS_SERVER_KEY:
+        raise ServiceError("Payments are not configured (missing MIDTRANS_SERVER_KEY).")
     try:
         r = requests.get(
             f"{_midtrans_hosts()[1]}/v2/{midtrans_order_id}/status",
@@ -165,6 +167,8 @@ def fetch_transaction_status(midtrans_order_id):
 
 
 def valid_notification_signature(payload):
+    if not settings.MIDTRANS_SERVER_KEY:
+        return False
     raw = (
         str(payload.get("order_id", ""))
         + str(payload.get("status_code", ""))
@@ -177,6 +181,8 @@ def valid_notification_signature(payload):
 
 def cancel_transaction(midtrans_order_id):
     """Cancel a transaction that has a payment attempt but is not yet paid."""
+    if not settings.MIDTRANS_SERVER_KEY:
+        raise ServiceError("Payments are not configured (missing MIDTRANS_SERVER_KEY).")
     try:
         r = requests.post(
             f"{_midtrans_hosts()[1]}/v2/{midtrans_order_id}/cancel",
