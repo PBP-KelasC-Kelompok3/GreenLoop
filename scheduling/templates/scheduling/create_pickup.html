@@ -177,8 +177,8 @@
   var weightIn   = document.getElementById('{{ form.estimated_weight.id_for_label }}');
   var photoIn    = document.getElementById('{{ form.waste_photo.id_for_label }}');
   var form       = document.getElementById('pickup-form');
-  var serverToday = '{{ schedule_today }}';
-  var serverNowMinutes = {{ schedule_now_minutes }};
+  var serverToday = '{{ schedule_today|default:"" }}';
+  var serverNowMinutes = Number('{{ schedule_now_minutes|default:0 }}');
   var bookingLeadMinutes = 60;
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
