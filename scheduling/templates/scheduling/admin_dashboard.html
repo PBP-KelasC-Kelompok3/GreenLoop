@@ -347,12 +347,18 @@
                     {% if pickup.status == 'PENDING' or pickup.status == 'pending' or pickup.status == 'Pending Verification' %}
                       <p class="text-muted small mb-4">Setujui untuk melanjutkan ke proses penjemputan atau tolak jika tidak sesuai.</p>
                       <div class="d-flex flex-column gap-2">
-                        <a href="{% url 'update_pickup_status' pickup.id 'SCHEDULED' %}" class="btn btn-approve d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Proses dan setujui penjemputan ini?');">
-                          <i class="bi bi-check-lg"></i> Setujui Penjemputan
-                        </a>
-                        <a href="{% url 'update_pickup_status' pickup.id 'REJECTED' %}" class="btn btn-reject-outline d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Tolak permintaan ini?');">
-                          <i class="bi bi-x-lg"></i> Tolak
-                        </a>
+                        <form method="post" action="{% url 'update_pickup_status' pickup.id 'SCHEDULED' %}" onsubmit="return confirm('Proses dan setujui penjemputan ini?');">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-approve d-flex w-100 align-items-center justify-content-center gap-2">
+                            <i class="bi bi-check-lg"></i> Setujui Penjemputan
+                          </button>
+                        </form>
+                        <form method="post" action="{% url 'update_pickup_status' pickup.id 'REJECTED' %}" onsubmit="return confirm('Tolak permintaan ini?');">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-reject-outline d-flex w-100 align-items-center justify-content-center gap-2">
+                            <i class="bi bi-x-lg"></i> Tolak
+                          </button>
+                        </form>
                       </div>
                     {% elif pickup.status == 'APPROVED' %}
                       <p class="text-muted small mb-3">Foto disetujui. Menunggu kurir yang sesuai dan sedang bertugas.</p>

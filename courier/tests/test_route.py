@@ -355,6 +355,8 @@ class DutyToggleTests(RouteTestBase):
         self.assertEqual(data["label"], "Sedang Bertugas")
         self.assertTrue(CourierProfile.objects.get(user=self.user).is_on_duty)
 
+        # Kurir tidak boleh berhenti bertugas selama masih memiliki tugas aktif.
+        CourierAssignment.objects.filter(courier=self.user).delete()
         data = self.post("false").json()
         self.assertFalse(data["is_on_duty"])
         self.assertEqual(data["label"], "Tidak Bertugas")
@@ -365,7 +367,10 @@ class DutyToggleTests(RouteTestBase):
 
     def test_garbage_value_means_off(self):
         self.post("true")
-        self.assertFalse(self.post("yes").json()["is_on_duty"])
+        response = self.post("yes")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("on_duty", response.json()["errors"])
+        self.assertTrue(CourierProfile.objects.get(user=self.user).is_on_duty)
 
     def test_page_shows_current_state(self):
         self.post("true")

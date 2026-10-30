@@ -352,8 +352,11 @@ def toggle_duty(request):
     """Ubah status Sedang Bertugas / Tidak Bertugas (AJAX)."""
     profile, _ = CourierProfile.objects.get_or_create(user=request.user)
 
-    # Status dikirim eksplisit ("true"/"false"), bukan dibalik, agar aman saat klik ganda
-    on_duty = request.POST.get("on_duty") == "true"
+    # Status dikirim eksplisit ("true"/"false"), bukan dibalik, agar aman saat klik ganda.
+    raw_on_duty = request.POST.get("on_duty", "").lower()
+    if raw_on_duty not in {"true", "false"}:
+        return _error("Status bertugas tidak valid.", field="on_duty")
+    on_duty = raw_on_duty == "true"
     if not on_duty and PickupSchedule.objects.filter(
         courier_assignment__courier=request.user,
         status__in=("SCHEDULED", "IN_PROGRESS"),

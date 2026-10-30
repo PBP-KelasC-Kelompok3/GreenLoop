@@ -54,6 +54,16 @@ class PickupScheduleForm(forms.ModelForm):
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Catatan lokasi atau instruksi khusus...'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['waste_photo'].required = True
+
+    def clean_waste_photo(self):
+        photo = self.cleaned_data.get('waste_photo')
+        if photo and photo.size > 5 * 1024 * 1024:
+            raise forms.ValidationError('Ukuran foto maksimal 5 MB.')
+        return photo
+
     def clean(self):
         cleaned_data = super().clean()
         pickup_date = cleaned_data.get('pickup_date')

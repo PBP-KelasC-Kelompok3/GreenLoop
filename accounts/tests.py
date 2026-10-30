@@ -122,6 +122,9 @@ class LoginRedirectTests(TestCase):
                 "password1": "testpass123",
                 "password2": "testpass123",
                 "role": "courier",
+                "full_name": "Kurir Baru",
+                "plate_number": "B 1234 KZT",
+                "vehicle_type": "motor",
             },
         )
 

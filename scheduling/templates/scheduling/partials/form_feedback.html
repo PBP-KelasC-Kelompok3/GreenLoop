@@ -1,0 +1,13 @@
+<div class="alert alert-{% if level == 'error' %}danger{% else %}{{ level }}{% endif %} rounded-3 mb-3"
+     role="status" aria-live="polite">
+  <strong>{{ message }}</strong>
+  {% if errors %}
+    <ul class="mb-0 mt-2">
+      {% for field, field_errors in errors.items %}
+        {% for error in field_errors %}
+          <li>{% if field != '__all__' %}{{ field|capfirst }}: {% endif %}{{ error }}</li>
+        {% endfor %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
