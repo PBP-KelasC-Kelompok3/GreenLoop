@@ -71,7 +71,7 @@
         </div>
         <span class="badge bg-info-subtle text-info rounded-pill">Estimasi</span>
       </div>
-      <small class="text-muted d-block fw-semibold">CO2e dicegah</small>
+      <small class="text-muted d-block fw-semibold">Estimasi CO2e dicegah</small>
       <h3 class="fw-bold text-dark mb-0 mt-1">{{ co2_saved }} <span class="fs-6 fw-normal text-muted">kg</span></h3>
     </div>
   </div>
@@ -114,8 +114,8 @@
             <div class="d-flex align-items-center gap-2 small">
               <i class="bi bi-person text-success"></i>
               <span>
-                {% if next_pickup.courier_name %}
-                  {{ next_pickup.courier_name }}
+                {% if next_pickup.courier_assignment %}
+                  {{ next_pickup.courier_assignment.courier.get_full_name|default:next_pickup.courier_assignment.courier.username }}
                 {% else %}
                   <span class="text-muted fst-italic">Menunggu Penugasan Kurir</span>
                 {% endif %}
@@ -128,7 +128,7 @@
         <div class="position-relative mt-2 pt-1">
           <div class="position-absolute w-100 bg-secondary bg-opacity-25 stepper-line-bg"></div>
           
-          <div class="position-absolute bg-success stepper-line-fill {% if next_pickup.status == 'PENDING' %}w-25{% elif next_pickup.status == 'IN_PROGRESS' %}w-75{% elif next_pickup.status == 'COMPLETED' %}w-100{% else %}w-0{% endif %}"></div>
+          <div class="position-absolute bg-success stepper-line-fill {% if next_pickup.status == 'COMPLETED' %}w-100{% elif next_pickup.courier_assignment %}w-75{% elif next_pickup.status == 'PENDING' %}w-25{% else %}w-50{% endif %}"></div>
 
           <div class="d-flex justify-content-between align-items-center position-relative z-1 px-1">
             <!-- Step 1: Diajukan -->
@@ -149,7 +149,7 @@
 
             <!-- Step 3: Kurir -->
             <div class="text-center">
-              <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 stepper-circle {% if next_pickup.status == 'IN_PROGRESS' or next_pickup.status == 'COMPLETED' %}bg-success text-white{% else %}bg-white border border-2 text-muted{% endif %}">
+              <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 stepper-circle {% if next_pickup.courier_assignment %}bg-success text-white{% else %}bg-white border border-2 text-muted{% endif %}">
                 <i class="bi bi-check"></i>
               </div>
               <span class="text-dark fw-medium d-block stepper-label">Kurir</span>
@@ -239,19 +239,20 @@
     <div class="card border-0 shadow-sm rounded-4 p-4 text-white h-100 bg-pickup-dark">
       <span class="text-uppercase fw-bold text-success-subtle mb-3 d-block fs-7 letter-spacing-1">Tukar Poin</span>
       
-      <div class="rounded-4 p-3 text-dark mb-4 d-flex align-items-center justify-content-between bg-accent-lime">
-        <div>
+      <div class="voucher-card rounded-4 p-3 text-dark mb-4 bg-accent-lime">
+        <div class="voucher-card__details">
           <div class="d-flex align-items-center gap-2 mb-1">
             <i class="bi bi-ticket-perforated-fill fs-5 text-dark"></i>
-            <h6 class="fw-bold mb-0 text-dark">Voucher GreenLoop</h6>
+            <h6 class="voucher-card__title fw-bold mb-0 text-dark">Voucher GreenLoop</h6>
           </div>
           <small class="text-dark-50 d-block mb-2">Gunakan saldo Waste Points untuk menukar voucher.</small>
-          <span class="fw-bold text-dark fs-6">Saldo {{ user_points_display }} poin</span>
         </div>
-        
-        <a href="{% url 'waste_reward:dashboard' %}" class="btn btn-dark text-white rounded-4 px-3 py-2 fw-semibold btn-sm shadow-sm text-nowrap">
-          Lihat Voucher
-        </a>
+        <div class="voucher-card__footer">
+          <span class="voucher-card__balance fw-bold text-dark fs-6">Saldo {{ user_points_display }} poin</span>
+          <a href="{% url 'waste_reward:dashboard' %}" class="voucher-card__action btn btn-dark text-white rounded-4 px-3 py-2 fw-semibold btn-sm shadow-sm">
+            Lihat Voucher
+          </a>
+        </div>
       </div>
 
       <div class="mt-auto">

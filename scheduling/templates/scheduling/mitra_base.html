@@ -31,8 +31,6 @@
     <button type="button" class="btn-close sidebar-close" id="sidebar-close" aria-label="Tutup"></button>
     {% if request.resolver_match.url_name == 'admin_dashboard' %}
       <span class="role-pill">Panel Admin</span>
-    {% elif request.resolver_match.url_name == 'courier_dashboard' %}
-      <span class="role-pill">Panel Kurir</span>
     {% else %}
       <span class="role-pill">Mitra B2B</span>
     {% endif %}
@@ -43,11 +41,6 @@
         {% if request.resolver_match.url_name == 'admin_dashboard' %}
           <a href="{% url 'admin_dashboard' %}" class="menu-item active">
             <i class="bi bi-shield-check"></i><span>Panel Admin</span>
-          </a>
-
-        {% elif request.resolver_match.url_name == 'courier_dashboard' %}
-          <a href="{% url 'courier_dashboard' %}" class="menu-item active">
-            <i class="bi bi-truck"></i><span>Tugas Penjemputan</span>
           </a>
 
         {% else %}

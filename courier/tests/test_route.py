@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from courier.maps import RoutingError, estimate_route
-from courier.models import CourierProfile, PickupRecord, WeightLog
+from courier.models import CourierAssignment, CourierProfile, PickupRecord, WeightLog
 from courier.route_state import get_today_stops
 from courier.utils import get_courier_stats
 from scheduling.models import MitraProfile, PickupSchedule
@@ -44,10 +44,12 @@ def make_points(rows=POINTS, courier=None, prefix="mitra"):
             latitude=lat, longitude=lng,
         )
         pickup = PickupSchedule.objects.create(
-            mitra=mitra, courier=courier, estimated_weight=kg,
+            mitra=mitra, estimated_weight=kg,
             pickup_date=timezone.localdate(), pickup_time_slot="08:00-10:00",
             status="SCHEDULED",
         )
+        if courier:
+            CourierAssignment.objects.create(pickup_schedule=pickup, courier=courier)
         pickup.code, pickup.name = code, name
         pickup.latitude, pickup.longitude = lat, lng
         points.append(pickup)
@@ -188,16 +190,16 @@ class LiveLocationTests(RouteTestBase):
         self.assertEqual(plan["route"]["geometry"][0], [first["lat"], first["lng"]])
         self.assertNotIn("Dari posisimu", [c["text"] for c in plan["route"]["chips"]])
 
-    def test_position_near_depok_but_outside_is_still_used_with_note(self):
+    def test_position_near_depok_but_outside_is_rejected(self):
         plan = self.data(lat="-6.2000", lng="106.8200")   # Jakarta Selatan
-        self.assertEqual(plan["origin"], {"lat": -6.2, "lng": 106.82})
-        self.assertIn("luar Kota Depok", plan["locationNote"])
-        self.assertIn("Dari posisimu", [c["text"] for c in plan["route"]["chips"]])
+        self.assertIsNone(plan["origin"])
+        self.assertIn("Kota Depok", plan["locationNote"])
+        self.assertNotIn("Dari posisimu", [c["text"] for c in plan["route"]["chips"]])
 
     def test_position_far_away_is_ignored_with_note(self):
         plan = self.data(lat="-7.2500", lng="112.7500")   # Surabaya
         self.assertIsNone(plan["origin"])
-        self.assertIn("terlalu jauh", plan["locationNote"])
+        self.assertIn("Kota Depok", plan["locationNote"])
 
     def test_position_inside_depok_has_no_note(self):
         self.assertIsNone(self.data(**USER_POS)["locationNote"])

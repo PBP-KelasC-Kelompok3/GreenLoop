@@ -72,7 +72,7 @@
 @media (hover: none) {
   .profile-photo-trigger { opacity: 1; }
 }
-.badge-silver { background-color: var(--gl-sage); color: var(--gl-dark); }
+.badge-level { background-color: var(--gl-sage); color: var(--gl-dark); }
 
 /* Tab */
 .profile-tab-link {

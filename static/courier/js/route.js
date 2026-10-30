@@ -66,9 +66,9 @@
         return (tenths / 10).toFixed(1).replace(".", ",");
     }
 
-    // Waste Points: berat x tarif, dibulatkan (setengah ke atas) seperti points_for di server
+    // Waste Points mengikuti ledger: berat dicatat per 0,1 kg dan poin dibulatkan ke bawah.
     function pointsFor(tenths) {
-        return Math.floor((tenths * plan.pointsPerKg + 5) / 10);
+        return Math.floor((tenths * plan.pointsPerKg) / 10);
     }
 
     // "58,6" / "58.6" -> 586 (persepuluhan); null bila bukan angka dengan maksimal satu desimal
@@ -298,7 +298,9 @@
 
     function updateFinishAvailability() {
         if (!finishButton || !finishStop) return;
-        var distance = userPos ? meters(userPos, { lat: finishStop.lat, lng: finishStop.lng }) : null;
+        var distance = userPos && isInsideDepok(userPos.lat, userPos.lng)
+            ? meters(userPos, { lat: finishStop.lat, lng: finishStop.lng })
+            : null;
         var arrived = finishStop.status === "active" && distance !== null && distance <= ARRIVAL_RADIUS_M;
         finishButton.disabled = !arrived;
 
@@ -481,6 +483,10 @@
     function drawMap(fit) {
         if (!map) return;
         layer.clearLayers();
+        L.polygon(plan.boundary, {
+            color: "#198754", weight: 2, fillColor: "#198754",
+            fillOpacity: 0.04, interactive: false
+        }).addTo(layer);
 
         var bounds = [];
         if (plan.route) {
@@ -497,10 +503,7 @@
                 icon: L.divIcon({ className: "route-pin-wrap", html: '<span class="route-me"></span>', iconSize: [22, 22], iconAnchor: [11, 11] }),
                 title: "Posisimu", zIndexOffset: 1000
             }).addTo(layer);
-            var b = plan.bounds;
-            var inDepok = plan.origin.lat >= b.south && plan.origin.lat <= b.north &&
-                          plan.origin.lng >= b.west && plan.origin.lng <= b.east;
-            if (inDepok) bounds.push([plan.origin.lat, plan.origin.lng]);   // di luar Depok tidak ikut mengatur zoom
+            bounds.push([plan.origin.lat, plan.origin.lng]);
         }
 
         plan.stops.forEach(function (s) {
@@ -510,12 +513,6 @@
                 .addTo(layer);
             bounds.push([s.lat, s.lng]);
         });
-
-        // Batas geser = wilayah Depok + seluruh rute dan pin (bila posisimu di luar Depok, rutenya tetap bisa dijelajahi)
-        var b0 = plan.bounds;
-        var area = L.latLngBounds([[b0.south, b0.west], [b0.north, b0.east]]);
-        bounds.forEach(function (point) { area.extend(point); });
-        map.setMaxBounds(area.pad(0.15));
 
         if (fit && bounds.length) {
             // Sisakan ruang untuk kartu di atas peta (ringkasan, pesan, petunjuk belok) agar pin dan garis tidak tertutup
@@ -544,6 +541,10 @@
                     if (!result.payload.ok) throw new Error("gagal");
                     els.dutyToggle.checked = result.payload.is_on_duty;
                     els.dutyLabel.textContent = result.payload.label;
+                    if (result.payload.dispatchedCount > 0) {
+                        showToast(result.payload.dispatchedCount + " penjemputan baru ditugaskan.");
+                        window.setTimeout(function () { window.location.reload(); }, 700);
+                    }
                 })
                 .catch(function () {
                     els.dutyToggle.checked = !wanted;           // kembalikan bila gagal
@@ -556,6 +557,20 @@
     /* ===== Lokasi kurir (GPS peramban) ===== */
 
     var lastFetch = { time: 0, pos: null };
+    var hasAcceptedPosition = false;
+
+    function isInsideDepok(lat, lng) {
+        var ring = plan.boundary || [];
+        var inside = false;
+        for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+            var a = ring[i], b = ring[j];
+            if ((a[0] > lat) !== (b[0] > lat) &&
+                lng < (b[1] - a[1]) * (lat - a[0]) / (b[0] - a[0]) + a[1]) {
+                inside = !inside;
+            }
+        }
+        return inside;
+    }
 
     // Jarak garis lurus dua posisi dalam meter
     function meters(a, b) {
@@ -566,10 +581,10 @@
     }
 
     // Minta server menghitung ulang rute dari posisi terbaru
-    function refreshFromPosition() {
+    function refreshFromPosition(fitToFirstPosition) {
         if (busy || !userPos) return;
         lastFetch = { time: Date.now(), pos: userPos };
-        var first = !plan.origin;
+        var first = fitToFirstPosition || !plan.origin;
         fetch(plan.dataUrl + "?lat=" + userPos.lat + "&lng=" + userPos.lng, {
             credentials: "same-origin",
             headers: { "X-Requested-With": "XMLHttpRequest" }
@@ -585,11 +600,36 @@
             lng: position.coords.longitude,
             accuracy: position.coords.accuracy
         };
-        geoNote = "";
+        var insideDepok = isInsideDepok(userPos.lat, userPos.lng);
+        var firstAcceptedPosition = insideDepok && !hasAcceptedPosition;
+        var previousOrigin = plan.origin;
+
+        if (insideDepok) {
+            hasAcceptedPosition = true;
+            geoNote = "";
+            plan.locationNote = "";
+            plan.origin = { lat: userPos.lat, lng: userPos.lng };
+            drawMap(false);
+
+            // Ikuti titik kurir saat mendekati tepi layar, tanpa menggeser peta pada setiap pembaruan GPS.
+            if (map && window.L) {
+                var currentPoint = L.latLng(userPos.lat, userPos.lng);
+                if (!map.getBounds().pad(-0.2).contains(currentPoint)) {
+                    map.panTo(currentPoint, { animate: true, duration: 0.3 });
+                }
+            }
+        } else {
+            plan.origin = null;
+            plan.locationNote = "Lokasi kurir harus berada di Kota Depok untuk menampilkan posisinya.";
+            if (previousOrigin) drawMap(false);
+        }
         updateFinishAvailability();
+        renderOverlays();
         // Hitung ulang rute saat pertama kali, atau setelah bergeser >150 m dan lewat 20 detik
         var moved = lastFetch.pos ? meters(lastFetch.pos, userPos) : Infinity;
-        if (!lastFetch.pos || (moved > 150 && Date.now() - lastFetch.time > 20000)) refreshFromPosition();
+        if (!lastFetch.pos || (moved > 150 && Date.now() - lastFetch.time > 20000)) {
+            refreshFromPosition(firstAcceptedPosition);
+        }
     }
 
     function onPositionError(error) {

@@ -8,6 +8,7 @@ from datetime import date, datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
 
 from .models import PickupRecord, points_for
+from .maps import in_depok
 from .utils import MONTHS_ID
 from scheduling.models import MitraProfile
 
@@ -164,6 +165,7 @@ def _percentages(values):
 
 def build_map(stops):
     """Posisi pin 0-100% untuk peta mini bergaya skema (bukan peta jalan sungguhan)."""
+    stops = [s for s in stops if in_depok(s.latitude, s.longitude)]
     if not stops:
         return {"pins": [], "path": ""}
     # Koreksi lebar derajat bujur menurut garis lintang supaya jarak tidak melar ke samping

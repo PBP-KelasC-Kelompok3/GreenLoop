@@ -2,11 +2,11 @@ from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
 
-from courier.models import CourierProfile
+from .models import CourierProfile
 
 
 class CourierApprovalMiddleware:
-    """Batasi akun kurir yang belum disetujui ke halaman tunggu verifikasi."""
+    """Batasi akun kurir yang belum disetujui ke halaman verifikasi."""
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -24,7 +24,9 @@ class CourierApprovalMiddleware:
             and not user.is_superuser
             and not self._is_allowed_path(request.path_info)
         ):
-            courier_profile = CourierProfile.objects.filter(user_id=user.pk).only("is_approved").first()
+            courier_profile = CourierProfile.objects.filter(
+                user_id=user.pk,
+            ).only("is_approved").first()
             if not courier_profile or not courier_profile.is_approved:
                 return redirect("courier:pending_verification")
 

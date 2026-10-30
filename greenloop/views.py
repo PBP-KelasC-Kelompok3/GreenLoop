@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from accounts.decorator import role_required
 from accounts.models import UserProfile
+from .impact import estimate_co2e_avoided
+from waste_reward.points import POINTS_PER_KILOGRAM
 
 
 def home(request):
@@ -21,9 +23,12 @@ def home(request):
     for m in monthly:
         m["percent"] = round(m["kg"] / max_kg * 100)
 
+    total_waste_kg = 12480
+    co2e_estimate = estimate_co2e_avoided(total_waste_kg)
     impact = {
-        "total_waste_kg": "12.480",
-        "carbon_reduction_kg": "8.740",
+        "total_waste_kg": f"{total_waste_kg:,}".replace(",", "."),
+        "carbon_reduction_kg": f"{int(co2e_estimate):,}".replace(",", "."),
+        "points_per_kg": POINTS_PER_KILOGRAM,
         "monthly": monthly,
         # Jumlah akun Mitra terdaftar (data nyata)
         "partner_count": UserProfile.objects.filter(role='mitra').count(),

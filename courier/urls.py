@@ -1,9 +1,12 @@
 from django.urls import path
-from . import route_views, views
+from . import admin_views, route_views, views
 
 app_name = "courier"
 
 urlpatterns = [
+    path("admin/verify/", admin_views.admin_verify_couriers, name="admin_verify_couriers"),
+    path("admin/verify/approve/<int:courier_id>/", admin_views.approve_courier, name="approve_courier"),
+    path("admin/dispatch/<int:pickup_id>/", admin_views.redispatch_pickup, name="redispatch_pickup"),
     path("pending-verification/", views.pending_verification, name="pending_verification"),
     path("", views.show_dashboard, name="show_dashboard"),
     path("route/", route_views.show_route_today, name="show_route_today"),

@@ -221,11 +221,18 @@ button {
     display: flex;
     align-items: center;
     gap: 12px;
+    width: 100%;
     margin-top: 12px;
     padding: 11px 14px;
+    border: 0;
     border-radius: 10px;
+    background: transparent;
     color: var(--danger);
+    font-family: inherit;
+    font-size: inherit;
     font-weight: 500;
+    text-align: left;
+    cursor: pointer;
 }
 
 /* Latar merah muda saat kursor di atas Keluar */

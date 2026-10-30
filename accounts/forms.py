@@ -168,9 +168,13 @@ class RegisterForm(UserCreationForm):
             cleaned['plate_number'] = ' '.join(
                 (cleaned.get('plate_number') or '').upper().split()
             )
-            plate = cleaned['plate_number']
-            if plate and not PLATE_RE.fullmatch(plate):
-                self.add_error('plate_number', 'Format plat nomor tidak valid.')
+            if not cleaned['plate_number']:
+                self.add_error('plate_number', 'Plat nomor wajib diisi untuk akun kurir.')
+            elif not PLATE_RE.fullmatch(cleaned['plate_number']):
+                self.add_error('plate_number', 'Format plat nomor tidak valid. Contoh: B 1234 KZT.')
+
+            if not cleaned.get('vehicle_type'):
+                self.add_error('vehicle_type', 'Jenis armada wajib dipilih untuk akun kurir.')
 
         return cleaned
 
@@ -202,7 +206,9 @@ class RegisterForm(UserCreationForm):
             profile.role = self.cleaned_data.get('role')
             profile.save(update_fields=['role'])
 
-        if self.cleaned_data.get('role') == 'mitra':
+        role = self.cleaned_data.get('role')
+
+        if role == 'mitra':
             from scheduling.models import MitraProfile
 
             business_type = {
@@ -225,7 +231,21 @@ class RegisterForm(UserCreationForm):
                     'address_detail': self.cleaned_data.get('address_detail', '').strip(),
                 },
             )
-        elif self.cleaned_data.get('role') == 'courier':
+        elif role == 'courier':
+            from courier.models import CourierProfile
+
+            vehicle_type = {
+                'motor': CourierProfile.VehicleType.MOTOR_BOX,
+                'mobil': CourierProfile.VehicleType.PICKUP_BAK,
+            }.get(self.cleaned_data.get('vehicle_type'), CourierProfile.VehicleType.PICKUP_BAK)
+
+            CourierProfile.objects.update_or_create(
+                user=user,
+                defaults={
+                    'plate_number': self.cleaned_data['plate_number'],
+                    'vehicle_type': vehicle_type,
+                },
+            )
             full_name = ' '.join((self.cleaned_data.get('full_name') or '').split())
             if full_name:
                 user.first_name = full_name

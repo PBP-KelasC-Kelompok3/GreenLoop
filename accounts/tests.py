@@ -324,7 +324,7 @@ class PublicPagesTests(TestCase):
 
         self.assertContains(
             response,
-            "8.740",
+            "6.240",
         )
 
     def test_guest_navigation_only_shows_catalog(self):

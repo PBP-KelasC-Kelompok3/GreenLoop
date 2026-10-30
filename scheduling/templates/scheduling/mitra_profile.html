@@ -38,7 +38,7 @@
         <h4 class="fw-bold mb-1 text-white">{{ profile.business_name|default:request.user.username }}</h4>
         <div class="d-flex gap-2 flex-wrap align-items-center">
           <span class="badge bg-light text-success fw-semibold">Terverifikasi</span>
-          <span class="badge badge-silver fw-semibold">Level Silver</span>
+          <span class="badge badge-level fw-semibold">Level {{ membership_tier }}</span>
           <small class="mitra-profile-username">@{{ request.user.username }}</small>
           <small class="profile-meta-separator" aria-hidden="true">·</small>
           <small class="mitra-profile-joined">Mitra sejak {{ request.user.date_joined|date:"M Y" }}</small>
@@ -135,7 +135,7 @@
               <span class="fw-bold">{{ total_poin|default:"0" }}</span>
             </div>
             <div class="d-flex align-items-center justify-content-between py-2 stat-item">
-              <div class="d-flex align-items-center gap-2 text-muted small"><i class="bi bi-cloud-minus text-success fs-6"></i> CO2e dicegah</div>
+              <div class="d-flex align-items-center gap-2 text-muted small"><i class="bi bi-cloud-minus text-success fs-6"></i> Estimasi CO2e dicegah</div>
               <span class="fw-bold">{{ co2e_dicegah|default:"0" }} kg</span>
             </div>
           </div>
@@ -237,15 +237,44 @@ document.addEventListener("DOMContentLoaded", function () {
   const data = JSON.parse($('map-data').textContent);
   const DEFAULT = [-6.3627, 106.82715];   // Depok
   const hasSaved = data.lat !== null && data.lng !== null;
+  const bounds = L.latLngBounds(
+    [data.bounds.south, data.bounds.west],
+    [data.bounds.north, data.bounds.east]
+  );
 
-  const map = L.map('map').setView(hasSaved ? [data.lat, data.lng] : DEFAULT, hasSaved ? 16 : 13);
+  const map = L.map('map', { maxBounds: bounds, maxBoundsViscosity: 1.0, minZoom: 10 })
+    .setView(hasSaved ? [data.lat, data.lng] : DEFAULT, hasSaved ? 16 : 11);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, attribution: '© OpenStreetMap'
+  }).addTo(map);
+  L.polygon(data.boundary, {
+    color: '#198754', weight: 2, fillColor: '#198754', fillOpacity: 0.04,
+    interactive: false
   }).addTo(map);
 
   const latInput = $('lat-input'), lngInput = $('lng-input');
   let marker = null;
   let editing = false;
+
+  function isInsideDepok(lat, lng) {
+    let inside = false;
+    for (let i = 0, j = data.boundary.length - 1; i < data.boundary.length; j = i++) {
+      const a = data.boundary[i], b = data.boundary[j];
+      if ((a[0] > lat) !== (b[0] > lat) &&
+          lng < (b[1] - a[1]) * (lat - a[0]) / (b[0] - a[0]) + a[1]) inside = !inside;
+    }
+    return inside;
+  }
+
+  function handleMarkerDrag() {
+    const point = marker.getLatLng();
+    if (!isInsideDepok(point.lat, point.lng)) {
+      alert('Titik lokasi harus tetap berada di dalam Kota Depok.');
+      marker.setLatLng([parseFloat(latInput.value), parseFloat(lngInput.value)]);
+      return;
+    }
+    onPinChanged(point.lat, point.lng);
+  }
 
   // Peta ada di tab tersembunyi -> hitung ulang ukuran saat tab dibuka
   $('tab-alamat-btn').addEventListener('shown.bs.tab', function () {
@@ -255,7 +284,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (hasSaved) {
     marker = L.marker([data.lat, data.lng], { draggable: false }).addTo(map);
-    marker.on('dragend', () => onPinChanged(marker.getLatLng().lat, marker.getLatLng().lng));
+    marker.on('dragend', handleMarkerDrag);
     latInput.value = data.lat;
     lngInput.value = data.lng;
   }
@@ -280,13 +309,18 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   function placeMarker(lat, lng) {
+    if (!isInsideDepok(lat, lng)) {
+      alert('Pilih titik lokasi di dalam Kota Depok.');
+      return false;
+    }
     if (!marker) {
       marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-      marker.on('dragend', () => onPinChanged(marker.getLatLng().lat, marker.getLatLng().lng));
+      marker.on('dragend', handleMarkerDrag);
     } else {
       marker.setLatLng([lat, lng]);
     }
     onPinChanged(lat, lng);
+    return true;
   }
 
   map.on('click', e => { if (editing) placeMarker(e.latlng.lat, e.latlng.lng); });
@@ -327,8 +361,7 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
         const lat = parseFloat(res[0].lat), lon = parseFloat(res[0].lon);
-        map.setView([lat, lon], 17);
-        placeMarker(lat, lon);
+        if (placeMarker(lat, lon)) map.setView([lat, lon], 17);
       })
       .catch(err => console.error(err));
   });

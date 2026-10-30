@@ -7,6 +7,7 @@ Bila layanan tidak merespons, rute dihitung kasar (garis lurus) agar halaman tet
 import json
 import math
 import os
+from pathlib import Path
 import urllib.error
 import urllib.request
 
@@ -17,8 +18,19 @@ REQUEST_TIMEOUT = 8  # detik
 CACHE_SECONDS = 300  # jawaban yang sama disimpan 5 menit agar API tidak dipanggil berulang
 USER_AGENT = "GreenLoop-Courier/1.0 (tugas kuliah)"
 
-# Perkiraan batas wilayah Kota Depok (dipakai membatasi peta dan memvalidasi titik jemput)
-DEPOK_BOUNDS = {"south": -6.46, "north": -6.32, "west": 106.72, "east": 106.92}
+# Poligon BIG (WADMKK=Kota Depok), geodatabase edisi September 2023:
+# https://geoservices.big.go.id/rbi/rest/services/Hosted/Wilayah_Administrasi_Kabupaten__Kota/FeatureServer/0
+with (Path(__file__).with_name("depok_boundary.json")).open(encoding="utf-8-sig") as boundary_file:
+    DEPOK_RING_LNG_LAT = json.load(boundary_file)
+
+# GeoJSON menyimpan titik sebagai [longitude, latitude].
+DEPOK_BOUNDARY = tuple((lat, lng) for lng, lat in DEPOK_RING_LNG_LAT)
+DEPOK_BOUNDS = {
+    "south": min(lat for lat, _lng in DEPOK_BOUNDARY),
+    "north": max(lat for lat, _lng in DEPOK_BOUNDARY),
+    "west": min(lng for _lat, lng in DEPOK_BOUNDARY),
+    "east": max(lng for _lat, lng in DEPOK_BOUNDARY),
+}
 
 # Titik awal kurir setiap hari
 DEPOT = {"name": "Gudang GreenLoop Depok", "lat": -6.3715, "lng": 106.8310}
@@ -43,9 +55,28 @@ def osrm_base_url():
 
 
 def in_depok(lat, lng):
-    """True bila koordinat berada di dalam kotak perkiraan wilayah Kota Depok."""
-    b = DEPOK_BOUNDS
-    return b["south"] <= lat <= b["north"] and b["west"] <= lng <= b["east"]
+    """True bila koordinat berada di dalam poligon administratif Kota Depok."""
+    try:
+        lat, lng = float(lat), float(lng)
+    except (TypeError, ValueError):
+        return False
+    if not (math.isfinite(lat) and math.isfinite(lng)):
+        return False
+
+    inside = False
+    for (lat1, lng1), (lat2, lng2) in zip(DEPOK_BOUNDARY, DEPOK_BOUNDARY[1:]):
+        cross = (lng - lng1) * (lat2 - lat1) - (lat - lat1) * (lng2 - lng1)
+        if (
+            abs(cross) < 1e-10
+            and min(lat1, lat2) - 1e-9 <= lat <= max(lat1, lat2) + 1e-9
+            and min(lng1, lng2) - 1e-9 <= lng <= max(lng1, lng2) + 1e-9
+        ):
+            return True
+        if (lat1 > lat) != (lat2 > lat):
+            crossing_lng = (lng2 - lng1) * (lat - lat1) / (lat2 - lat1) + lng1
+            if lng < crossing_lng:
+                inside = not inside
+    return inside
 
 
 def haversine_m(a, b):

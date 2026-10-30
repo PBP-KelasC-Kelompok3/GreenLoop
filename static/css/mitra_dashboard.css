@@ -140,6 +140,51 @@ div.card.bg-pickup-dark .text-white-50 {
   color: #ffffff !important;
 }
 
+/* Voucher card stays within the points widget on narrow screens. */
+.voucher-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .75rem;
+  min-width: 0;
+}
+
+.voucher-card__details {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.voucher-card__title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.voucher-card__action {
+  margin-left: auto;
+  max-width: 100%;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.voucher-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.voucher-card__balance {
+  flex: 0 1 auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+  .voucher-card__action {
+    flex: 0 0 auto;
+  }
+}
+
 /* ===== Kotak Tanggal Penjemputan Berikutnya ===== */
 .next-pickup-date-box {
   width: 78px;

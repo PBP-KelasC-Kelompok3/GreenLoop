@@ -2,9 +2,10 @@
 from dataclasses import dataclass
 from datetime import datetime, time
 from decimal import Decimal
+from django.db.models import Q
 
 
-from .maps import STATUS_APPROVED, STATUS_DONE, STATUS_ON_THE_WAY
+from .maps import STATUS_APPROVED, STATUS_DONE, STATUS_ON_THE_WAY, in_depok
 from .utils import MONTHS_ID
 
 DAYS_ID = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
@@ -37,33 +38,36 @@ def format_day_date(value):
     return f"{DAYS_ID[value.weekday()]}, {value.day} {MONTHS_ID[value.month - 1]} {value.year}"
 
 
-# Muatan maksimal armada kurir per penjemputan (kg), sesuai CourierProfile.vehicle_type.
-# Estimasi berat di setiap titik disesuaikan dengan armada kurir yang sedang bertugas.
-VEHICLE_CAPACITY_KG = {"Motor Box": 5, "Pickup Bak": 10}
-LARGEST_CAPACITY_KG = max(VEHICLE_CAPACITY_KG.values())
+# Helper lama untuk membuat estimasi sintetis pada data rute contoh.
+# Ini bukan kapasitas operasional dan tidak dipakai dispatcher; penugasan nyata
+# memakai berat PickupSchedule serta batas aman terpusat di dispatch.py.
+SYNTHETIC_ESTIMATE_CAP_KG = {"Motor Box": 5, "Pickup Bak": 10}
+LARGEST_SYNTHETIC_ESTIMATE_KG = max(SYNTHETIC_ESTIMATE_CAP_KG.values())
 
 def estimate_for(base_kg, vehicle):
-    """Estimasi berat untuk armada kurir.
-
-    Data titik menyimpan estimasi untuk armada terbesar (1-10 kg). Untuk armada yang lebih kecil
-    angkanya diskalakan, jadi motor mendapat 1-5 kg dan pickup 1-10 kg, dan tidak pernah melebihi muatannya.
-    """
-    cap = VEHICLE_CAPACITY_KG.get(vehicle, LARGEST_CAPACITY_KG)
+    """Skalakan berat sintetis untuk helper data rute lama, bukan tugas nyata."""
+    cap = SYNTHETIC_ESTIMATE_CAP_KG.get(vehicle, LARGEST_SYNTHETIC_ESTIMATE_KG)
     # Dibulatkan setengah ke atas (round() Python membulatkan 2,5 ke 2, itu tidak diinginkan)
-    scaled = (base_kg * cap * 2 + LARGEST_CAPACITY_KG) // (LARGEST_CAPACITY_KG * 2)
+    scaled = (base_kg * cap * 2 + LARGEST_SYNTHETIC_ESTIMATE_KG) // (LARGEST_SYNTHETIC_ESTIMATE_KG * 2)
     return max(1, min(cap, scaled))
 
 
 def _today_stops(user, today, vehicle=None):
     """Pickup hari ini yang memang ditugaskan kepada kurir ini."""
-    from scheduling.models import PickupSchedule
-    from .models import PickupRecord
+    from .models import CourierAssignment, PickupRecord
 
-    pickups = list(PickupSchedule.objects.filter(
+    assignments = list(CourierAssignment.objects.filter(
         courier=user,
-        pickup_date=today,
-        status__in=("SCHEDULED", "IN_PROGRESS", "COMPLETED"),
-    ).select_related("mitra").order_by("pickup_time_slot", "pk"))
+        pickup_schedule__status__in=("SCHEDULED", "IN_PROGRESS", "COMPLETED"),
+    ).filter(
+        Q(pickup_schedule__pickup_date=today)
+        | Q(
+            pickup_schedule__pickup_date__lt=today,
+            pickup_schedule__status__in=("SCHEDULED", "IN_PROGRESS"),
+        )
+    ).select_related("pickup_schedule__mitra")
+      .order_by("pickup_schedule__pickup_date", "pickup_schedule__pickup_time_slot", "pickup_schedule_id"))
+    pickups = [assignment.pickup_schedule for assignment in assignments]
     from scheduling.models import MitraProfile
     profiles = {
         profile.user_id: profile
@@ -78,7 +82,12 @@ def _today_stops(user, today, vehicle=None):
     stops = []
     for pickup in pickups:
         profile = profiles.get(pickup.mitra_id)
-        if not profile or profile.latitude is None or profile.longitude is None:
+        if (
+            not profile
+            or profile.latitude is None
+            or profile.longitude is None
+            or not in_depok(profile.latitude, profile.longitude)
+        ):
             continue
         record = records.get(pickup.pk)
         slot = pickup.pickup_time_slot.replace("–", "-").replace(" WIB", "").split("-")

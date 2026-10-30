@@ -81,41 +81,35 @@
 
   <!-- ================= KOLOM KANAN ================= -->
   <div class="pk-col">
-    <!-- Estimasi Volume + Armada -->
+    <!-- Estimasi Berat + Armada -->
     <section class="pk-card">
-      <h2 class="pk-card-title mb-3">Estimasi Volume &amp; Jenis Armada</h2>
+      <h2 class="pk-card-title mb-3">Estimasi Berat &amp; Jenis Armada</h2>
 
-      <label for="{{ form.estimated_weight.id_for_label }}" class="pk-label">Estimasi volume limbah</label>
+      <label for="{{ form.estimated_weight.id_for_label }}" class="pk-label">Estimasi berat limbah</label>
       <div class="pk-weight-row">
         <div class="pk-weight-input">
           {{ form.estimated_weight }}
           <span>kg</span>
         </div>
-        <input type="range" id="weight-range" min="0" max="500" step="1" value="0" aria-label="Geser untuk estimasi berat">
+        <input type="range" id="weight-range" min="0" max="120" step="1" value="0" aria-label="Geser untuk estimasi berat">
       </div>
       {% if form.estimated_weight.errors %}
         <div class="pk-error">{{ form.estimated_weight.errors.0 }}</div>
       {% endif %}
-      <div class="pk-hint" id="armada-hint">Isi berat untuk melihat armada yang disarankan. (Rata-rata 4 minggu: 38 kg)</div>
+      <div class="pk-hint" id="armada-hint">Isi berat untuk melihat armada yang disarankan.</div>
 
       <div class="pk-armada" id="armada-list">
         <button type="button" class="pk-armada-card" data-value="Motor Box">
           <span class="pk-reco d-none">Disarankan</span>
           <span class="pk-armada-icon"><i class="bi bi-box-seam"></i></span>
           <strong>Motor Box</strong>
-          <small>maks. 25 kg</small>
+          <small>maks. 20 kg untuk penugasan</small>
         </button>
         <button type="button" class="pk-armada-card" data-value="Pickup Bak">
           <span class="pk-reco d-none">Disarankan</span>
           <span class="pk-armada-icon"><i class="bi bi-truck"></i></span>
           <strong>Pickup Bak</strong>
-          <small>25–150 kg</small>
-        </button>
-        <button type="button" class="pk-armada-card" data-value="Truk Kecil">
-          <span class="pk-reco d-none">Disarankan</span>
-          <span class="pk-armada-icon"><i class="bi bi-truck-flatbed"></i></span>
-          <strong>Truk Kecil</strong>
-          <small>&gt; 150 kg</small>
+          <small>20,1-120 kg untuk penugasan</small>
         </button>
       </div>
       {% if form.armada.errors %}
@@ -183,6 +177,9 @@
   var weightIn   = document.getElementById('{{ form.estimated_weight.id_for_label }}');
   var photoIn    = document.getElementById('{{ form.waste_photo.id_for_label }}');
   var form       = document.getElementById('pickup-form');
+  var serverToday = '{{ schedule_today|default:"" }}';
+  var serverNowMinutes = Number('{{ schedule_now_minutes|default:0 }}');
+  var bookingLeadMinutes = 60;
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -235,6 +232,7 @@
           dateError.classList.add('d-none');
           renderCalendar();
           updateSlotLabel();
+          renderSlots();
         });
       })(date);
       grid.appendChild(btn);
@@ -253,7 +251,18 @@
   var slotList = document.getElementById('slot-list');
   function renderSlots() {
     slotList.innerHTML = '';
+    var availableCount = 0;
     Array.prototype.forEach.call(slotSelect.options, function (opt) {
+      if (!opt.value) return;
+      var startMatch = opt.value.match(/^(\d{2}):(\d{2})/);
+      var slotStartMinutes = startMatch ? (+startMatch[1] * 60 + +startMatch[2]) : 0;
+      var dateValue = selected ? iso(selected) : '';
+      var available = dateValue && (
+        dateValue > serverToday ||
+        (dateValue === serverToday && slotStartMinutes >= serverNowMinutes + bookingLeadMinutes)
+      );
+      if (!available) return;
+      availableCount++;
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'pk-slot' + (opt.value === slotSelect.value ? ' is-selected' : '');
@@ -262,6 +271,23 @@
       btn.addEventListener('click', function () { slotSelect.value = opt.value; renderSlots(); });
       slotList.appendChild(btn);
     });
+    if (slotSelect.value) {
+      var selectedOption = Array.prototype.find.call(slotSelect.options, function (opt) {
+        return opt.value === slotSelect.value;
+      });
+      if (!selectedOption || !selected || (iso(selected) === serverToday &&
+          (+selectedOption.value.slice(0, 2) * 60 + +selectedOption.value.slice(3, 5)) < serverNowMinutes + bookingLeadMinutes)) {
+        slotSelect.value = '';
+      }
+    }
+    if (!availableCount) {
+      var emptyMessage = document.createElement('p');
+      emptyMessage.className = 'pk-muted';
+      emptyMessage.textContent = selected
+        ? 'Silakan pilih tanggal lain untuk melihat jadwal yang tersedia.'
+        : 'Pilih tanggal untuk melihat jadwal yang tersedia.';
+      slotList.appendChild(emptyMessage);
+    }
   }
 
   var chips = document.getElementById('waste-chips');
@@ -290,8 +316,12 @@
   function recommend() {
     var w = parseFloat(weightIn.value);
     armadaCards.forEach(function (c) { c.querySelector('.pk-reco').classList.add('d-none'); });
-    if (!w || w <= 0) { hint.textContent = 'Isi berat untuk melihat armada yang disarankan. (Rata-rata 4 minggu: 38 kg)'; return; }
-    var val = w <= 25 ? 'Motor Box' : (w <= 150 ? 'Pickup Bak' : 'Truk Kecil');
+    if (!w || w <= 0) { hint.textContent = 'Isi berat untuk melihat armada yang disarankan. Rekomendasi memakai batas aman 80% kapasitas.'; return; }
+    if (w > 120) {
+      hint.textContent = 'Maksimal berat satu pengajuan adalah 120 kg. Pisahkan menjadi beberapa penjemputan.';
+      return;
+    }
+    var val = w <= 20 ? 'Motor Box' : 'Pickup Bak';
     armadaCards.forEach(function (c) {
       if (c.dataset.value === val) c.querySelector('.pk-reco').classList.remove('d-none');
     });
@@ -350,10 +380,14 @@
   });
 
   form.addEventListener('submit', function (e) {
-    if (!dateInput.value) {
+    if (!dateInput.value || !slotSelect.value) {
       e.preventDefault();
-      dateError.classList.remove('d-none');
-      dateError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (!dateInput.value) {
+        dateError.classList.remove('d-none');
+        dateError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        slotList.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
   });
 

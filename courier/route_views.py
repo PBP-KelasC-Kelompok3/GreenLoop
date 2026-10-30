@@ -14,6 +14,7 @@ from accounts.decorator import role_required
 
 from .maps import (
     DEPOK_BOUNDS,
+    DEPOK_BOUNDARY,
     STATUS_DONE,
     STATUS_ON_THE_WAY,
     build_navigation,
@@ -23,7 +24,8 @@ from .maps import (
     haversine_m,
     in_depok,
 )
-from .models import POINTS_PER_KG, CourierProfile, PickupRecord, WeightLog, points_for
+from .models import CourierAssignment, POINTS_PER_KG, CourierProfile, PickupRecord, WeightLog, points_for
+from .dispatch import dispatch_pending_pickups
 from scheduling.models import PickupSchedule
 from .route_plan import build_live_plan
 from .route_state import (
@@ -99,10 +101,6 @@ def build_directions(route, leg_index):
     ]
 
 
-# Kotak Jabodetabek: posisi kurir di luar Depok tetap dipakai sebagai titik awal petunjuk arah
-NEAR_DEPOK = {"south": -6.80, "north": -5.90, "west": 106.40, "east": 107.30}
-
-
 def read_origin(request):
     """Posisi kurir dari parameter lat dan lng. Hasil: ((lat, lng) atau None, catatan atau None)."""
     source = request.POST if request.method == "POST" else request.GET
@@ -112,13 +110,9 @@ def read_origin(request):
         return None, None
     if not (math.isfinite(lat) and math.isfinite(lng)):
         return None, None
-    if in_depok(lat, lng):
-        return (lat, lng), None
-
-    b = NEAR_DEPOK
-    if b["south"] <= lat <= b["north"] and b["west"] <= lng <= b["east"]:
-        return (lat, lng), "Posisimu di luar Kota Depok. Petunjuk arah tetap dihitung dari posisimu, tetapi peta hanya menampilkan wilayah Depok."
-    return None, "Posisimu terlalu jauh dari Kota Depok, jadi rute dihitung antar titik jemput saja."
+    if not in_depok(lat, lng):
+        return None, "Lokasi kurir harus berada di Kota Depok untuk menampilkan rute."
+    return (lat, lng), None
 
 
 def build_route_payload(request):
@@ -155,6 +149,7 @@ def build_route_payload(request):
         "origin": {"lat": origin[0], "lng": origin[1]} if origin else None,
         "locationNote": location_note,
         "bounds": DEPOK_BOUNDS,
+        "boundary": DEPOK_BOUNDARY,
         "stops": [
             {
                 "id": s.pk,
@@ -254,7 +249,7 @@ def start_pickup(request, pk):
 
     today = timezone.localdate()
     pickup = PickupSchedule.objects.filter(
-        pk=pk, courier=request.user, pickup_date=today,
+        pk=pk, courier_assignment__courier=request.user, pickup_date__lte=today,
         status__in=("SCHEDULED", "IN_PROGRESS"),
     ).first()
     if pickup is None:
@@ -262,7 +257,10 @@ def start_pickup(request, pk):
     with transaction.atomic():
         for other in today_stops(request):
             if other.pk != stop.pk and other.status == STATUS_ON_THE_WAY:
-                PickupSchedule.objects.filter(pk=other.pk, courier=request.user).update(status="SCHEDULED")
+                PickupSchedule.objects.filter(
+                    pk=other.pk,
+                    courier_assignment__courier=request.user,
+                ).update(status="SCHEDULED")
                 PickupRecord.objects.filter(
                     courier=request.user, pickup_schedule_id=other.pk,
                     status=PickupRecord.Status.ONGOING,
@@ -306,7 +304,7 @@ def finish_pickup(request, pk):
 
     today = timezone.localdate()
     pickup = PickupSchedule.objects.filter(
-        pk=pk, courier=request.user, pickup_date=today,
+        pk=pk, courier_assignment__courier=request.user, pickup_date__lte=today,
         status__in=("SCHEDULED", "IN_PROGRESS"),
     ).first()
     if pickup is None:
@@ -314,7 +312,7 @@ def finish_pickup(request, pk):
     with transaction.atomic():
         from waste_reward.services import award_verified_pickup
         reward_transaction = award_verified_pickup(
-            pickup.mitra, weight, f"pickup-{pickup.pk}",
+            pickup.mitra, weight, f"scheduling.pickupschedule:{pickup.pk}",
         )
         pickup.actual_weight = weight
         pickup.points = reward_transaction.points_delta
@@ -355,11 +353,21 @@ def toggle_duty(request):
     profile, _ = CourierProfile.objects.get_or_create(user=request.user)
 
     # Status dikirim eksplisit ("true"/"false"), bukan dibalik, agar aman saat klik ganda
-    profile.is_on_duty = request.POST.get("on_duty") == "true"
+    on_duty = request.POST.get("on_duty") == "true"
+    if not on_duty and PickupSchedule.objects.filter(
+        courier_assignment__courier=request.user,
+        status__in=("SCHEDULED", "IN_PROGRESS"),
+    ).exists():
+        return _error("Selesaikan atau minta admin memindahkan tugas aktif sebelum berhenti bertugas.", status=409)
+
+    profile.is_on_duty = on_duty
     profile.save(update_fields=["is_on_duty"])
+
+    dispatched = dispatch_pending_pickups() if profile.is_on_duty else []
 
     return JsonResponse({
         "ok": True,
         "is_on_duty": profile.is_on_duty,
         "label": "Sedang Bertugas" if profile.is_on_duty else "Tidak Bertugas",
+        "dispatchedCount": sum(result.assignment is not None for result in dispatched),
     })

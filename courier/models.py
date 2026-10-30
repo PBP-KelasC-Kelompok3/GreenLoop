@@ -1,16 +1,17 @@
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from waste_reward.points import POINTS_PER_KILOGRAM, points_for_weight
 
 # Tarif Waste Points per kilogram (contoh: 58,6 kg x 5 = 293 poin)
-POINTS_PER_KG = 5
+POINTS_PER_KG = POINTS_PER_KILOGRAM
 
 
 def points_for(weight_kg):
-    """Menghitung Waste Points dari berat, dibulatkan ke bilangan bulat."""
-    return int((Decimal(weight_kg) * POINTS_PER_KG).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    """Gunakan konversi Waste Points yang sama dengan saldo ledger mitra."""
+    return points_for_weight(weight_kg)
 
 class CourierProfile(models.Model):
     """Data tambahan khusus kurir (satu kurir = satu profil)."""
@@ -41,6 +42,28 @@ class CourierProfile(models.Model):
     def __str__(self):
         status = "Aktif" if self.is_approved else "Pending"
         return f"{self.user.username} ({self.plate_number or '-'}) - {status}"
+
+
+class CourierAssignment(models.Model):
+    """Kurir yang ditugaskan ke satu pengajuan penjemputan."""
+
+    pickup_schedule = models.OneToOneField(
+        "scheduling.PickupSchedule",
+        on_delete=models.CASCADE,
+        related_name="courier_assignment",
+    )
+    courier = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="courier_assignments",
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["assigned_at", "pk"]
+
+    def __str__(self):
+        return f"{self.pickup_schedule_id} -> {self.courier.username}"
 
 
 class WeightLog(models.Model):

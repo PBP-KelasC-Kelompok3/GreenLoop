@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db import transaction
+from django.core.exceptions import ValidationError
 from .models import PickupSchedule, MitraProfile
 from .forms import PickupScheduleForm
 from django.db.models import Sum
@@ -9,28 +9,28 @@ from django.utils import timezone
 from datetime import timedelta
 import json
 from django.db.models import Q
-from django.contrib.auth.models import User
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from waste_reward.services import award_verified_pickup, get_balance
-from courier.models import CourierProfile
+from django.utils.dateparse import parse_date
+from django.views.decorators.http import require_GET, require_POST
+from waste_reward.services import get_balance
+from waste_reward.models import RewardTransaction
+from waste_reward.points import POINTS_PER_KILOGRAM, membership_tier
+from greenloop.impact import estimate_co2e_avoided
+from accounts.permissions import can_manage_greenloop
 from accounts.decorator import role_required
+from .schedule_rules import PICKUP_TIME_SLOTS, validate_pickup_window
 
 
 def _can_manage_pickups(user):
-    profile = getattr(user, 'userprofile', None)
-    return bool(
-        user.is_superuser
-        or user.is_staff
-        or user.groups.filter(name='Petugas GreenLoop').exists()
-        or (profile and profile.role == 'admin')
-    )
+    return can_manage_greenloop(user)
 
 
 @login_required
 def mitra_dashboard(request):
     """Dashboard Mitra B2B dengan agregasi statistik, poin, dan grafik dinamis."""
-    user_pickups = PickupSchedule.objects.filter(mitra=request.user).order_by('-created_at')
+    user_pickups = PickupSchedule.objects.filter(mitra=request.user).select_related(
+        'courier_assignment__courier'
+    ).order_by('-created_at')
     completed_pickups = user_pickups.filter(status='COMPLETED')
 
     # 1. Total Limbah Disetor (kg)
@@ -45,15 +45,15 @@ def mitra_dashboard(request):
         pickup_date__month=today.month,
     ).count()
 
-    # 3. Estimasi CO2e Dicegah (0.5 kg CO2e per kg limbah)
-    co2_saved = round(total_waste * 0.5, 1)
+    # 3. Estimasi CO2e memakai faktor bersama lintas halaman.
+    co2_saved = estimate_co2e_avoided(total_waste)
 
     # Reward ledger is the single source of truth for member points.
     calculated_points = get_balance(request.user)
 
     # 5. Penjemputan Terdekat
     next_pickup = (
-        user_pickups.filter(status__in=['PENDING', 'IN_PROGRESS'])
+        user_pickups.filter(status__in=['PENDING', 'APPROVED', 'SCHEDULED', 'IN_PROGRESS'])
         .order_by('pickup_date')
         .first()
     )
@@ -61,24 +61,25 @@ def mitra_dashboard(request):
     # 6. Hitung Stepper Progress Penjemputan Berikutnya
     stepper_progress = 0
     if next_pickup:
+        courier_assignment = getattr(next_pickup, 'courier_assignment', None)
         if next_pickup.status == 'PENDING':
             stepper_progress = 25
-        elif next_pickup.status == 'IN_PROGRESS':
-            stepper_progress = 75
+        elif next_pickup.status == 'APPROVED':
+            stepper_progress = 50
         elif next_pickup.status == 'COMPLETED':
             stepper_progress = 100
+        elif courier_assignment:
+            stepper_progress = 75
 
     # 7. Logika Tier/Level Membership Dinamis
-    if calculated_points < 1000:
-        current_tier = 'Bronze'
+    current_tier = membership_tier(calculated_points)
+    if current_tier == 'Bronze':
         next_tier = 'Silver'
         target_points = 1000
-    elif calculated_points < 3000:
-        current_tier = 'Silver'
+    elif current_tier == 'Silver':
         next_tier = 'Gold'
         target_points = 3000
-    elif calculated_points < 5000:
-        current_tier = 'Gold'
+    elif current_tier == 'Gold':
         next_tier = 'Platinum'
         target_points = 5000
     else:
@@ -87,7 +88,7 @@ def mitra_dashboard(request):
         target_points = calculated_points
 
     points_needed = max(0, target_points - calculated_points)
-    kg_needed = round(points_needed / 5, 1)
+    kg_needed = round(points_needed / POINTS_PER_KILOGRAM, 1)
     level_progress_pct = (
         min(100, int((calculated_points / target_points) * 100))
         if target_points > 0
@@ -118,6 +119,7 @@ def mitra_dashboard(request):
         'co2_saved': co2_saved,
         'user_points': calculated_points,
         'user_points_display': f'{calculated_points:,}'.replace(',', '.'),
+        'points_per_kg': POINTS_PER_KILOGRAM,
         'weekly_labels': json.dumps(weekly_labels),
         'weekly_data': json.dumps(weekly_data),
         'title': 'Dashboard Mitra',
@@ -137,32 +139,34 @@ def create_pickup(request):
     if request.method == 'POST':
         form = PickupScheduleForm(request.POST, request.FILES)
         if form.is_valid():
-            # Ambil tanggal dan slot waktu yang dipilih user
-            pickup_date = form.cleaned_data.get('pickup_date')
-            time_slot = form.cleaned_data.get('pickup_time_slot')
-            
-            # Batas kuota per slot (misalnya maksimal 3 mitra)
-            MAX_QUOTA = 3
-            existing_count = PickupSchedule.objects.filter(
-                pickup_date=pickup_date, 
-                pickup_time_slot=time_slot
-            ).exclude(status='REJECTED').count()
-            
-            if existing_count >= MAX_QUOTA:
-                messages.error(request, f"Maaf, slot waktu {time_slot} pada tanggal tersebut sudah penuh (maksimal {MAX_QUOTA} mitra). Silakan pilih slot lain.")
-            else:
-                # Simpan data jika kuota masih tersedia
-                pickup = form.save(commit=False)
-                pickup.mitra = request.user
-                pickup.status = 'PENDING' # Status awal
-                pickup.save()
-                messages.success(request, "Pengajuan penjemputan berhasil dikirim!")
-                return redirect('mitra_dashboard')
+            from courier.maps import in_depok
+            location = MitraProfile.objects.filter(user=request.user).first()
+            if (
+                location is None
+                or location.latitude is None
+                or location.longitude is None
+                or not in_depok(location.latitude, location.longitude)
+            ):
+                messages.error(
+                    request,
+                    'Atur titik lokasi usaha di Kota Depok pada Profil sebelum mengajukan penjemputan.',
+                )
+                return redirect('mitra_profile')
+            pickup = form.save(commit=False)
+            pickup.mitra = request.user
+            pickup.status = 'PENDING'
+            pickup.save()
+            messages.success(request, "Pengajuan penjemputan berhasil dikirim!")
+            return redirect('mitra_dashboard')
     else:
         form = PickupScheduleForm()
         
+    local_now = timezone.localtime()
     context = {
         'form': form,
+        'pickup_slots': PICKUP_TIME_SLOTS,
+        'schedule_today': timezone.localdate().isoformat(),
+        'schedule_now_minutes': local_now.hour * 60 + local_now.minute,
     }
     return render(request, 'scheduling/create_pickup.html', context)
 
@@ -181,15 +185,36 @@ def edit_pickup(request, pickup_id):
     return redirect('mitra_dashboard')
 
   if request.method == 'POST':
-    pickup.pickup_date = request.POST.get('pickup_date')
-    pickup.pickup_time_slot = request.POST.get('time_slot')
+    pickup_date = parse_date(request.POST.get('pickup_date', ''))
+    time_slot = request.POST.get('time_slot', '')
+    valid_slots = {value for value, _label in PICKUP_TIME_SLOTS}
+    try:
+      if time_slot not in valid_slots:
+        raise ValidationError('Slot waktu penjemputan tidak valid.')
+      validate_pickup_window(pickup_date, time_slot)
+    except ValidationError as error:
+      messages.error(request, error.messages[0])
+      return render(request, 'scheduling/edit_pickup.html', {
+          'pickup': pickup,
+          'pickup_slots': PICKUP_TIME_SLOTS,
+          'submitted_date': request.POST.get('pickup_date', ''),
+          'submitted_slot': time_slot,
+      })
+
+    pickup.pickup_date = pickup_date
+    pickup.pickup_time_slot = time_slot
     pickup.notes = request.POST.get('notes')
-    pickup.save()
+    pickup.save(update_fields=['pickup_date', 'pickup_time_slot', 'notes'])
 
     messages.success(request, 'Jadwal penjemputan berhasil diperbarui.')
     return redirect('mitra_dashboard')
 
-  return render(request, 'scheduling/edit_pickup.html', {'pickup': pickup})
+  return render(request, 'scheduling/edit_pickup.html', {
+      'pickup': pickup,
+      'pickup_slots': PICKUP_TIME_SLOTS,
+      'submitted_date': pickup.pickup_date.isoformat(),
+      'submitted_slot': pickup.pickup_time_slot,
+  })
 
 
 @login_required
@@ -205,7 +230,7 @@ def admin_dashboard(request):
     search_query = request.GET.get('q', '')
 
     all_pickups = PickupSchedule.objects.select_related(
-        'mitra'
+        'mitra', 'courier_assignment__courier'
     ).all().order_by('-created_at')
 
     # Jika admin mengetik sesuatu di kolom pencarian
@@ -224,6 +249,10 @@ def admin_dashboard(request):
         status__in=['IN_PROGRESS', 'SCHEDULED']
     ).count()
 
+    waiting_courier_count = all_pickups.filter(status='APPROVED').count()
+
+    rejected_count = all_pickups.filter(status='REJECTED').count()
+
     completed_count = all_pickups.filter(
         status='COMPLETED'
     ).count()
@@ -232,7 +261,9 @@ def admin_dashboard(request):
         'all_pickups': all_pickups,
         'pending_count': pending_count,
         'in_progress_count': in_progress_count,
+        'waiting_courier_count': waiting_courier_count,
         'completed_count': completed_count,
+        'rejected_count': rejected_count,
         'search_query': search_query,
     }
 
@@ -243,287 +274,47 @@ def admin_dashboard(request):
     )
 
 
-def assign_next_courier(pickup):
-    """Memilih kurir yang sudah melayani alamat sama/terdekat bila memungkinkan."""
-    from courier.maps import haversine_m
-
-
-    couriers = list(
-        User.objects.filter(
-            is_active=True,
-            userprofile__role='courier'
-        ).order_by('id')
-    )
-
-    if not couriers:
-        return None
-
-    profiles = {
-        p.user_id: p for p in MitraProfile.objects.filter(
-            user_id__in=[pickup.mitra_id] + list(
-                PickupSchedule.objects.filter(
-                    courier__in=couriers, status__in=['SCHEDULED', 'IN_PROGRESS'],
-                ).exclude(pk=pickup.pk).values_list('mitra_id', flat=True)
-            )
-        )
-    }
-    profile = profiles.get(pickup.mitra_id)
-    def address_key_for(item):
-        p = profiles.get(item.mitra_id)
-        parts = (p.address_detail, p.kelurahan, p.kecamatan, p.kota, p.provinsi) if p else ()
-        return ' '.join(' '.join(filter(None, parts)).casefold().split())
-
-    address_key = address_key_for(pickup)
-    assigned = list(
-        PickupSchedule.objects.filter(
-            courier__in=couriers,
-            status__in=['SCHEDULED', 'IN_PROGRESS'],
-        ).exclude(pk=pickup.pk).select_related('mitra', 'courier')
-    )
-    # Semua pengajuan dari alamat yang sama memakai kurir yang sama.
-    for other in assigned:
-        other_profile = profiles.get(other.mitra_id)
-        other_key = address_key_for(other)
-        same_coordinates = bool(
-            profile and other_profile
-            and profile.latitude is not None and profile.longitude is not None
-            and other_profile.latitude is not None and other_profile.longitude is not None
-            and haversine_m(
-                (profile.latitude, profile.longitude),
-                (other_profile.latitude, other_profile.longitude),
-            ) <= 25
-        )
-        if (other_key and address_key and other_key == address_key) or same_coordinates:
-            return other.courier
-
-    # Jarak dekat dan slot waktu tumpang tindih: gabungkan ke kurir yang sama.
-    if profile and profile.latitude is not None and profile.longitude is not None:
-        candidates = []
-        for other in assigned:
-            other_profile = profiles.get(other.mitra_id)
-            if (other.pickup_date != pickup.pickup_date or not other_profile
-                    or other_profile.latitude is None or other_profile.longitude is None):
-                continue
-            if other.pickup_time_slot != pickup.pickup_time_slot:
-                continue
-            distance = haversine_m(
-                (profile.latitude, profile.longitude),
-                (other_profile.latitude, other_profile.longitude),
-            )
-            if distance <= 1000:
-                candidates.append((distance, other.pk, other.courier))
-        if candidates:
-            return min(candidates, key=lambda row: (row[0], row[1]))[2]
-
-    last_courier_id = (
-        PickupSchedule.objects
-        .filter(courier__isnull=False)
-        .exclude(id=pickup.id)
-        .order_by('-created_at', '-id')
-        .values_list('courier_id', flat=True)
-        .first()
-    )
-
-    if last_courier_id is None:
-        return couriers[0]
-
-    for courier in couriers:
-        if courier.id > last_courier_id:
-            return courier
-
-    return couriers[0]
-
-
 @login_required
-def update_pickup_status(request, pickup_id, new_status=None):
-    is_admin = _can_manage_pickups(request.user)
-
-    profile = getattr(request.user, 'userprofile', None)
-    is_courier = bool(
-        profile and profile.role == 'courier'
-    )
-
-    if not (is_admin or is_courier):
-        messages.error(
-            request,
-            "Anda tidak memiliki hak akses untuk mengubah penjemputan."
-        )
+@require_GET
+def update_pickup_status(request, pickup_id, new_status):
+    """Admin menyetujui foto atau menolak pengajuan; penugasan ditangani app courier."""
+    if not _can_manage_pickups(request.user):
+        messages.error(request, "Anda tidak memiliki hak akses untuk mengubah penjemputan.")
         return redirect('home')
 
     pickup = get_object_or_404(PickupSchedule, id=pickup_id)
-
-    allowed_statuses = ['IN_PROGRESS', 'SCHEDULED', 'REJECTED']
-
-    # 1. Kurir menyelesaikan penjemputan melalui POST.
-    if request.method == 'POST':
-        if is_courier:
-            # Kurir hanya boleh menyelesaikan tugas miliknya.
-            if pickup.courier_id != request.user.id:
-                messages.error(
-                    request,
-                    "Penjemputan ini bukan tugas yang ditugaskan kepada Anda."
-                )
-                return redirect('courier_dashboard')
-
-            if pickup.status not in ['IN_PROGRESS', 'SCHEDULED']:
-                messages.error(
-                    request,
-                    "Penjemputan ini tidak tersedia untuk diselesaikan."
-                )
-                return redirect('courier_dashboard')
-
-        elif not is_admin:
-            messages.error(request, "Akses ditolak.")
-            return redirect('home')
-
-        actual_weight = request.POST.get(
-            'actual_weight', ''
-        ).strip()
-
-        if not actual_weight:
-            messages.error(
-                request,
-                "Berat aktual wajib diisi."
-            )
-            return redirect(
-                'courier_dashboard' if is_courier
-                else 'admin_dashboard'
-            )
-
-        try:
-            from decimal import Decimal, InvalidOperation
-
-            weight = Decimal(actual_weight)
-
-            if not weight.is_finite() or weight <= 0:
-                raise InvalidOperation
-
-        except (InvalidOperation, ValueError):
-            messages.error(
-                request,
-                "Berat aktual harus lebih dari 0 kg."
-            )
-            return redirect(
-                'courier_dashboard' if is_courier
-                else 'admin_dashboard'
-            )
-
-        with transaction.atomic():
-            from courier.models import PickupRecord, WeightLog
-            mitra_profile = MitraProfile.objects.filter(user=pickup.mitra).first()
-            partner_name = (mitra_profile.business_name if mitra_profile else '') or pickup.mitra.username
-            address = mitra_profile.address_detail if mitra_profile else ''
-
-            reward_transaction = award_verified_pickup(
-                pickup.mitra,
-                weight,
-                f'pickup-{pickup.pk}',
-            )
-            pickup.actual_weight = weight
-            pickup.points = reward_transaction.points_delta
-            pickup.status = 'COMPLETED'
-
-            completed_count = PickupSchedule.objects.filter(
-                mitra=pickup.mitra,
-                status='COMPLETED'
-            ).exclude(id=pickup.id).count() + 1
-
-            if completed_count >= 10:
-                pickup.certificate = 'certificates/Certificate.png'
-
-            pickup.save()
-            if is_courier:
-                code = f'PK-{pickup.pk:04d}'
-                PickupRecord.objects.update_or_create(
-                    pickup_schedule=pickup,
-                    defaults={
-                        'courier': request.user, 'code': code,
-                        'date': pickup.pickup_date,
-                        'slot': pickup.pickup_time_slot,
-                        'partner_name': partner_name[:120],
-                        'area': address[:200],
-                        'est_kg': max(0, int(round(pickup.estimated_weight))),
-                        'actual_kg': weight, 'vehicle': pickup.armada,
-                        'status': PickupRecord.Status.DONE,
-                        'finished_at': timezone.now(),
-                    },
-                )
-                WeightLog.objects.update_or_create(
-                    pickup_schedule=pickup,
-                    defaults={
-                        'courier': request.user,
-                        'partner_name': partner_name[:120],
-                        'collected_at': pickup.pickup_date, 'weight_kg': weight,
-                        'notes': f'Pikap {code}',
-                    },
-                )
-
-        messages.success(
-            request,
-            f"Penjemputan PK-00{pickup.id} berhasil diselesaikan. "
-            f"Berat aktual: {pickup.actual_weight} kg tercatat, "
-            f"{pickup.points} poin ditambahkan."
-        )
-
-        if is_courier:
-            return redirect('courier_dashboard')
-
+    if pickup.status != 'PENDING':
+        messages.info(request, "Pengajuan ini sudah diproses sebelumnya.")
         return redirect('admin_dashboard')
 
-    # 2. Admin/petugas mengubah status melalui URL.
-    if new_status:
-        if not is_admin:
-            messages.error(
-                request,
-                "Hanya admin/petugas yang boleh mengubah status ini."
-            )
-            return redirect('courier_dashboard')
-
-        if new_status not in allowed_statuses:
-            messages.error(
-                request,
-                "Status penjemputan tidak valid."
-            )
-            return redirect('admin_dashboard')
-
-        # Tetapkan kurir jika belum ada penugasan.
-        if (
-            new_status in ['IN_PROGRESS', 'SCHEDULED']
-            and pickup.courier_id is None
-        ):
-            courier = assign_next_courier(pickup)
-
-            if courier is None:
-                messages.error(
-                    request,
-                    "Belum ada akun kurir aktif. "
-                    "Status penjemputan belum diubah."
-                )
-                return redirect('admin_dashboard')
-
-            pickup.courier = courier
-
-            messages.info(
-                request,
-                f"Kurir {courier.username} ditugaskan "
-                f"untuk penjemputan PK-00{pickup.id}."
-            )
-
-        pickup.status = new_status
-        pickup.save()
-
-        messages.success(
-            request,
-            f"Status penjemputan PK-00{pickup.id} "
-            f"diubah menjadi {new_status}!"
-        )
-
+    if new_status == 'REJECTED':
+        pickup.status = 'REJECTED'
+        pickup.save(update_fields=['status'])
+        messages.success(request, f"Pengajuan PK-{pickup.pk:04d} ditolak.")
         return redirect('admin_dashboard')
 
-    return redirect(
-        'admin_dashboard' if is_admin
-        else 'courier_dashboard'
-    )
+    if new_status != 'SCHEDULED':
+        messages.error(request, "Status penjemputan tidak valid.")
+        return redirect('admin_dashboard')
+
+    pickup.status = 'APPROVED'
+    pickup.save(update_fields=['status'])
+
+    from courier.dispatch import dispatch_pickup, dispatch_wait_message
+    result = dispatch_pickup(pickup.pk)
+    if result.assignment:
+        courier_name = result.assignment.courier.get_full_name() or result.assignment.courier.username
+        messages.success(
+            request,
+            f"Foto disetujui. Kurir {courier_name} ditugaskan untuk PK-{pickup.pk:04d}.",
+        )
+    else:
+        messages.warning(
+            request,
+            f"Foto disetujui, tetapi PK-{pickup.pk:04d} belum ditugaskan. "
+            f"{dispatch_wait_message(result.reason)} Sistem akan mencoba lagi saat kurir mulai bertugas.",
+        )
+    return redirect('admin_dashboard')
 
 @login_required
 def pickup_history(request):
@@ -567,34 +358,6 @@ def pickup_history(request):
 
 
 @login_required
-def courier_dashboard(request):
-    """Dashboard kurir hanya menampilkan tugas yang ditugaskan kepadanya."""
-
-    profile = getattr(request.user, 'userprofile', None)
-
-    if not profile or profile.role != 'courier':
-        messages.error(
-            request,
-            "Halaman ini hanya dapat diakses oleh akun kurir."
-        )
-        return redirect('home')
-
-    active_pickups = PickupSchedule.objects.filter(
-        courier=request.user,
-        status__in=['IN_PROGRESS', 'SCHEDULED']
-    ).select_related('mitra').order_by('-created_at')
-
-    context = {
-        'pickups': active_pickups,
-    }
-
-    return render(
-        request,
-        'scheduling/courier_dashboard.html',
-        context
-    )
-
-@login_required
 def mitra_profile(request):
     profile, _ = MitraProfile.objects.get_or_create(user=request.user)
 
@@ -613,12 +376,13 @@ def mitra_profile(request):
         if lat_raw and lng_raw:
             try:
                 lat, lng = float(lat_raw), float(lng_raw)
-                if -90 <= lat <= 90 and -180 <= lng <= 180:
+                from courier.maps import in_depok
+                if -90 <= lat <= 90 and -180 <= lng <= 180 and in_depok(lat, lng):
                     profile.latitude = lat
                     profile.longitude = lng
                     profile.location_locked = True   # lokasi jadi permanen
                 else:
-                    messages.error(request, 'Koordinat di luar jangkauan yang valid.')
+                    messages.error(request, 'Pilih titik lokasi di dalam Kota Depok.')
                     return redirect('mitra_profile')
             except ValueError:
                 messages.error(request, 'Format koordinat tidak valid.')
@@ -636,18 +400,33 @@ def mitra_profile(request):
     # ---- Statistik dinamis ----
     completed = PickupSchedule.objects.filter(mitra=request.user, status='COMPLETED')
     total_limbah = completed.aggregate(Sum('actual_weight'))['actual_weight__sum'] or 0
-    total_poin = completed.aggregate(Sum('points'))['points__sum'] or 0
+    total_poin = (
+        RewardTransaction.objects.filter(
+            user=request.user,
+            kind=RewardTransaction.Kind.PICKUP,
+        ).aggregate(Sum('points_delta'))['points_delta__sum'] or 0
+    )
+    current_tier = membership_tier(get_balance(request.user))
+    from courier.maps import DEPOK_BOUNDS, DEPOK_BOUNDARY, in_depok
+    has_depok_location = (
+        profile.latitude is not None
+        and profile.longitude is not None
+        and in_depok(profile.latitude, profile.longitude)
+    )
 
     context = {
         'profile': profile,
         'total_limbah': total_limbah,
         'total_penjemputan': completed.count(),
         'total_poin': total_poin,
-        'co2e_dicegah': round(float(total_limbah) * 0.75, 1),
+        'membership_tier': current_tier,
+        'co2e_dicegah': estimate_co2e_avoided(total_limbah),
         'map_data': {
-            'lat': profile.latitude,
-            'lng': profile.longitude,
+            'lat': profile.latitude if has_depok_location else None,
+            'lng': profile.longitude if has_depok_location else None,
             'locked': profile.location_locked,
+            'bounds': DEPOK_BOUNDS,
+            'boundary': DEPOK_BOUNDARY,
         },
     }
     return render(request, 'scheduling/mitra_profile.html', context)
@@ -676,31 +455,3 @@ def update_mitra_profile_photo(request):
         previous_photo.delete(save=False)
 
     return JsonResponse({'ok': True, 'photo_url': profile.profile_photo.url})
-
-@login_required
-def admin_verify_couriers(request):
-    """Halaman admin untuk melihat daftar kurir yang mendaftar dan menunggu verifikasi."""
-    if not _can_manage_pickups(request.user):
-        return redirect('home')
-    
-    pending_couriers = CourierProfile.objects.filter(is_approved=False)
-    approved_couriers = CourierProfile.objects.filter(is_approved=True)
-    
-    context = {
-        'pending_couriers': pending_couriers,
-        'approved_couriers': approved_couriers,
-    }
-    return render(request, 'scheduling/admin_verify_couriers.html', context)
-
-
-@login_required
-def approve_courier(request, courier_id):
-    """Fungsi saat admin menekan tombol 'Setujui' untuk akun kurir."""
-    if not _can_manage_pickups(request.user):
-        return redirect('home')
-    
-    courier_profile = get_object_or_404(CourierProfile, id=courier_id)
-    courier_profile.is_approved = True
-    courier_profile.save()
-    
-    return redirect('admin_verify_couriers')
