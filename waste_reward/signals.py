@@ -9,11 +9,15 @@ def award_points_for_completed_pickup(sender, instance, **kwargs):
 
     from .services import award_verified_pickup
 
-    award_verified_pickup(
+    reward_entry = award_verified_pickup(
         user=instance.mitra,
         kilograms=instance.actual_weight,
         pickup_reference=f'scheduling.pickupschedule:{instance.pk}',
     )
+    # Keep the legacy pickup history field aligned with the authoritative reward ledger.
+    if instance.points != reward_entry.points_delta:
+        sender.objects.filter(pk=instance.pk).update(points=reward_entry.points_delta)
+        instance.points = reward_entry.points_delta
 
 
 def connect_pickup_signals():

@@ -2,6 +2,7 @@ import secrets
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 
 
 class RewardVoucher(models.Model):
@@ -22,6 +23,16 @@ class RewardVoucher(models.Model):
 
     class Meta:
         ordering = ('sort_order', 'points_cost')
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(points_cost__gt=0),
+                name='wr_voucher_cost_positive',
+            ),
+            models.CheckConstraint(
+                condition=Q(valid_days__gt=0),
+                name='wr_voucher_validity_positive',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.title} ({self.points_cost} poin)'
@@ -99,6 +110,18 @@ class RewardTransaction(models.Model):
 
     class Meta:
         ordering = ('-created_at', '-pk')
+        indexes = [
+            models.Index(fields=('user', '-created_at'), name='wr_reward_user_date_idx'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(kind='pickup', points_delta__gte=0, weight_kg__gte=0)
+                    | Q(kind='redemption', points_delta__lt=0, weight_kg__isnull=True)
+                ),
+                name='wr_transaction_kind_consistent',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.user} · {self.points_delta:+d} poin'
