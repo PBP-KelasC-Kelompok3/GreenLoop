@@ -7,13 +7,15 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.paginator import Paginator
 from django.http import JsonResponse
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 
+from accounts.permissions import can_manage_greenloop
 from .points import POINTS_PER_KILOGRAM, membership_tier
 
+from .forms import RewardVoucherForm
 from .models import RewardTransaction, RewardVoucher, UserVoucher
 from .services import (
     InsufficientPoints,
@@ -69,6 +71,86 @@ def mitra_required(view_func):
         return view_func(request, *args, **kwargs)
 
     return wrapped
+
+
+def greenloop_admin_required(view_func):
+    """Allow catalog management only to staff authorized for GreenLoop admin."""
+    @login_required
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if not can_manage_greenloop(request.user):
+            raise PermissionDenied('Hanya admin GreenLoop yang dapat mengelola katalog voucher.')
+        return view_func(request, *args, **kwargs)
+
+    return wrapped
+
+
+def _voucher_json(voucher):
+    return {
+        'id': voucher.pk,
+        'code': voucher.code,
+        'title': voucher.title,
+        'kind': voucher.kind,
+        'kind_display': voucher.get_kind_display(),
+        'value_label': voucher.value_label,
+        'points_cost': voucher.points_cost,
+        'description': voucher.description,
+        'valid_days': voucher.valid_days,
+        'is_active': voucher.is_active,
+        'sort_order': voucher.sort_order,
+    }
+
+
+@greenloop_admin_required
+def manage_vouchers(request):
+    query = request.GET.get('q', '').strip()[:100]
+    vouchers = RewardVoucher.objects.annotate(redemption_count=Count('redemptions'))
+    if query:
+        vouchers = vouchers.filter(
+            Q(title__icontains=query)
+            | Q(code__icontains=query)
+            | Q(value_label__icontains=query)
+        )
+    return render(request, 'waste_reward/admin_vouchers.html', {
+        'vouchers': vouchers,
+        'query': query,
+        'form': RewardVoucherForm(),
+    })
+
+
+@greenloop_admin_required
+@require_http_methods(['GET', 'POST'])
+def manage_voucher_detail(request, voucher_id):
+    voucher = get_object_or_404(RewardVoucher, pk=voucher_id)
+    if request.method == 'GET':
+        return JsonResponse({'voucher': _voucher_json(voucher)})
+
+    form = RewardVoucherForm(request.POST, instance=voucher)
+    if not form.is_valid():
+        return JsonResponse({'errors': form.errors.get_json_data()}, status=400)
+    voucher = form.save()
+    return JsonResponse({'status': 'updated', 'voucher': _voucher_json(voucher)})
+
+
+@greenloop_admin_required
+@require_POST
+def create_voucher(request):
+    form = RewardVoucherForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse({'errors': form.errors.get_json_data()}, status=400)
+    voucher = form.save()
+    return JsonResponse({'status': 'created', 'voucher': _voucher_json(voucher)}, status=201)
+
+
+@greenloop_admin_required
+@require_POST
+def archive_voucher(request, voucher_id):
+    voucher = get_object_or_404(RewardVoucher, pk=voucher_id)
+    if not voucher.is_active:
+        return JsonResponse({'error': 'Voucher sudah diarsipkan.'}, status=409)
+    voucher.is_active = False
+    voucher.save(update_fields=('is_active',))
+    return JsonResponse({'status': 'archived', 'voucher': _voucher_json(voucher)})
 
 
 @mitra_required

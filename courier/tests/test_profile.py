@@ -313,13 +313,14 @@ class ShowProfileTests(TestCase):
                          list(CourierProfile.VehicleType.choices))
 
     def test_shows_user_data(self):
-        for text in ("Budi Santoso", "@budi", "budi@greenloop.id",
+        for text in ("Budi Santoso", "budi@greenloop.id",
                      "B 1234 KZT", "Motor Box", "20 Okt 2026", "Kurir Lapangan"):
             with self.subTest(text=text):
                 self.assertContains(self.res, text)
+        self.assertContains(self.res, 'profile-username">@<span data-bind="username">budi</span>')
 
     def test_avatar_shows_initials(self):
-        self.assertContains(self.res, ">BS</div>")
+        self.assertContains(self.res, 'data-bind="initials">BS</span>')
 
     def test_status_pill_on_duty(self):
         self.assertContains(self.res, "Sedang Bertugas")
@@ -346,7 +347,8 @@ class ShowProfileTests(TestCase):
     def test_forms_point_to_endpoints_and_have_csrf(self):
         self.assertContains(self.res, f'action="{reverse("courier:update_profile")}"')
         self.assertContains(self.res, f'action="{reverse("courier:change_password")}"')
-        self.assertContains(self.res, "csrfmiddlewaretoken", count=2)
+        # The shared sidebar logout form also carries a CSRF token.
+        self.assertContains(self.res, "csrfmiddlewaretoken", count=3)
 
     def test_edit_form_is_prefilled(self):
         self.assertContains(self.res, 'name="full_name"')
@@ -447,7 +449,7 @@ class UpdateProfileEndpointTests(TestCase):
         self.client.post(self.url, {**VALID_PROFILE, "full_name": "Rina Wati"})
         res = self.client.get(reverse("courier:show_profile"))
         self.assertContains(res, "Rina Wati")
-        self.assertContains(res, ">RW</div>")
+        self.assertContains(res, 'data-bind="initials">RW</span>')
 
 
 # ======================================================================
