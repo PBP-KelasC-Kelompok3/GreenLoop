@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from .models import PickupSchedule, MitraProfile
-from .forms import PickupScheduleForm
+from .forms import MitraProfileForm, PickupScheduleForm
 from django.db.models import Sum
 from django.utils import timezone
 from datetime import timedelta
@@ -25,7 +25,7 @@ def _can_manage_pickups(user):
     return can_manage_greenloop(user)
 
 
-@login_required
+@role_required(['mitra'])
 def mitra_dashboard(request):
     """Dashboard Mitra B2B dengan agregasi statistik, poin, dan grafik dinamis."""
     user_pickups = PickupSchedule.objects.filter(mitra=request.user).select_related(
@@ -135,6 +135,7 @@ def mitra_dashboard(request):
     return render(request, 'scheduling/mitra_dashboard.html', context)
 
 
+@role_required(['mitra'])
 def create_pickup(request):
     if request.method == 'POST':
         form = PickupScheduleForm(request.POST, request.FILES)
@@ -171,7 +172,7 @@ def create_pickup(request):
     return render(request, 'scheduling/create_pickup.html', context)
 
 
-@login_required
+@role_required(['mitra'])
 def edit_pickup(request, pickup_id):
   pickup = get_object_or_404(
       PickupSchedule, id=pickup_id, mitra=request.user
@@ -215,6 +216,19 @@ def edit_pickup(request, pickup_id):
       'submitted_date': pickup.pickup_date.isoformat(),
       'submitted_slot': pickup.pickup_time_slot,
   })
+
+
+@role_required(['mitra'])
+@require_POST
+def delete_pickup(request, pickup_id):
+    pickup = get_object_or_404(PickupSchedule, id=pickup_id, mitra=request.user)
+    if pickup.status != 'PENDING':
+        messages.error(request, 'Hanya pengajuan yang menunggu verifikasi yang dapat dihapus.')
+        return redirect('pickup_history')
+
+    pickup.delete()
+    messages.success(request, 'Pengajuan penjemputan berhasil dihapus.')
+    return redirect('pickup_history')
 
 
 @login_required
@@ -316,7 +330,7 @@ def update_pickup_status(request, pickup_id, new_status):
         )
     return redirect('admin_dashboard')
 
-@login_required
+@role_required(['mitra'])
 def pickup_history(request):
     status_filter = request.GET.get('status', 'ALL')
     
@@ -357,21 +371,15 @@ def pickup_history(request):
     return render(request, 'scheduling/pickup_history.html', context)
 
 
-@login_required
+@role_required(['mitra'])
 def mitra_profile(request):
     profile, _ = MitraProfile.objects.get_or_create(user=request.user)
+    form = MitraProfileForm(request.POST or None, instance=profile)
 
     if request.method == 'POST':
-        text_fields = [
-            'business_name', 'business_type', 'pic_name', 'phone_number',
-            'operational_hours', 'provinsi', 'kota', 'kecamatan',
-            'kelurahan', 'address_detail', 'courier_notes',
-        ]
-        for field in text_fields:
-            setattr(profile, field, request.POST.get(field, '').strip())
-
         lat_raw = request.POST.get('latitude', '').strip()
         lng_raw = request.POST.get('longitude', '').strip()
+        map_valid = True
 
         if lat_raw and lng_raw:
             try:
@@ -383,19 +391,31 @@ def mitra_profile(request):
                     profile.location_locked = True   # lokasi jadi permanen
                 else:
                     messages.error(request, 'Pilih titik lokasi di dalam Kota Depok.')
-                    return redirect('mitra_profile')
+                    map_valid = False
+                    lat_raw = lng_raw = ''
             except ValueError:
                 messages.error(request, 'Format koordinat tidak valid.')
-                return redirect('mitra_profile')
+                map_valid = False
+                lat_raw = lng_raw = ''
         elif not profile.location_locked:
             # mitra belum pernah menentukan titik dan tidak mengirim koordinat
             messages.error(request, 'Tentukan titik lokasi di peta terlebih dahulu.')
+            map_valid = False
+        if form.is_valid() and map_valid:
+            profile = form.save(commit=False)
+            # Koordinat dan status kunci diatur oleh validasi peta di atas.
+            if lat_raw and lng_raw:
+                try:
+                    profile.latitude = float(lat_raw)
+                    profile.longitude = float(lng_raw)
+                    profile.location_locked = True
+                except ValueError:
+                    pass
+            profile.save()
+            messages.success(request, 'Profil berhasil diperbarui.')
             return redirect('mitra_profile')
-        # kalau sudah locked dan tidak kirim koordinat: titik lama dipertahankan
-
-        profile.save()
-        messages.success(request, 'Profil berhasil diperbarui.')
-        return redirect('mitra_profile')
+        if not form.is_valid():
+            messages.error(request, 'Periksa kembali data profil yang kamu masukkan.')
 
     # ---- Statistik dinamis ----
     completed = PickupSchedule.objects.filter(mitra=request.user, status='COMPLETED')
@@ -416,6 +436,7 @@ def mitra_profile(request):
 
     context = {
         'profile': profile,
+        'form': form,
         'total_limbah': total_limbah,
         'total_penjemputan': completed.count(),
         'total_poin': total_poin,
@@ -430,6 +451,15 @@ def mitra_profile(request):
         },
     }
     return render(request, 'scheduling/mitra_profile.html', context)
+
+
+@role_required(['mitra'])
+@require_POST
+def delete_mitra_profile(request):
+    profile = get_object_or_404(MitraProfile, user=request.user)
+    profile.delete()
+    messages.success(request, 'Data profil usaha berhasil dihapus. Akun mitra tetap aktif.')
+    return redirect('mitra_dashboard')
 
 
 @role_required(['mitra'])

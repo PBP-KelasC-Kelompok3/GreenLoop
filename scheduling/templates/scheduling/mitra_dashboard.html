@@ -14,7 +14,6 @@
 {% endblock %}
 
 {% block extra_css %}
-<!-- CSS Khusus Terpisah untuk Mitra Dashboard -->
 <link rel="stylesheet" href="{% static 'css/mitra_dashboard.css' %}">
 {% endblock %}
 
@@ -212,6 +211,13 @@
                     <a href="{% url 'edit_pickup' pickup.id %}" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-0 fs-7">
                       <i class="bi bi-pencil-square"></i> Edit
                     </a>
+                    <form method="POST" action="{% url 'delete_pickup' pickup.id %}" class="d-inline"
+                          onsubmit="return confirm('Hapus pengajuan penjemputan ini?');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0 fs-7">
+                        <i class="bi bi-trash"></i> Hapus
+                      </button>
+                    </form>
                   {% else %}
                     <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1 rounded-pill">Kurir Dalam Perjalanan</span>
                   {% endif %}
