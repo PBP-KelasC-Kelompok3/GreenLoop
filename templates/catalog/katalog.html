@@ -305,6 +305,11 @@
     }
 
     document.getElementById('searchInput').addEventListener('input', loadProducts);
-    document.addEventListener('DOMContentLoaded', loadProducts);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadProducts();
+        if (new URLSearchParams(window.location.search).get('orders') === '1' && isAuthenticated) {
+            loadOrders();
+        }
+    });
 </script>
 {% endblock content %}

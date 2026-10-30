@@ -61,14 +61,7 @@
                     </a>
                 </li>
 
-                {# Katalog: hanya tamu dan konsumen #}
-                {% if not user.is_authenticated or user.userprofile.role == 'consumer' %}
-                    <li>
-                        <a href="{% url 'coming_soon' 'katalog' %}">
-                            Katalog
-                        </a>
-                    </li>
-                {% endif %}
+                <li><a href="{% url 'katalog:katalog_page' %}">Katalog</a></li>
 
                 <li>
                     <a data-nav-section="impact" href="{% url 'home' %}#impact">
@@ -87,14 +80,8 @@
                     {% if user.userprofile.role == 'consumer' %}
 
                         <li>
-                            <a href="{% url 'coming_soon' 'rewards' %}">
-                                Rewards
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="{% url 'coming_soon' 'lacak-pesanan' %}">
-                                Lacak Pesanan
+                            <a href="{% url 'katalog:katalog_page' %}?orders=1">
+                                Pesanan Saya
                             </a>
                         </li>
 
@@ -105,6 +92,7 @@
                                 Dashboard Mitra
                             </a>
                         </li>
+                        <li><a href="{% url 'waste_reward:dashboard' %}">Waste &amp; Reward</a></li>
 
                     {% elif user.userprofile.role == 'courier' %}
 
@@ -208,8 +196,7 @@
 
             <div class="footer-col">
                 <h3>Produk</h3>
-                <a href="{% url 'coming_soon' 'katalog' %}">Katalog</a>
-                <a href="{% url 'coming_soon' 'lacak-pesanan' %}">Lacak Pesanan</a>
+                <a href="{% url 'katalog:katalog_page' %}">Katalog &amp; Pesanan</a>
             </div>
 
             <div class="footer-col">
@@ -220,7 +207,11 @@
                     <a href="{% url 'register' %}?role=mitra">Daftar Mitra</a>
                 {% endif %}
                 <a href="{% url 'coming_soon' 'pickup' %}">Smart Pick-Up</a>
-                <a href="{% url 'coming_soon' 'rewards' %}">Waste Points</a>
+                {% if user.is_authenticated and user.userprofile.role == 'mitra' %}
+                    <a href="{% url 'waste_reward:dashboard' %}">Waste &amp; Reward</a>
+                {% else %}
+                    <a href="{% url 'home' %}#cara-kerja">Waste Points</a>
+                {% endif %}
             </div>
 
             <div class="footer-col">
