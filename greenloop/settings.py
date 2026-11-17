@@ -32,9 +32,20 @@ ALLOWED_HOSTS = [
     'muhammad-fayadh51-greenloop.pws.cs.ui.ac.id',
 ]
 
+
 CSRF_TRUSTED_ORIGINS = [
     'https://muhammad-fayadh51-greenloop.pws.cs.ui.ac.id',
+    'http://localhost:5000',
+    'http://127.0.0.1:5000',
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5000',
+    'http://127.0.0.1:5000',
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -43,15 +54,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'scheduling',
     'accounts.apps.AccountsConfig',
     'courier',
     'waste_reward.apps.WasteRewardConfig',
     'catalog',
+    'corsheaders',
+
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
