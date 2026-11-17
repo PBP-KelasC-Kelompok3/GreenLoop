@@ -8,6 +8,7 @@ from .views import home, coming_soon, admin_dashboard
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
+    path('api/auth/', include('accounts.api_urls')),
     path('accounts/', include('accounts.urls')),
     path('courier/', include('courier.urls')),
     path('scheduling/', include('scheduling.urls')),

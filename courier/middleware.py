@@ -12,6 +12,9 @@ class CourierApprovalMiddleware:
         self.get_response = get_response
         self.pending_path = reverse("courier:pending_verification")
         self.logout_path = reverse("logout")
+        self.api_logout_path = reverse("accounts_api:logout")
+        self.api_csrf_path = reverse("accounts_api:csrf")
+        self.profile_api_path = reverse("accounts_api:profile")
 
     def __call__(self, request):
         user = request.user
@@ -34,7 +37,13 @@ class CourierApprovalMiddleware:
 
     def _is_allowed_path(self, path):
         return (
-            path in (self.pending_path, self.logout_path)
+            path in (
+                self.pending_path,
+                self.logout_path,
+                self.api_logout_path,
+                self.api_csrf_path,
+                self.profile_api_path,
+            )
             or path.startswith(settings.STATIC_URL)
             or bool(settings.MEDIA_URL and path.startswith(settings.MEDIA_URL))
         )
